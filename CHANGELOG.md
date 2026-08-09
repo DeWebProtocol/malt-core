@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+This release-candidate delta completes the browser Verifier/Writer separation
+introduced in v0.0.7-rc.1.
+
+### Added
+
+- Add explicit IPA `direct`, `compact`, and `fast` committer profiles while
+  preserving one parameter set, typed roots, commitments, and proof encoding.
+- Add verifier-only IPA initialization without committer fixed-base tables.
+- Export the canonical IPA parameter-set identifier and digest for release
+  provenance.
+- Add reproducible, content-addressed Verifier and Writer WASM release bundles
+  whose filenames and served paths include the full asset-set manifest digest.
+
+### Changed
+
+- Split the browser writer into one KZG module and three IPA profile modules.
+- Replace the multi-backend writer controller with one immutable
+  backend/profile Worker controller and make initialization cancellation and
+  idle fatal failures observable.
+- Pin the audited `go-ipa` source snapshot inside MALT so verifier and committer
+  profiles are built from one reviewable implementation.
+
+### Compatibility
+
+- These changes do not alter MALT roots, CIDs, transcripts, parameter sets,
+  ProofLists, receipts, or proof encodings.
+- Browser integrations built against v0.0.7-rc.1 must adopt the split writer
+  filenames and `createMaltWriterWorker` controller API.
+- Unversioned WASM URLs are not immutable release identities. Consumers should
+  load one complete digest-addressed asset set and reload when the application
+  entrypoint selects a new digest.
+
 ## [0.0.7-rc.1] - 2026-07-31
 
 This experimental release candidate centers on three protocol changes:

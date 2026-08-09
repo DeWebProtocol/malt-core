@@ -90,6 +90,14 @@ jobs:
       - name: Run writer WASM smoke
         run: sh scripts/test-writer-wasm.sh
 
+      - name: Build content-addressed WASM release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          scripts/build-wasm-release.sh \
+            "v0.0.0-ci.${GITHUB_SHA::12}" \
+            "${RUNNER_TEMP}/malt-wasm-release"
+
       - name: Run vet
         run: go vet ./...
 
