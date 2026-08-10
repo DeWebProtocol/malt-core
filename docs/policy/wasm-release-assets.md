@@ -49,9 +49,11 @@ entrypoint must reload before starting another verifier or writer runtime.
 Each set binds the exact MALT version and commit, Go version and toolchain,
 build target and flags, and file checksums. Writer provenance additionally
 binds build tags, IPA committer profiles, IPA parameter identity, retained
-table metadata, and Worker fallback policy. Consumers validate these semantic
-fields as well as `SHA256SUMS`; a checksum file that was regenerated alongside
-tampered metadata is not sufficient provenance.
+table metadata, and the Core runtime invariants of one runtime per controller
+and exact backend/profile targeting. Device selection and retrying another
+profile are host policies and are not asserted by Core provenance. Consumers
+validate these semantic fields as well as `SHA256SUMS`; a checksum file that
+was regenerated alongside tampered metadata is not sufficient provenance.
 
 Build and validate both release bundles from a clean checkout:
 

@@ -13,13 +13,14 @@ untrusted caller-supplied evidence.
 | Version | Security support |
 | --- | --- |
 | `main` | Best-effort review of current integration code |
-| `v0.0.7-rc.1` | Current experimental release candidate |
+| `v0.0.7-rc.2` | Current experimental release candidate |
+| `v0.0.7-rc.1` | Previous experimental release candidate |
 | `v0.0.6` | Previous non-prerelease experimental source release |
 | `v0.0.5` and earlier | Not supported |
 
 MALT remains pre-`v1.0.0` and experimental. Security fixes may require
 breaking API, proof, root, or wire-format changes. Consumers evaluating the
-current typed-root and Map-proof contracts should pin `v0.0.7-rc.1` rather
+current typed-root and Map-proof contracts should pin `v0.0.7-rc.2` rather
 than depend on `main`. Consumers remaining on v0.0.6 must not assume its flat
 roots are wire-compatible with this release candidate.
 

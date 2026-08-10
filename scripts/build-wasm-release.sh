@@ -148,7 +148,7 @@ PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 	const fs = require("node:fs")
 	const parameters = JSON.parse(process.env.IPA_PARAMETERS_JSON)
 	const provenance = {
-		schema: "malt.web-writer.provenance/v2",
+		schema: "malt.web-writer.provenance/v3",
 		source_repository: "https://github.com/DeWebProtocol/malt.git",
 		source_version: process.env.MALT_VERSION,
 		source_commit: process.env.MALT_COMMIT,
@@ -165,7 +165,7 @@ PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 				fast: {file: "malt-writer-ipa-fast.wasm", build_tags: ["writer_ipa", "malt_no_default_kzg"], linker_profile: "fast", retained_fixed_base_table_bytes: 350355456}
 			}
 		},
-		worker_policy: {maximum_active_committers: 1, ipa_fallback: ["fast", "compact", "direct"], cross_backend_fallback: false},
+		runtime_invariants: {one_runtime_per_controller: true, exact_backend_profile: true},
 		build_environment: {GO111MODULE: "on", GOENV: "off", GOWORK: "off", GOFLAGS: "", GOTOOLCHAIN: "local"},
 		codegen_environment: {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"}
 	}
