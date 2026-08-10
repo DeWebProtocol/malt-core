@@ -39,6 +39,7 @@ release version:
 ```bash
 scripts/build-wasm-release.sh vX.Y.Z dist/wasm-release
 scripts/check-wasm-release.sh dist/wasm-release
+node scripts/test-wasm-release-adversarial.mjs dist/wasm-release
 ```
 
 The output contract is defined in [WASM Release Assets](./wasm-release-assets.md).

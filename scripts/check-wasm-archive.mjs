@@ -54,6 +54,74 @@ function headerChecksum(block) {
   return sum
 }
 
+function asciiBytes(value, label) {
+  const bytes = Buffer.from(value, 'ascii')
+  if (bytes.toString('ascii') !== value) {
+    throw new Error(`canonical ustar ${label} must be ASCII`)
+  }
+  return bytes
+}
+
+function writeStringField(block, offset, length, value, label) {
+  const bytes = asciiBytes(value, label)
+  if (bytes.length > length) {
+    throw new Error(`canonical ustar ${label} is too long`)
+  }
+  bytes.copy(block, offset)
+}
+
+function writeOctalField(block, offset, length, value, label) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`canonical ustar ${label} must be a non-negative safe integer`)
+  }
+  const digits = value.toString(8)
+  if (digits.length > length - 1) {
+    throw new Error(`canonical ustar ${label} does not fit its field`)
+  }
+  block.write(`${digits.padStart(length - 1, '0')}\0`, offset, length, 'ascii')
+}
+
+function splitPath(path) {
+  const bytes = asciiBytes(path, 'path')
+  if (bytes.length <= 100) return { name: path, prefix: '' }
+
+  for (let index = path.length - 1; index > 0; index -= 1) {
+    if (path[index] !== '/') continue
+    const prefix = path.slice(0, index)
+    const name = path.slice(index + 1)
+    if (
+      name && asciiBytes(name, 'name').length <= 100 &&
+      asciiBytes(prefix, 'prefix').length <= 155
+    ) {
+      return { name, prefix }
+    }
+  }
+  throw new Error(`canonical ustar path cannot be represented: ${JSON.stringify(path)}`)
+}
+
+function canonicalHeader(expected, size, sourceEpoch) {
+  const block = Buffer.alloc(512)
+  const { name, prefix } = splitPath(expected.path)
+  writeStringField(block, 0, 100, name, 'name')
+  writeOctalField(block, 100, 8, expected.mode, 'mode')
+  writeOctalField(block, 108, 8, 0, 'uid')
+  writeOctalField(block, 116, 8, 0, 'gid')
+  writeOctalField(block, 124, 12, size, 'size')
+  writeOctalField(block, 136, 12, sourceEpoch, 'mtime')
+  block[156] = expected.type === 'directory' ? 0x35 : 0x30
+  block.write('ustar\0', 257, 6, 'binary')
+  block.write('00', 263, 2, 'ascii')
+  writeStringField(block, 345, 155, prefix, 'prefix')
+
+  const checksum = headerChecksum(block)
+  const checksumDigits = checksum.toString(8)
+  if (checksumDigits.length > 6) {
+    throw new Error('canonical ustar checksum does not fit its field')
+  }
+  block.write(`${checksumDigits.padStart(6, '0')}\0 `, 148, 8, 'binary')
+  return block
+}
+
 let buffered = Buffer.alloc(0)
 let contentBytes = 0
 let paddingBytes = 0
@@ -120,6 +188,9 @@ function consume(chunk) {
       (expected.type === 'directory' && size !== 0)
     ) {
       throw new Error(`non-canonical raw ustar metadata for ${path}`)
+    }
+    if (!block.equals(canonicalHeader(expected, size, sourceEpoch))) {
+      throw new Error(`non-canonical raw ustar header encoding for ${path}`)
     }
 
     contentBytes = size

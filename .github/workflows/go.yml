@@ -94,9 +94,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          release_dir="${RUNNER_TEMP}/malt-wasm-release"
           scripts/build-wasm-release.sh \
             "v0.0.0-ci.${GITHUB_SHA::12}" \
-            "${RUNNER_TEMP}/malt-wasm-release"
+            "${release_dir}"
+          node scripts/test-wasm-release-adversarial.mjs "${release_dir}"
 
       - name: Run vet
         run: go vet ./...

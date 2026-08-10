@@ -58,6 +58,7 @@ Build and validate both release bundles from a clean checkout:
 ```bash
 scripts/build-wasm-release.sh vX.Y.Z dist/wasm-release
 scripts/check-wasm-release.sh dist/wasm-release
+node scripts/test-wasm-release-adversarial.mjs dist/wasm-release
 ```
 
 The exact Go patch version in `go.mod` is the release toolchain. Archive
