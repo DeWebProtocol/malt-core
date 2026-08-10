@@ -33,6 +33,20 @@ commit. It should import only the intended public packages, at minimum:
 - `sdk/verifier`;
 - `auth/arcset/materializer` when exercising executor composition.
 
+Build and validate the content-addressed browser asset sets using the exact
+release version:
+
+```bash
+scripts/build-wasm-release.sh vX.Y.Z dist/wasm-release
+scripts/check-wasm-release.sh dist/wasm-release
+node scripts/test-wasm-release-adversarial.mjs dist/wasm-release
+```
+
+The output contract is defined in [WASM Release Assets](./wasm-release-assets.md).
+Upload all four emitted files without renaming or replacing them: two
+digest-named archives, the digest-named release manifest, and its
+`SHA256SUMS`.
+
 Review README, architecture, roadmap, schemas, compatibility policy, threat
 model, and release notes. If Web publishes the WASM build, its provenance must
 identify the exact MALT commit, Go toolchain, and SHA-256 checksum.
@@ -54,5 +68,6 @@ The GitHub release must include:
 - profile/schema compatibility notes;
 - known experimental limits.
 
-Source tags are authoritative. Native binaries are build-from-source until a
-separate workflow publishes signed platform artifacts and checksums.
+Source tags are authoritative. WASM bundles are content-addressed convenience
+assets with exact provenance; native platform binaries remain build-from-source
+until a separate workflow publishes signed artifacts and checksums.
