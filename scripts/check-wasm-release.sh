@@ -225,7 +225,7 @@ VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	exactFiles(process.env.WRITER_ROOT, writerFiles)
 	exactChecksums(process.env.WRITER_ROOT, writerFiles.filter((name) => name !== "SHA256SUMS"))
 	const writer = JSON.parse(fs.readFileSync(path.join(process.env.WRITER_ROOT, "PROVENANCE.json"), "utf8"))
-	validateBase(writer, "malt.web-writer.provenance/v2")
+	validateBase(writer, "malt.web-writer.provenance/v3")
 	const expectedArtifacts = {
 		kzg: {file: "malt-writer-kzg.wasm", build_tags: ["writer_kzg"]},
 		ipa: {
@@ -237,9 +237,7 @@ VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	if (writer.parameters?.id !== "malt.ipa-parameters/v1" ||
 		writer.parameters?.sha256 !== "3799df0a77d1843b13a3a08744165180a12e1cd2dca529bee64ad691ac63adaf" ||
 		JSON.stringify(writer.artifacts) !== JSON.stringify(expectedArtifacts) ||
-		writer.worker_policy?.maximum_active_committers !== 1 ||
-		writer.worker_policy?.cross_backend_fallback !== false ||
-		JSON.stringify(writer.worker_policy?.ipa_fallback) !== JSON.stringify(["fast", "compact", "direct"])) {
+		JSON.stringify(writer.runtime_invariants) !== JSON.stringify({one_runtime_per_controller: true, exact_backend_profile: true})) {
 		throw new Error("invalid writer parameter or Worker provenance")
 	}
 '

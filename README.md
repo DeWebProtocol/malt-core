@@ -22,11 +22,12 @@ line client, daemon, UnixFS model, or website.
 [Client-root contract](./docs/spec/client-root-contract.md) ·
 [ProofList](./docs/spec/prooflist-format.md) ·
 [Compatibility](./docs/policy/compatibility.md) ·
-[v0.0.7-rc.1 release candidate](./docs/releases/v0.0.7.md) · [Roadmap](./ROADMAP.md)
+[v0.0.7-rc.2 release candidate](./docs/releases/v0.0.7.md) · [Roadmap](./ROADMAP.md)
 
-`v0.0.7-rc.1` is the current release candidate. Its Map-proof and client-root
-profiles remain experimental; `/v1` profile suffixes do not declare MALT or
-its Go APIs stable at v1.
+`v0.0.7-rc.2` is the current release candidate. It completes the browser
+Verifier/Writer split and content-addressed WASM delivery while preserving the
+experimental Map-proof and client-root profiles introduced in rc.1. `/v1`
+profile suffixes do not declare MALT or its Go APIs stable at v1.
 
 ## Boundary
 
@@ -91,7 +92,7 @@ conformance tests and examples, not deployment.
 ## Install
 
 ```bash
-go get github.com/dewebprotocol/malt@v0.0.7-rc.1
+go get github.com/dewebprotocol/malt@v0.0.7-rc.2
 ```
 
 ### Verify a resolve result

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.7-rc.2] - 2026-08-10
+
 This release-candidate delta completes the browser Verifier/Writer separation
 introduced in v0.0.7-rc.1.
 
@@ -16,8 +18,11 @@ introduced in v0.0.7-rc.1.
 - Add verifier-only IPA initialization without committer fixed-base tables.
 - Export the canonical IPA parameter-set identifier and digest for release
   provenance.
+- Add `malt.web-writer.provenance/v3` for split Writer artifacts and the Core
+  invariants of one runtime per controller and exact backend/profile targeting.
 - Add reproducible, content-addressed Verifier and Writer WASM release bundles
-  whose filenames and served paths include the full asset-set manifest digest.
+  whose filenames bind the full asset-set and archive digests and whose served
+  paths include the full asset-set manifest digest.
 
 ### Changed
 
@@ -27,6 +32,8 @@ introduced in v0.0.7-rc.1.
   idle fatal failures observable.
 - Pin the audited `go-ipa` source snapshot inside MALT so verifier and committer
   profiles are built from one reviewable implementation.
+- Canonicalize and validate gzip/ustar release archives, provenance, checksums,
+  member metadata, padding, and end blocks before publication.
 
 ### Compatibility
 
@@ -34,6 +41,8 @@ introduced in v0.0.7-rc.1.
   ProofLists, receipts, or proof encodings.
 - Browser integrations built against v0.0.7-rc.1 must adopt the split writer
   filenames and `createMaltWriterWorker` controller API.
+- Writer asset consumers must validate `malt.web-writer.provenance/v3`; device
+  selection and profile retry order remain host policy.
 - Unversioned WASM URLs are not immutable release identities. Consumers should
   load one complete digest-addressed asset set and reload when the application
   entrypoint selects a new digest.
@@ -264,7 +273,8 @@ for the trusted CLI/daemon and UnixFS application, and
 - KZG verification rejects out-of-range proof indices and non-canonical proof
   lengths instead of allowing malformed input to panic or reuse a commitment.
 
-[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.1...HEAD
+[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.2...HEAD
+[0.0.7-rc.2]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.1...v0.0.7-rc.2
 [0.0.7-rc.1]: https://github.com/DeWebProtocol/malt/compare/v0.0.6...v0.0.7-rc.1
 [0.0.6]: https://github.com/DeWebProtocol/malt/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/DeWebProtocol/malt/compare/v0.0.4...v0.0.5
