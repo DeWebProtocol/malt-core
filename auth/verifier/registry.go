@@ -108,7 +108,7 @@ func (r *BackendRegistry) lookup(root cid.Cid) (backendVerifiers, error) {
 func NewDefaultBackendRegistry() (*BackendRegistry, error) {
 	registry := NewBackendRegistry()
 
-	kzgScheme, err := kzg.NewScheme()
+	kzgScheme, err := kzg.NewVerifierScheme()
 	if err != nil {
 		return nil, fmt.Errorf("creating KZG verifier backend: %w", err)
 	}

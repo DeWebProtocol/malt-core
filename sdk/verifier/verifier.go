@@ -82,7 +82,7 @@ func NewForBackend(kind maltcid.BackendKind) (*Verifier, error) {
 	)
 	switch kind {
 	case maltcid.BackendKindKZG:
-		scheme, err = kzg.NewScheme()
+		scheme, err = kzg.NewVerifierScheme()
 	case maltcid.BackendKindIPA:
 		scheme, err = ipa.NewVerifierScheme()
 	default:

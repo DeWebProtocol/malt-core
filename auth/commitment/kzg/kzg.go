@@ -6,9 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
-	"math/bits"
 
-	blsfr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	"github.com/dewebprotocol/malt/auth/commitment"
 	"github.com/dewebprotocol/malt/wire/maltcid"
@@ -28,33 +26,50 @@ const (
 	MaxCacheEntries = 1024
 )
 
-// Scheme implements a KZG-based index commitment backend.
+// VerifierScheme is the verification-only KZG backend. It deliberately does
+// not retain or link the 4096-point writer commitment key.
+type VerifierScheme struct {
+	openingKey *kzgOpeningKey
+	domain     *kzgDomain
+}
+
+// Scheme implements the full KZG index commitment backend.
 type Scheme struct {
-	context      *gokzg4844.Context
-	domainPoints []gokzg4844.Scalar
+	*VerifierScheme
+	writerKey *kzgWriterKey
 }
 
 var _ commitment.IndexOpener = (*Scheme)(nil)
 
 // NewScheme creates a new KZG commitment scheme.
 func NewScheme() (*Scheme, error) {
-	context, err := gokzg4844.NewContext4096Secure()
+	verifier, err := NewVerifierScheme()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create KZG context: %w", err)
+		return nil, err
 	}
-	domainPoints, err := buildDomainPoints(MaxValues)
+	writerKey, err := loadKZGWriterKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize KZG writer key: %w", err)
+	}
+	return &Scheme{VerifierScheme: verifier, writerKey: writerKey}, nil
+}
+
+// NewVerifierScheme creates a KZG verifier without loading the 4096-point
+// writer key. This is the constructor for portable and browser verifiers.
+func NewVerifierScheme() (*VerifierScheme, error) {
+	openingKey, err := loadKZGOpeningKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize KZG opening key: %w", err)
+	}
+	domain, err := loadKZGDomain()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize KZG domain: %w", err)
 	}
-
-	return &Scheme{
-		context:      context,
-		domainPoints: domainPoints,
-	}, nil
+	return &VerifierScheme{openingKey: openingKey, domain: domain}, nil
 }
 
 // MaxValues returns the maximum number of authenticated slots.
-func (s *Scheme) MaxValues() int {
+func (s *VerifierScheme) MaxValues() int {
 	return MaxValues
 }
 
@@ -132,9 +147,11 @@ func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 }
 
 func (s *Scheme) proveValuesIndex(values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
-	blob := blobFromValues(values)
-	inputPoint := s.domainPoint(index)
-	proof, claimedValue, err := s.context.ComputeKZGProof(blob, inputPoint, 1)
+	polynomial, err := polynomialFromValues(values)
+	if err != nil {
+		return nil, nil, err
+	}
+	proof, claimedValue, err := provePolynomialAtIndex(s.writerKey, s.domain, polynomial, index)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to compute proof: %w", err)
 	}
@@ -202,16 +219,16 @@ func (s *Scheme) BatchProveAtRoot(root cid.Cid, values []commitment.Cell, indice
 }
 
 // VerifyIndex verifies a proof for a stable index without cache state.
-func (s *Scheme) VerifyIndex(comm cid.Cid, index uint64, value commitment.Cell, proof []byte) (bool, error) {
-	if index >= uint64(len(s.domainPoints)) {
-		return false, fmt.Errorf("index %d exceeds max %d", index, len(s.domainPoints)-1)
+func (s *VerifierScheme) VerifyIndex(comm cid.Cid, index uint64, value commitment.Cell, proof []byte) (bool, error) {
+	if index >= uint64(len(s.domain.roots)) {
+		return false, fmt.Errorf("index %d exceeds max %d", index, len(s.domain.roots)-1)
 	}
 	kzgProof, claimedValue, proofIndex, err := deserializeProof(proof)
 	if err != nil {
 		return false, err
 	}
-	if proofIndex >= uint64(len(s.domainPoints)) {
-		return false, fmt.Errorf("proof index %d exceeds max %d", proofIndex, len(s.domainPoints)-1)
+	if proofIndex >= uint64(len(s.domain.roots)) {
+		return false, fmt.Errorf("proof index %d exceeds max %d", proofIndex, len(s.domain.roots)-1)
 	}
 	if proofIndex != index {
 		return false, nil
@@ -228,8 +245,7 @@ func (s *Scheme) VerifyIndex(comm cid.Cid, index uint64, value commitment.Cell, 
 	var kzgComm gokzg4844.KZGCommitment
 	copy(kzgComm[:], commBytes)
 
-	inputPoint := s.domainPoint(index)
-	if err := s.context.VerifyKZGProof(kzgComm, inputPoint, claimedValue, kzgProof); err != nil {
+	if err := verifyKZGOpening(s.openingKey, kzgComm, s.domain.roots[index], claimedValue, kzgProof); err != nil {
 		return false, fmt.Errorf("KZG proof verification failed: %w", err)
 	}
 	return true, nil
@@ -239,7 +255,7 @@ func (s *Scheme) VerifyIndex(comm cid.Cid, index uint64, value commitment.Cell, 
 // current go-kzg-4844 dependency does not expose batch opening generation.
 // TODO: replace this looped verification path once BatchProve emits a real
 // KZG multiproof for our index-commitment setting.
-func (s *Scheme) BatchVerify(comm cid.Cid, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) BatchVerify(comm cid.Cid, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
 	if err := validateBatchVerification(indices, values); err != nil {
 		return false, err
 	}
@@ -301,7 +317,7 @@ func validateBatchVerification(indices []uint64, values []commitment.Cell) error
 }
 
 // VerifyProof verifies a proof carrying its own index metadata.
-func (s *Scheme) VerifyProof(comm cid.Cid, value commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) VerifyProof(comm cid.Cid, value commitment.Cell, proof []byte) (bool, error) {
 	_, _, index, err := deserializeProof(proof)
 	if err != nil {
 		return false, err
@@ -341,28 +357,17 @@ func (s *Scheme) commitValues(values []commitment.Cell) (cid.Cid, error) {
 		return cid.Cid{}, fmt.Errorf("too many values: %d > %d", len(values), MaxValues)
 	}
 
-	blob := blobFromValues(values)
-	comm, err := s.context.BlobToKZGCommitment(blob, 1)
+	polynomial, err := polynomialFromValues(values)
+	if err != nil {
+		return cid.Cid{}, err
+	}
+	comm, err := commitPolynomial(s.writerKey, polynomial)
 	if err != nil {
 		return cid.Cid{}, fmt.Errorf("failed to commit: %w", err)
 	}
 
 	commBytes := comm[:]
 	return maltcid.NewKZGCid(commBytes)
-}
-
-func (s *Scheme) domainPoint(index uint64) gokzg4844.Scalar {
-	return s.domainPoints[index]
-}
-
-func blobFromValues(values []commitment.Cell) *gokzg4844.Blob {
-	blob := &gokzg4844.Blob{}
-	for i, value := range values {
-		scalar := cellToKZGScalar(value)
-		offset := i * gokzg4844.SerializedScalarSize
-		copy(blob[offset:offset+gokzg4844.SerializedScalarSize], scalar[:])
-	}
-	return blob
 }
 
 func serializeProof(proof gokzg4844.KZGProof, claimedValue gokzg4844.Scalar, index uint64) []byte {
@@ -420,54 +425,9 @@ func deserializeBatchProof(data []byte) ([][]byte, error) {
 	return proofs, nil
 }
 
-func buildDomainPoints(size int) ([]gokzg4844.Scalar, error) {
-	if bits.OnesCount(uint(size)) != 1 {
-		return nil, fmt.Errorf("domain size %d is not a power of two", size)
-	}
-
-	var rootOfUnity blsfr.Element
-	if _, err := rootOfUnity.SetString("10238227357739495823651030575849232062558860180284477541189508159991286009131"); err != nil {
-		return nil, err
-	}
-
-	const maxOrderRoot = 32
-	logx := bits.TrailingZeros(uint(size))
-	if logx > maxOrderRoot {
-		return nil, fmt.Errorf("domain size %d exceeds supported root order", size)
-	}
-
-	var generator blsfr.Element
-	expo := uint64(1 << (maxOrderRoot - logx))
-	generator.Exp(rootOfUnity, big.NewInt(int64(expo)))
-
-	roots := make([]blsfr.Element, size)
-	current := blsfr.One()
-	for i := 0; i < size; i++ {
-		roots[i] = current
-		current.Mul(&current, &generator)
-	}
-	bitReverseRoots(roots)
-
-	points := make([]gokzg4844.Scalar, size)
-	for i := range roots {
-		points[i] = gokzg4844.SerializeScalar(roots[i])
-	}
-	return points, nil
-}
-
-func bitReverseRoots(roots []blsfr.Element) {
-	n := len(roots)
-	bitLen := bits.Len(uint(n)) - 1
-	for i := 0; i < n; i++ {
-		j := int(bits.Reverse(uint(i)) >> (bits.UintSize - bitLen))
-		if j > i {
-			roots[i], roots[j] = roots[j], roots[i]
-		}
-	}
-}
-
 // Ensure Scheme implements commitment.IndexCommitment.
 var _ commitment.IndexCommitment = (*Scheme)(nil)
+var _ commitment.IndexVerifier = (*VerifierScheme)(nil)
 var _ commitment.IndexVerifier = (*Scheme)(nil)
 var _ commitment.IndexProver = (*Scheme)(nil)
 var _ commitment.IndexRootProver = (*Scheme)(nil)
