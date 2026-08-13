@@ -161,7 +161,7 @@ func (w *Writer) commitMapDelta(ctx context.Context, namespace string, delta Arc
 		return root, nil
 	}
 
-	root := delta.Object
+	updates := make([]mapping.BatchUpdate, 0, len(changes))
 	logical := make(map[arcset.Path]cid.Cid, len(changes))
 	for _, change := range changes {
 		key := arcset.CanonicalizePath(change.Coordinate.String())
@@ -173,12 +173,16 @@ func (w *Writer) commitMapDelta(ctx context.Context, namespace string, delta Arc
 		if change.After != nil {
 			newValue = change.After.CID()
 		}
-		nextRoot, err := w.semantic.Update(ctx, namespace, root, key, oldValue, newValue)
-		if err != nil {
-			return cid.Undef, err
-		}
-		root = nextRoot
+		updates = append(updates, mapping.BatchUpdate{
+			Key:      key,
+			OldValue: oldValue,
+			NewValue: newValue,
+		})
 		logical[key] = newValue
+	}
+	root, err := w.semantic.BatchUpdate(ctx, namespace, delta.Object, updates)
+	if err != nil {
+		return cid.Undef, err
 	}
 	if w.materializer != nil {
 		deltaSet, err := arcset.NewArcSetFromPaths(logical)

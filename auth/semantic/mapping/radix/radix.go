@@ -754,9 +754,11 @@ func (s *Map) updateSubtreeWithoutPersistCached(
 	return s.commitOrCollapseNodeWithoutPersist(ctx, namespace, nextSlots, nodes, buckets)
 }
 
-// BatchUpdate applies multiple updates atomically by applying them sequentially
-// and returning the final root only if all updates succeed. If any update fails,
-// the entire batch is rejected and no state is persisted to ArcSet materializer.
+// BatchUpdate applies multiple updates atomically and returns the final root
+// only if all updates succeed. The persisted root node is opened once, updates
+// are applied below their root slots, and the final root commitment is computed
+// once after every subtree succeeds. If any update fails, no state is persisted
+// to the ArcSet materializer.
 func (s *Map) BatchUpdate(ctx context.Context, namespace string, root cid.Cid, updates []mapping.BatchUpdate) (cid.Cid, error) {
 	if !root.Defined() {
 		return cid.Undef, fmt.Errorf("root is undefined")
@@ -774,27 +776,44 @@ func (s *Map) BatchUpdate(ctx context.Context, namespace string, root cid.Cid, u
 		return cid.Undef, err
 	}
 
-	// Build a cache of all materialized nodes/buckets as we traverse
-	// This allows subsequent updates in the batch to read from newly created nodes
+	// Build a cache of all materialized nodes/buckets below the root as we
+	// traverse. Subsequent updates in the batch can read newly created nodes
+	// without opening or persisting an intermediate root.
 	nodeCache := make(map[string][]cid.Cid)
-	nodeCache[root.String()] = initialSlots
+	nextRootSlots := cloneCIDs(initialSlots)
 
 	// Accumulate all nodes and buckets that need to be persisted
 	var pendingNodes []pendingNode
 	var pendingBuckets []pendingBucket
 
-	// Apply updates sequentially without persisting
-	currentRoot := root
+	// Apply updates sequentially below their root slots without committing the
+	// top-level node after each coordinate. Changes are canonical and unique at
+	// the mutation boundary, while this method preserves input ordering for its
+	// general public contract.
 	for i, update := range updates {
 		if update.Key.IsEmpty() {
 			return cid.Undef, fmt.Errorf("update %d: key is empty", i)
 		}
-
-		newRoot, nodes, buckets, err := s.updateWithoutPersistCached(ctx, namespace, currentRoot, update.Key, update.OldValue, update.NewValue, nodeCache)
+		digest := hashPath(update.Key)
+		rootSlot, ok := s.geometry.MapDigit(digest[:], 0)
+		if !ok {
+			return cid.Undef, fmt.Errorf("update %d: missing root radix digit", i)
+		}
+		nextSlot, nodes, buckets, err := s.updateSubtreeWithoutPersistCached(
+			ctx,
+			namespace,
+			nextRootSlots[rootSlot],
+			digest,
+			1,
+			update.Key,
+			update.OldValue,
+			update.NewValue,
+			nodeCache,
+		)
 		if err != nil {
 			return cid.Undef, fmt.Errorf("update %d (key=%s): %w", i, update.Key.String(), err)
 		}
-		currentRoot = newRoot
+		nextRootSlots[rootSlot] = nextSlot
 
 		// Add new nodes to cache
 		for _, node := range nodes {
@@ -804,6 +823,14 @@ func (s *Map) BatchUpdate(ctx context.Context, namespace string, root cid.Cid, u
 		pendingNodes = append(pendingNodes, nodes...)
 		pendingBuckets = append(pendingBuckets, buckets...)
 	}
+	if slices.EqualFunc(initialSlots, nextRootSlots, cidEqual) {
+		return root, nil
+	}
+	currentRoot, err := s.commitSlots(nextRootSlots)
+	if err != nil {
+		return cid.Undef, err
+	}
+	pendingNodes = append(pendingNodes, pendingNode{root: currentRoot, slots: nextRootSlots})
 
 	// All updates succeeded - now persist atomically
 	// First persist all nodes
