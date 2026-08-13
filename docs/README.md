@@ -28,7 +28,7 @@ research narrative remain in `DeWebProtocol/documents`.
 - [Threat model](./policy/threat-model.md)
 - [Compatibility policy](./policy/compatibility.md)
 - [Release process](./policy/releasing.md)
-- [v0.0.7-rc.2 release notes](./releases/v0.0.7.md)
+- [v0.0.7-rc.3 release notes](./releases/v0.0.7.md)
 - [v0.0.6 release notes](./releases/v0.0.6.md)
 - [v0.0.5 release notes](./releases/v0.0.5.md)
 - [v0.0.4 release notes](./releases/v0.0.4.md)
