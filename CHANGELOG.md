@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.7-rc.3] - 2026-08-13
+
+This release-candidate delta removes the remaining KZG setup bottleneck and
+optimizes internal KZG commitment, opening, and verification execution without
+changing externally observable commitment or wire semantics.
+
+### Added
+
+- Add a verification-only KZG constructor that loads only the canonical G1
+  generator and the two G2 opening-key points.
+- Add reproducibly generated, committed verifier and Writer setup assets
+  derived from the exact `go-kzg-4844 v1.1.0` trusted setup.
+- Add a generation test that revalidates all 4096 retained G1 points and both
+  retained G2 points, then byte-compares the derived assets with the committed
+  copies.
+
+### Changed
+
+- Replace runtime JSON parsing and decompression of all 4096 KZG Lagrange G1
+  points with build-time validated canonical coordinates for Writer startup.
+- Replace the internal KZG commitment, opening, and verification execution path
+  with equivalent gnark public operations over the validated setup assets.
+- Use the verification-only KZG scheme in the default portable and SDK
+  verifier registries.
+
+### Compatibility
+
+- These changes do not alter MALT roots, CIDs, KZG parameters, commitments,
+  proofs, transcripts, ProofLists, receipts, schemas, or wire encodings.
+- KZG commitments and openings remain byte-for-byte interoperable with the
+  pinned `go-kzg-4844 v1.1.0` implementation.
+
 ## [0.0.7-rc.2] - 2026-08-10
 
 This release-candidate delta completes the browser Verifier/Writer separation
@@ -273,7 +305,8 @@ for the trusted CLI/daemon and UnixFS application, and
 - KZG verification rejects out-of-range proof indices and non-canonical proof
   lengths instead of allowing malformed input to panic or reuse a commitment.
 
-[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.2...HEAD
+[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.3...HEAD
+[0.0.7-rc.3]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.2...v0.0.7-rc.3
 [0.0.7-rc.2]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.1...v0.0.7-rc.2
 [0.0.7-rc.1]: https://github.com/DeWebProtocol/malt/compare/v0.0.6...v0.0.7-rc.1
 [0.0.6]: https://github.com/DeWebProtocol/malt/compare/v0.0.5...v0.0.6
