@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.7-rc.4] - 2026-08-13
+
+This release-candidate delta reduces Writer latency for transactions that
+change multiple Map arcs, without changing roots or wire semantics.
+
+### Changed
+
+- Apply all canonical Map changes in one semantic `BatchUpdate` instead of
+  committing the top-level Map after every changed arc.
+- Open and validate the existing root once, update affected subtrees in
+  batch-local state, and compute and persist one final top-level commitment.
+- Preserve ordered updates within the same root slot and exact final-root
+  parity with sequential updates.
+
+### Compatibility
+
+- These changes do not alter MALT roots, CIDs, commitment parameters,
+  commitments, proofs, transcripts, ProofLists, receipts, schemas, or wire
+  encodings.
+- The final root is byte-for-byte identical to applying the same canonical
+  changes sequentially.
+
 ## [0.0.7-rc.3] - 2026-08-13
 
 This release-candidate delta removes the remaining KZG setup bottleneck and
@@ -305,7 +327,8 @@ for the trusted CLI/daemon and UnixFS application, and
 - KZG verification rejects out-of-range proof indices and non-canonical proof
   lengths instead of allowing malformed input to panic or reuse a commitment.
 
-[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.3...HEAD
+[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.4...HEAD
+[0.0.7-rc.4]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.3...v0.0.7-rc.4
 [0.0.7-rc.3]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.2...v0.0.7-rc.3
 [0.0.7-rc.2]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.1...v0.0.7-rc.2
 [0.0.7-rc.1]: https://github.com/DeWebProtocol/malt/compare/v0.0.6...v0.0.7-rc.1
