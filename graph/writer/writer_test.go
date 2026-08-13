@@ -158,6 +158,22 @@ type fixedWidthAppendOnlySemantics struct {
 	appender list.FixedWidthAppender
 }
 
+type countingBatchMapSemantics struct {
+	mapping.Semantics
+	updateCalls      int
+	batchUpdateCalls int
+}
+
+func (s *countingBatchMapSemantics) Update(ctx context.Context, namespace string, root cid.Cid, key arcset.Path, oldValue, newValue cid.Cid) (cid.Cid, error) {
+	s.updateCalls++
+	return s.Semantics.Update(ctx, namespace, root, key, oldValue, newValue)
+}
+
+func (s *countingBatchMapSemantics) BatchUpdate(ctx context.Context, namespace string, root cid.Cid, updates []mapping.BatchUpdate) (cid.Cid, error) {
+	s.batchUpdateCalls++
+	return s.Semantics.BatchUpdate(ctx, namespace, root, updates)
+}
+
 func (s fixedWidthAppendOnlySemantics) AppendFixed(ctx context.Context, namespace string, root cid.Cid, key cid.Cid, totalSize uint64) (cid.Cid, uint64, error) {
 	return s.appender.AppendFixed(ctx, namespace, root, key, totalSize)
 }
@@ -435,6 +451,65 @@ func TestWriterApplySemanticMapMutation(t *testing.T) {
 	}
 	if !got.Equals(newChild) {
 		t.Fatalf("child target = %s, want %s", got, newChild)
+	}
+}
+
+func TestWriterApplySemanticMapMutationUsesOneBatch(t *testing.T) {
+	w, _, semantic, _ := newTestWriter(t)
+	ctx := context.Background()
+	namespace := "test-batched-semantic-mutation"
+	oldA := fakeCID("old-a")
+	oldB := fakeCID("old-b")
+	newA := fakeCID("new-a")
+	newB := fakeCID("new-b")
+
+	snapshot, err := arcset.NewArcSet(map[string]cid.Cid{
+		"a": oldA,
+		"b": oldB,
+	})
+	if err != nil {
+		t.Fatalf("NewArcSet failed: %v", err)
+	}
+	root, err := w.CreateStructure(ctx, namespace, snapshot)
+	if err != nil {
+		t.Fatalf("CreateStructure failed: %v", err)
+	}
+	counting := &countingBatchMapSemantics{Semantics: semantic}
+	w.semantic = counting
+
+	receipt, err := w.Apply(ctx, namespace, SemanticMutation{
+		BaseRoot: root,
+		Deltas: []ArcSetDelta{{
+			Object: root,
+			Kind:   arcset.KindMap,
+			Changes: mustWriterDelta(t, arcset.KindMap, []arcset.ArcChange{
+				{
+					Coordinate: mustMapCoordinate(t, "a"),
+					Before:     targetRefPtr(arcset.NewMapTarget(oldA)),
+					After:      targetRefPtr(arcset.NewMapTarget(newA)),
+				},
+				{
+					Coordinate: mustMapCoordinate(t, "b"),
+					Before:     targetRefPtr(arcset.NewMapTarget(oldB)),
+					After:      targetRefPtr(arcset.NewMapTarget(newB)),
+				},
+			}),
+		}},
+	})
+	if err != nil {
+		t.Fatalf("Apply failed: %v", err)
+	}
+	if counting.batchUpdateCalls != 1 || counting.updateCalls != 0 {
+		t.Fatalf("semantic calls = BatchUpdate %d Update %d, want 1/0", counting.batchUpdateCalls, counting.updateCalls)
+	}
+	for path, want := range map[string]cid.Cid{"a": newA, "b": newB} {
+		got, err := w.GetArc(ctx, namespace, receipt.NewRoot, path)
+		if err != nil {
+			t.Fatalf("GetArc(%s) failed: %v", path, err)
+		}
+		if !got.Equals(want) {
+			t.Fatalf("%s target = %s, want %s", path, got, want)
+		}
 	}
 }
 
