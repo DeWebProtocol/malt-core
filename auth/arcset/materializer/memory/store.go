@@ -5,6 +5,7 @@ package memory
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/dewebprotocol/malt/auth/arcset"
@@ -19,10 +20,11 @@ type Store struct {
 }
 
 type scopeState struct {
-	current   map[arcset.Path]cid.Cid
-	nodes     map[arcset.Path]cid.Cid
-	nodeRoots map[string]map[arcset.Path]struct{}
-	roots     map[string]map[arcset.Path]cid.Cid
+	current    map[arcset.Path]cid.Cid
+	nodes      map[arcset.Path]cid.Cid
+	nodeRoots  map[string]map[arcset.Path]struct{}
+	nodeOwners map[arcset.Path]string
+	roots      map[string]map[arcset.Path]cid.Cid
 }
 
 // New creates an in-memory materializer. branching controls whether snapshots
@@ -132,22 +134,36 @@ func (s *Store) UpdateNode(_ context.Context, scope string, root cid.Cid, values
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	state := s.ensureScope(scope)
-	paths := state.nodeRoots[root.KeyString()]
+	rootKey := root.KeyString()
+	paths := state.nodeRoots[rootKey]
 	if paths == nil {
 		paths = make(map[arcset.Path]struct{}, len(delta))
-		state.nodeRoots[root.KeyString()] = paths
 	}
+	for path, target := range delta {
+		if !target.Defined() {
+			continue
+		}
+		if owner, owned := state.nodeOwners[path]; owned && owner != rootKey {
+			return fmt.Errorf("node materializer path %q is already owned by another root", path)
+		}
+	}
+	state.nodeRoots[rootKey] = paths
 	for path, target := range delta {
 		if target.Defined() {
 			state.nodes[path] = target
 			paths[path] = struct{}{}
+			state.nodeOwners[path] = rootKey
 		} else {
+			if owner, owned := state.nodeOwners[path]; !owned || owner != rootKey {
+				continue
+			}
 			delete(state.nodes, path)
 			delete(paths, path)
+			delete(state.nodeOwners, path)
 		}
 	}
 	if len(paths) == 0 {
-		delete(state.nodeRoots, root.KeyString())
+		delete(state.nodeRoots, rootKey)
 	}
 	return nil
 }
@@ -256,6 +272,7 @@ func (s *Store) RetainRoots(retain map[string][]cid.Cid) int {
 			}
 			for path := range paths {
 				delete(state.nodes, path)
+				delete(state.nodeOwners, path)
 			}
 			delete(state.nodeRoots, key)
 			removed++
@@ -330,10 +347,11 @@ func (s *Store) ensureScope(scope string) *scopeState {
 	state := s.scopes[scope]
 	if state == nil {
 		state = &scopeState{
-			current:   map[arcset.Path]cid.Cid{},
-			nodes:     map[arcset.Path]cid.Cid{},
-			nodeRoots: map[string]map[arcset.Path]struct{}{},
-			roots:     map[string]map[arcset.Path]cid.Cid{},
+			current:    map[arcset.Path]cid.Cid{},
+			nodes:      map[arcset.Path]cid.Cid{},
+			nodeRoots:  map[string]map[arcset.Path]struct{}{},
+			nodeOwners: map[arcset.Path]string{},
+			roots:      map[string]map[arcset.Path]cid.Cid{},
 		}
 		s.scopes[scope] = state
 	}
