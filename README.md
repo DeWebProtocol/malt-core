@@ -22,12 +22,12 @@ line client, daemon, UnixFS model, or website.
 [Client-root contract](./docs/spec/client-root-contract.md) ·
 [ProofList](./docs/spec/prooflist-format.md) ·
 [Compatibility](./docs/policy/compatibility.md) ·
-[v0.0.7-rc.4 release candidate](./docs/releases/v0.0.7.md) · [Roadmap](./ROADMAP.md)
+[v0.0.7-rc.5 release candidate](./docs/releases/v0.0.7.md) · [Roadmap](./ROADMAP.md)
 
-`v0.0.7-rc.4` is the current release candidate. It batches all Map changes in
-one Writer transaction into one final top-level commitment while preserving
-the roots, commitments, proofs, and wire contracts from rc.3. `/v1` profile
-suffixes do not declare MALT or its Go APIs stable at v1.
+`v0.0.7-rc.5` is the current release candidate. It adds authenticated local
+Writer session checkpoints while preserving the roots, commitments, proofs,
+and wire contracts from rc.4. `/v1` profile suffixes do not declare MALT or
+its Go APIs stable at v1.
 
 ## Boundary
 
@@ -92,7 +92,7 @@ conformance tests and examples, not deployment.
 ## Install
 
 ```bash
-go get github.com/dewebprotocol/malt@v0.0.7-rc.4
+go get github.com/dewebprotocol/malt@v0.0.7-rc.5
 ```
 
 ### Verify a resolve result

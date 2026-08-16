@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.7-rc.5] - 2026-08-16
+
+This release-candidate delta lets trusted clients persist and authenticate
+verified Writer session state without changing protocol or wire semantics.
+
+### Added
+
+- Add deterministic export and strict restore validation for the in-memory
+  ArcSet materializer.
+- Add authenticated Writer session checkpoints that bind the normalized update
+  view, working roots, and caller-supplied materialization digest with a
+  caller-owned 32-byte key.
+- Restore a valid checkpoint without recomputing every complete vector, while
+  requiring cache misses, corrupt state, and unavailable keys to fall back to
+  normal session loading.
+
+### Compatibility
+
+- Checkpoints are a local SDK execution cache, not portable transition,
+  publication, freshness, or trust proofs.
+- The client owns checkpoint persistence, key protection, and verification that
+  restored materializer bytes match the digest authenticated by the checkpoint.
+- These changes do not alter MALT roots, CIDs, commitment parameters,
+  commitments, proofs, transcripts, ProofLists, receipts, schemas, or wire
+  encodings.
+
 ## [0.0.7-rc.4] - 2026-08-13
 
 This release-candidate delta reduces Writer latency for transactions that
@@ -327,7 +353,8 @@ for the trusted CLI/daemon and UnixFS application, and
 - KZG verification rejects out-of-range proof indices and non-canonical proof
   lengths instead of allowing malformed input to panic or reuse a commitment.
 
-[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.4...HEAD
+[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.5...HEAD
+[0.0.7-rc.5]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.4...v0.0.7-rc.5
 [0.0.7-rc.4]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.3...v0.0.7-rc.4
 [0.0.7-rc.3]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.2...v0.0.7-rc.3
 [0.0.7-rc.2]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.1...v0.0.7-rc.2
