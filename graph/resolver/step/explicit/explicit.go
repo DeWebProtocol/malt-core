@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/observation"
-	"github.com/dewebprotocol/malt/auth/proof/evidence"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
-	"github.com/dewebprotocol/malt/graph/resolver/step"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/observation"
+	"github.com/dewebprotocol/malt-core/auth/proof/evidence"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	"github.com/dewebprotocol/malt-core/graph/resolver/step"
 	cid "github.com/ipfs/go-cid"
 )
 

@@ -12,7 +12,7 @@ schema and verifiers. Any incompatible extension would require a new profile.
 
 ## Status
 
-The Go package `github.com/dewebprotocol/malt/artifact`, its schemas under
+The Go package `github.com/dewebprotocol/malt-core/artifact`, its schemas under
 `artifact/schemas/`, and fixtures under `artifact/testdata/v0alpha2/` remain
 available for v0.0.4 compatibility. Core is transport-neutral and no longer
 ships the historical `/v1/artifacts/*` HTTP projection. A gateway that

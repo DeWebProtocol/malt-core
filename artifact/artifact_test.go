@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	malt "github.com/dewebprotocol/malt"
-	"github.com/dewebprotocol/malt/artifact"
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
+	malt "github.com/dewebprotocol/malt-core"
+	"github.com/dewebprotocol/malt-core/artifact"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )

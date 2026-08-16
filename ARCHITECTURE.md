@@ -19,6 +19,24 @@ application state are outside the trust boundary.
 | Gateway/executor | candidate selection for server-executed mutations, exact client-root replay/materialization, proof generation, ArcTable/KV/CAS, service policy | the final trust decision or substitution of a client-computed root |
 | CAS | immutable CID-addressed bytes | graph semantics and ProofLists |
 
+## Repository boundary
+
+The source repository and Go module for this SDK are
+`DeWebProtocol/malt-core` and `github.com/dewebprotocol/malt-core`. The wider
+system keeps the following one-way dependencies:
+
+```text
+MALT local runtime ──► malt-core
+managed Gateway   ──► malt-core
+malt-evaluation   ──► pinned malt-core and product artifacts
+malt-web          ──► versioned browser-verifier artifacts
+```
+
+The local runtime owns trusted roots, keys, UnixFS, synchronization, local
+filesystem projection, and pluggable Gateway/peer/local transports. The
+Gateway is an optional untrusted executor and storage provider. Neither may be
+imported by this module.
+
 ## Data flow
 
 ```mermaid

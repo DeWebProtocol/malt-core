@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	structure "github.com/dewebprotocol/malt/auth/semantic"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	structure "github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

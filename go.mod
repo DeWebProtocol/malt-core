@@ -1,4 +1,4 @@
-module github.com/dewebprotocol/malt
+module github.com/dewebprotocol/malt-core
 
 go 1.25.7
 

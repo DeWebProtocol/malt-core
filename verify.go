@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
 	cid "github.com/ipfs/go-cid"
 )
 

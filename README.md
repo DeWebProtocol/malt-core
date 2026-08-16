@@ -1,6 +1,6 @@
 # MALT Core
 
-[![Go CI](https://github.com/dewebprotocol/malt/actions/workflows/go.yml/badge.svg)](https://github.com/dewebprotocol/malt/actions/workflows/go.yml)
+[![Go CI](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml/badge.svg)](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **MALT is an SDK and protocol implementation for arc-granularity graph data
@@ -22,12 +22,15 @@ line client, daemon, UnixFS model, or website.
 [Client-root contract](./docs/spec/client-root-contract.md) ·
 [ProofList](./docs/spec/prooflist-format.md) ·
 [Compatibility](./docs/policy/compatibility.md) ·
-[v0.0.7-rc.5 release candidate](./docs/releases/v0.0.7.md) · [Roadmap](./ROADMAP.md)
+[v0.0.7 release](./docs/releases/v0.0.7.md) ·
+[Repository migration](./docs/releases/repository-migration.md) ·
+[Roadmap](./ROADMAP.md)
 
-`v0.0.7-rc.5` is the current release candidate. It adds authenticated local
-Writer session checkpoints while preserving the roots, commitments, proofs,
-and wire contracts from rc.4. `/v1` profile suffixes do not declare MALT or
-its Go APIs stable at v1.
+`v0.0.7` is the first release from `DeWebProtocol/malt-core` and the first Go
+module release under `github.com/dewebprotocol/malt-core`. The repository and
+module namespace migration does not alter the roots, commitments, proofs,
+schemas, or wire contracts from `v0.0.7-rc.5`. `/v1` profile suffixes do not
+declare MALT or its Go APIs stable at v1.
 
 ## Boundary
 
@@ -92,7 +95,7 @@ conformance tests and examples, not deployment.
 ## Install
 
 ```bash
-go get github.com/dewebprotocol/malt@v0.0.7-rc.5
+go get github.com/dewebprotocol/malt-core@v0.0.7
 ```
 
 ### Verify a resolve result

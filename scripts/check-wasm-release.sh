@@ -74,7 +74,8 @@ EXPECTED_GO_VERSION="${expected_go_version}" node -e '
 	const expectedCodegen = {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"}
 	const toolchain = /^go version (go[0-9]+\.[0-9]+\.[0-9]+) ([a-z0-9]+)\/([a-z0-9]+)$/.exec(manifest.go_toolchain || "")
 	if (manifest.schema !== "malt.wasm-release/v1" ||
-		manifest.source_repository !== "https://github.com/DeWebProtocol/malt.git" ||
+		manifest.source_repository !== "https://github.com/DeWebProtocol/malt-core.git" ||
+		manifest.source_module !== "github.com/dewebprotocol/malt-core" ||
 		!version.test(manifest.source_version || "") ||
 		!hex40.test(manifest.source_commit || "") ||
 		!Number.isSafeInteger(manifest.source_epoch) || manifest.source_epoch <= 0 ||
@@ -199,7 +200,8 @@ VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	}
 	const validateBase = (value, schema) => {
 		if (value.schema !== schema ||
-			value.source_repository !== "https://github.com/DeWebProtocol/malt.git" ||
+			value.source_repository !== "https://github.com/DeWebProtocol/malt-core.git" ||
+			value.source_module !== "github.com/dewebprotocol/malt-core" ||
 			value.source_version !== process.env.RELEASE_VERSION ||
 			value.source_commit !== process.env.SOURCE_COMMIT ||
 			value.go_version !== process.env.GO_VERSION ||

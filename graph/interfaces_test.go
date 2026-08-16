@@ -3,8 +3,8 @@ package graph
 import (
 	"testing"
 
-	"github.com/dewebprotocol/malt/graph/resolver"
-	"github.com/dewebprotocol/malt/graph/writer"
+	"github.com/dewebprotocol/malt-core/graph/resolver"
+	"github.com/dewebprotocol/malt-core/graph/writer"
 )
 
 func TestResolverAndWriterImplementGraphPorts(t *testing.T) {

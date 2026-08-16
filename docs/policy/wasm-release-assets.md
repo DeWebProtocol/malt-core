@@ -46,8 +46,9 @@ entrypoint must reload before starting another verifier or writer runtime.
 
 ## Provenance
 
-Each set binds the exact MALT version and commit, Go version and toolchain,
-build target and flags, and file checksums. Writer provenance additionally
+Each set binds the exact Core repository, Go module path, MALT version and
+commit, Go version and toolchain, build target and flags, and file checksums.
+Writer provenance additionally
 binds build tags, IPA committer profiles, IPA parameter identity, retained
 table metadata, and the Core runtime invariants of one runtime per controller
 and exact backend/profile targeting. Device selection and retrying another

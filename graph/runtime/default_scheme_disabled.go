@@ -5,7 +5,7 @@ package runtimegraph
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
 )
 
 func newDefaultCommitmentScheme() (commitment.IndexCommitment, error) {

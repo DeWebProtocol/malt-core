@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	materializermemory "github.com/dewebprotocol/malt/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt/mutation"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	materializermemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/mutation"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

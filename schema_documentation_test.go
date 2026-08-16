@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dewebprotocol/malt/artifact"
-	"github.com/dewebprotocol/malt/protocol"
+	"github.com/dewebprotocol/malt-core/artifact"
+	"github.com/dewebprotocol/malt-core/protocol"
 )
 
 var documentedSchemaName = regexp.MustCompile("`([a-z0-9-]+\\.schema\\.json)`")

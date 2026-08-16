@@ -5,10 +5,10 @@ import (
 	"crypto/sha256"
 	"testing"
 
-	materializermemory "github.com/dewebprotocol/malt/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	materializermemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

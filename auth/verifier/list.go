@@ -4,9 +4,9 @@ package verifier
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	structure "github.com/dewebprotocol/malt/auth/semantic"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	structure "github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
 	cid "github.com/ipfs/go-cid"
 )
 

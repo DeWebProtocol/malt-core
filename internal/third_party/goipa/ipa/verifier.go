@@ -3,9 +3,9 @@ package ipa
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/banderwagon"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/common"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/banderwagon"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
 )
 
 // CheckIPAProof verifies an IPA proof for a committed polynomial in evaluation form.

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dewebprotocol/malt/conformance"
-	"github.com/dewebprotocol/malt/internal/conformancegen"
-	"github.com/dewebprotocol/malt/protocol"
-	sdkverifier "github.com/dewebprotocol/malt/sdk/verifier"
+	"github.com/dewebprotocol/malt-core/conformance"
+	"github.com/dewebprotocol/malt-core/internal/conformancegen"
+	"github.com/dewebprotocol/malt-core/protocol"
+	sdkverifier "github.com/dewebprotocol/malt-core/sdk/verifier"
 )
 
 func TestResolveReadCorpora(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 func TestForCapacity(t *testing.T) {

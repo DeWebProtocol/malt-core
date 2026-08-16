@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	malt "github.com/dewebprotocol/malt"
+	malt "github.com/dewebprotocol/malt-core"
 )
 
 func TestSegmentPathRoundTripAndConsume(t *testing.T) {

@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	"github.com/dewebprotocol/malt/mutation"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	"github.com/dewebprotocol/malt-core/mutation"
 	cid "github.com/ipfs/go-cid"
 )
 

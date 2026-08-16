@@ -9,7 +9,7 @@ import (
 	"math"
 	"syscall/js"
 
-	"github.com/dewebprotocol/malt/protocol"
+	"github.com/dewebprotocol/malt-core/protocol"
 )
 
 const maxOperationIDBytes = 128

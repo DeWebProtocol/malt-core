@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"syscall/js"
 
-	"github.com/dewebprotocol/malt/artifact"
-	"github.com/dewebprotocol/malt/protocol"
-	clientverifier "github.com/dewebprotocol/malt/sdk/verifier"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/artifact"
+	"github.com/dewebprotocol/malt-core/protocol"
+	clientverifier "github.com/dewebprotocol/malt-core/sdk/verifier"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 func main() {

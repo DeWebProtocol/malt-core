@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/dewebprotocol/malt/mutation"
+	"github.com/dewebprotocol/malt-core/mutation"
 )
 
 // MaxClientRootJSONBytes bounds every client-writer JSON document before

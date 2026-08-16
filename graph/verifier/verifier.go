@@ -6,10 +6,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
-	authverifier "github.com/dewebprotocol/malt/auth/verifier"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	authverifier "github.com/dewebprotocol/malt-core/auth/verifier"
 )
 
 // Runtime is the minimal reference-runtime surface needed to construct the

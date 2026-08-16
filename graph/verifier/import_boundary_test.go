@@ -28,7 +28,7 @@ func TestVerifierPackageDoesNotImportLayoutPackages(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unquote import in %s: %v", file, err)
 			}
-			if strings.HasPrefix(path, "github.com/dewebprotocol/malt/layout/") {
+			if strings.HasPrefix(path, "github.com/dewebprotocol/malt-core/layout/") {
 				t.Fatalf("graph/verifier must not import layout packages; %s imports %s", file, path)
 			}
 		}

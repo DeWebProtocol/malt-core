@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"sync"
 
-	materializermemory "github.com/dewebprotocol/malt/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/mutation"
-	"github.com/dewebprotocol/malt/protocol"
-	clientwriter "github.com/dewebprotocol/malt/sdk/writer"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	materializermemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/mutation"
+	"github.com/dewebprotocol/malt-core/protocol"
+	clientwriter "github.com/dewebprotocol/malt-core/sdk/writer"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

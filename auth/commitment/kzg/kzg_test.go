@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
 )
 
 func TestKZGProveIsStateless(t *testing.T) {

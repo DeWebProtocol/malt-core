@@ -5,8 +5,8 @@ import (
 	"crypto/sha256"
 	"hash"
 
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/banderwagon"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/banderwagon"
 )
 
 // The transcript is used to create challenge scalars.

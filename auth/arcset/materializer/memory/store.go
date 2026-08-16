@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/arcset/materializer"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	cid "github.com/ipfs/go-cid"
 )
 

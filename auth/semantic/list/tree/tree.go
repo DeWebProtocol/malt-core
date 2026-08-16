@@ -12,13 +12,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	materializer "github.com/dewebprotocol/malt/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/semantic"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/auth/semantic/list/tree/internal"
-	"github.com/dewebprotocol/malt/auth/semantic/nodegeometry"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	materializer "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list/tree/internal"
+	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

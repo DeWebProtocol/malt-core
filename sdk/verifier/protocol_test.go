@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	"github.com/dewebprotocol/malt/protocol"
-	clientverifier "github.com/dewebprotocol/malt/sdk/verifier"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	"github.com/dewebprotocol/malt-core/protocol"
+	clientverifier "github.com/dewebprotocol/malt-core/sdk/verifier"
 	cid "github.com/ipfs/go-cid"
 )
 

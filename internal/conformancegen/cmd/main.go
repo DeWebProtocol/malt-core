@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dewebprotocol/malt/internal/conformancegen"
+	"github.com/dewebprotocol/malt-core/internal/conformancegen"
 )
 
 func main() {

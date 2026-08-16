@@ -3,10 +3,10 @@ package graph
 import (
 	"context"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/graph/resolver"
-	"github.com/dewebprotocol/malt/graph/writer"
-	"github.com/dewebprotocol/malt/mutation"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/graph/resolver"
+	"github.com/dewebprotocol/malt-core/graph/writer"
+	"github.com/dewebprotocol/malt-core/mutation"
 	cid "github.com/ipfs/go-cid"
 )
 

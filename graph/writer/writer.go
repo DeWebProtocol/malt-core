@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	materialization "github.com/dewebprotocol/malt/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	materialization "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
 	cid "github.com/ipfs/go-cid"
 )
 

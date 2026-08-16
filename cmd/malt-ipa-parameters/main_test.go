@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	commitmentipa "github.com/dewebprotocol/malt/auth/commitment/ipa"
+	commitmentipa "github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 )
 
 func TestWriteParameterExport(t *testing.T) {

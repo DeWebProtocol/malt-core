@@ -152,7 +152,7 @@ must:
    before trusting the body.
 
 The first-party UnixFS implementation of that check lives in
-`DeWebProtocol/malt-client`, not in core.
+the MALT local runtime (currently `DeWebProtocol/malt-client`), not in core.
 
 ## Related Proposals
 

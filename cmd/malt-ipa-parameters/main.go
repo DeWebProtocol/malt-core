@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	commitmentipa "github.com/dewebprotocol/malt/auth/commitment/ipa"
+	commitmentipa "github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 )
 
 type parameterExport struct {

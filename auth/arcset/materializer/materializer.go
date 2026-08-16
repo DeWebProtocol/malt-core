@@ -11,7 +11,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
 	cid "github.com/ipfs/go-cid"
 )
 

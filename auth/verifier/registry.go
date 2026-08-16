@@ -3,11 +3,11 @@ package verifier
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt/auth/semantic/nodegeometry"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

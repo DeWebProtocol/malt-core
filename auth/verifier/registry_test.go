@@ -3,11 +3,11 @@ package verifier_test
 import (
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	authverifier "github.com/dewebprotocol/malt/auth/verifier"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	authverifier "github.com/dewebprotocol/malt-core/auth/verifier"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 func TestBackendRegistryRejectsMismatchedSchemeGeometry(t *testing.T) {

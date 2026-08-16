@@ -7,10 +7,10 @@ import (
 	"math"
 	"runtime"
 
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fp"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/banderwagon"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/common"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fp"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/banderwagon"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
 )
 
 // IPAConfig contains all the necessary information to create an IPA related proofs,

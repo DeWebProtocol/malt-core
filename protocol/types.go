@@ -6,8 +6,8 @@ package protocol
 import (
 	"fmt"
 
-	malt "github.com/dewebprotocol/malt"
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
+	malt "github.com/dewebprotocol/malt-core"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
 	cid "github.com/ipfs/go-cid"
 )
 

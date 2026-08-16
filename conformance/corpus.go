@@ -13,7 +13,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/dewebprotocol/malt/protocol"
+	"github.com/dewebprotocol/malt-core/protocol"
 )
 
 const (

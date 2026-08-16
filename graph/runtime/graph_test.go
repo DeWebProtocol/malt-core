@@ -5,14 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	malt "github.com/dewebprotocol/malt"
-	"github.com/dewebprotocol/malt/auth/arcset"
-	materialmemory "github.com/dewebprotocol/malt/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	clientverifier "github.com/dewebprotocol/malt/sdk/verifier"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	malt "github.com/dewebprotocol/malt-core"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	clientverifier "github.com/dewebprotocol/malt-core/sdk/verifier"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

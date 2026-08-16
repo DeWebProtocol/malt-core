@@ -128,7 +128,8 @@ PROVENANCE_PATH="${verifier_staging}/PROVENANCE.json" node -e '
 	const fs = require("node:fs")
 	const provenance = {
 		schema: "malt.web-verifier.provenance/v1",
-		source_repository: "https://github.com/DeWebProtocol/malt.git",
+		source_repository: "https://github.com/DeWebProtocol/malt-core.git",
+		source_module: "github.com/dewebprotocol/malt-core",
 		source_version: process.env.MALT_VERSION,
 		source_commit: process.env.MALT_COMMIT,
 		go_version: process.env.GO_VERSION,
@@ -149,7 +150,8 @@ PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 	const parameters = JSON.parse(process.env.IPA_PARAMETERS_JSON)
 	const provenance = {
 		schema: "malt.web-writer.provenance/v3",
-		source_repository: "https://github.com/DeWebProtocol/malt.git",
+		source_repository: "https://github.com/DeWebProtocol/malt-core.git",
+		source_module: "github.com/dewebprotocol/malt-core",
 		source_version: process.env.MALT_VERSION,
 		source_commit: process.env.MALT_COMMIT,
 		go_version: process.env.GO_VERSION,
@@ -227,7 +229,8 @@ MANIFEST_PATH="${temporary}/WASM-RELEASE.json" node -e '
 	})
 	const manifest = {
 		schema: "malt.wasm-release/v1",
-		source_repository: "https://github.com/DeWebProtocol/malt.git",
+		source_repository: "https://github.com/DeWebProtocol/malt-core.git",
+		source_module: "github.com/dewebprotocol/malt-core",
 		source_version: process.env.MALT_VERSION,
 		source_commit: process.env.MALT_COMMIT,
 		source_epoch: Number(process.env.SOURCE_EPOCH),

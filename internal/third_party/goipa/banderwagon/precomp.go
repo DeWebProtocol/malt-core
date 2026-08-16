@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fp"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/common/parallel"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fp"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common/parallel"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
-	structure "github.com/dewebprotocol/malt/auth/semantic"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/auth/semantic/nodegeometry"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	structure "github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
 	cid "github.com/ipfs/go-cid"
 )
 

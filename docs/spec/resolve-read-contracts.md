@@ -12,7 +12,7 @@ not a generic operation envelope.
 | primitive semantic read | `malt.read/v0alpha1` | `malt.ReadRequest`, `malt.ReadResult`, `malt.VerifyRead` |
 | map membership or non-membership | `malt.map-proof/v0alpha1` | `malt.MapProofRequest`, `malt.MapProofResult`, `malt.VerifyMapProof` |
 
-Serialized values live in `github.com/dewebprotocol/malt/protocol`. Checked-in
+Serialized values live in `github.com/dewebprotocol/malt-core/protocol`. Checked-in
 JSON Schemas live in `protocol/schemas/` and are embedded through
 `protocol.Schema` and `protocol.SchemaNames`.
 

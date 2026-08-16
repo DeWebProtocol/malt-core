@@ -107,7 +107,7 @@ not become the only copy of a schema or specification.
 ## Current Implementation Baseline
 
 These MIPs were migrated from the previous research-documentation repository to
-`DeWebProtocol/malt` as the implementation-bound proposal source of truth. The
+`DeWebProtocol/malt-core` as the implementation-bound proposal source of truth. The
 initial migrated set was originally based on implementation main around commit
 `c827af2`, including PR #74 graph/resolver/writer/layout boundary work, PR #73
 stale API/proof type cleanup, PR #75 implementation-doc alignment, subsequent

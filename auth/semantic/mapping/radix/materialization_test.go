@@ -3,11 +3,11 @@ package radix_test
 import (
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	materialmemory "github.com/dewebprotocol/malt/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
-	mappingradix "github.com/dewebprotocol/malt/auth/semantic/mapping/radix"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	mappingradix "github.com/dewebprotocol/malt-core/auth/semantic/mapping/radix"
 	cid "github.com/ipfs/go-cid"
 )
 
