@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deweb.world/schemas/malt/conformance/map-proof/v1/vector.schema.json",
+  "title": "MALT Map-proof Conformance Vector v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "operation", "backend", "category", "verification", "expected"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "operation": {
+      "const": "map_proof"
+    },
+    "backend": {
+      "enum": ["kzg", "ipa"]
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verification": {
+      "type": "object"
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valid"],
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

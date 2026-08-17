@@ -84,7 +84,7 @@ jobs:
       - name: Run 32-bit commitment tests
         run: GOARCH=386 go test ./auth/commitment/kzg ./auth/commitment/ipa
 
-      - name: Run verifier WASM conformance and Map-proof smoke
+      - name: Run verifier WASM conformance corpora
         run: sh scripts/test-verifier-wasm-vectors.sh
 
       - name: Run writer WASM smoke

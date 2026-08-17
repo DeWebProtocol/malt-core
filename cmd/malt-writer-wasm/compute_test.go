@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"os"
 	"strings"
 	"testing"
 
@@ -660,87 +659,6 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	}
 	if _, err := session.prepare(t.Context(), "after-close", intentJSON); err != nil {
 		t.Fatalf("prepare after reload failed: %v", err)
-	}
-}
-
-type wasmComputeFixture struct {
-	Backend          maltcid.BackendKind             `json:"backend"`
-	OperationID      string                          `json:"operation_id"`
-	UpdateView       protocol.UpdateView             `json:"update_view"`
-	SemanticIntent   protocol.SemanticIntent         `json:"semantic_intent"`
-	ExpectedBundle   protocol.ClientRootBundle       `json:"expected_bundle"`
-	ExpectedNextView protocol.UpdateView             `json:"expected_next_view"`
-	ExpectedReceipt  protocol.MaterializationReceipt `json:"expected_receipt"`
-}
-
-func TestGenerateWASMFixtures(t *testing.T) {
-	outputPath := os.Getenv("MALT_WRITER_WASM_FIXTURE_OUT")
-	if outputPath == "" {
-		t.Skip("MALT_WRITER_WASM_FIXTURE_OUT is not set")
-	}
-
-	fixtures := make([]wasmComputeFixture, 0, 2)
-	for _, backend := range []maltcid.BackendKind{maltcid.BackendKindKZG, maltcid.BackendKindIPA} {
-		view, intent := computeFixture(t, backend)
-		wireView, err := protocol.NewUpdateView(view)
-		if err != nil {
-			t.Fatalf("NewUpdateView(%s) failed: %v", backend, err)
-		}
-		wireIntent, err := protocol.NewSemanticIntent(view, intent)
-		if err != nil {
-			t.Fatalf("NewSemanticIntent(%s) failed: %v", backend, err)
-		}
-		viewJSON, err := json.Marshal(wireView)
-		if err != nil {
-			t.Fatalf("marshal update view (%s): %v", backend, err)
-		}
-		intentJSON, err := json.Marshal(wireIntent)
-		if err != nil {
-			t.Fatalf("marshal semantic intent (%s): %v", backend, err)
-		}
-		operationID := "wasm-" + string(backend) + "-fixture"
-		writer, err := newComputer(string(backend))
-		if err != nil {
-			t.Fatalf("newComputer(%s) failed: %v", backend, err)
-		}
-		raw, err := writer.compute(t.Context(), operationID, viewJSON, intentJSON)
-		if err != nil {
-			t.Fatalf("compute fixture (%s) failed: %v", backend, err)
-		}
-		response, err := protocol.DecodeWriterComputeResult(raw)
-		if err != nil {
-			t.Fatalf("decode fixture response (%s): %v", backend, err)
-		}
-		bundle, err := response.Bundle.Core()
-		if err != nil {
-			t.Fatalf("decode fixture bundle (%s): %v", backend, err)
-		}
-		bundleDigest, err := bundle.Digest()
-		if err != nil {
-			t.Fatalf("digest fixture bundle (%s): %v", backend, err)
-		}
-		receipt, err := protocol.NewMaterializationReceipt(mutation.MaterializationReceipt{
-			Profile: mutation.MaterializationReceiptProfile, OperationID: operationID,
-			BaseRoot: bundle.View.BaseRoot, Candidate: bundle.Candidate,
-			BundleDigest: bundleDigest, DurableBoundary: "wasm-smoke-memory-v1",
-		}, bundle)
-		if err != nil {
-			t.Fatalf("encode fixture receipt (%s): %v", backend, err)
-		}
-		fixtures = append(fixtures, wasmComputeFixture{
-			Backend: backend, OperationID: operationID,
-			UpdateView: wireView, SemanticIntent: wireIntent,
-			ExpectedBundle: response.Bundle, ExpectedNextView: response.NextView,
-			ExpectedReceipt: receipt,
-		})
-	}
-
-	data, err := json.Marshal(fixtures)
-	if err != nil {
-		t.Fatalf("marshal WASM fixtures: %v", err)
-	}
-	if err := os.WriteFile(outputPath, data, 0o600); err != nil {
-		t.Fatalf("write WASM fixtures: %v", err)
 	}
 }
 

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deweb.world/schemas/malt/conformance/client-root/v1/vector.schema.json",
+  "title": "MALT Client-root Conformance Vector v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "backend", "category", "operation_id", "update_view", "semantic_intent", "expected"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "backend": {
+      "enum": ["kzg", "ipa"]
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "update_view": {
+      "type": "object"
+    },
+    "semantic_intent": {
+      "type": "object"
+    },
+    "expected": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["valid"],
+          "properties": {
+            "valid": {"const": false}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["valid", "bundle", "materialization", "next_view", "receipt"],
+          "properties": {
+            "valid": {"const": true},
+            "bundle": {"type": "object"},
+            "materialization": {"type": "object"},
+            "next_view": {"type": "object"},
+            "receipt": {"type": "object"}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,621 @@
+{
+  "schema_version": "malt.map-proof.conformance/v1",
+  "vectors": [
+    {
+      "id": "map-proof.ipa.absence.accept",
+      "operation": "map_proof",
+      "backend": "ipa",
+      "category": "absence",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni",
+          "key": [
+            "missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJBQUFBQ0JzVnhtRFYvVk94VVduY1NGTHN2dFJ0VDRaZ05YYk1PYmFYRDYwMlR1ZE1TT0d3LzByMVlRckZrVnlEOExMM0UybVlZbGVnWHFTaDkrU3R5UDA0K2xNK3JMRFhvM1FuMDhxb1ZrZERnYmxORHdXQ3ZOZGdnS05sRHFkaTI3MG5Wd25JcitjYmxRc1ZHV3IydUgxd0k0L1pUcld5emNPZW5NZm5tYzVBVno4d1JIMTAzVTFuWTBDV2ZnSVZraW9adzU0VHJNamRka2lQVHRndGk0WFVKcnNnakc4S3NienFrMklsVXNKaXRVbXZRZXVqZHN3akJDUGtoeXVCalEzSlRqaERyYW1aSmh0VndvL0FHc3lucGRZOUVPNElIdWxScVdHVGIxb0xIZi8vVnJKcmI2bFFoK1ZTV3V3Ni8vMXlPdC9vVUpNSkx4ZVE1U0FlSFExRk1VazlndG1pak9IVWtjeWE2d3JSOFJ6bC83elVUNTRKbkJ2MHpPWW9nQThVOGovSWxSVnF1NmdtU2dPRUhrLzlldVlCYi9lRGJkNWR3YU9NeTA0QXhEYWdiWi9FSEUxZ1ZpRkxhRUpMcmdkd3hPWDhKWUwzQzU5SXJvbFlGMGVha1c5UjJyTkw1QW1kaVFYZ2lWNTJpRjlycUtVRE9ud1dUMVE5b3B4eThVRXpWMTcrdGtiVVpCQVdRczNPZTFTOUtnY0JEckZ4OHBoNyt1N1BlaERYWC9tYlFvaVNaTzJyM3RXeWh4VnNNZTlqRlNqNDlCRjZIbmJCVFVoZmdhOHJzYVZhUThadUZIT3ZEYjVXdWFKVlFlaFhVVCtVZHoxUzhzZmJoaExjU1pERjBXTkd4Y2hBV1VWU3Z2M2pUaDBVR3EzckEwYWY4QnJFN1pObi82SHN2ZGtCQkhXVzBqMzMyOTlPbENNTzZyWWtxSGZnT1I2NXdpN1dqVmdsWnlwY3Jnd0FBQUQvIn1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "map-proof.ipa.cross-root.reject",
+      "operation": "map_proof",
+      "backend": "ipa",
+      "category": "cross_root",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "bagbofqabaaqaos4w4yh5sev4vpnscovbmln7srpzdrwbpfodat6xbu43xlojxga",
+          "key": [
+            "missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "bagbofqabaaqaos4w4yh5sev4vpnscovbmln7srpzdrwbpfodat6xbu43xlojxga"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "bagbofqabaaqaos4w4yh5sev4vpnscovbmln7srpzdrwbpfodat6xbu43xlojxga"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJBQUFBQ0JzVnhtRFYvVk94VVduY1NGTHN2dFJ0VDRaZ05YYk1PYmFYRDYwMlR1ZE1TT0d3LzByMVlRckZrVnlEOExMM0UybVlZbGVnWHFTaDkrU3R5UDA0K2xNK3JMRFhvM1FuMDhxb1ZrZERnYmxORHdXQ3ZOZGdnS05sRHFkaTI3MG5Wd25JcitjYmxRc1ZHV3IydUgxd0k0L1pUcld5emNPZW5NZm5tYzVBVno4d1JIMTAzVTFuWTBDV2ZnSVZraW9adzU0VHJNamRka2lQVHRndGk0WFVKcnNnakc4S3NienFrMklsVXNKaXRVbXZRZXVqZHN3akJDUGtoeXVCalEzSlRqaERyYW1aSmh0VndvL0FHc3lucGRZOUVPNElIdWxScVdHVGIxb0xIZi8vVnJKcmI2bFFoK1ZTV3V3Ni8vMXlPdC9vVUpNSkx4ZVE1U0FlSFExRk1VazlndG1pak9IVWtjeWE2d3JSOFJ6bC83elVUNTRKbkJ2MHpPWW9nQThVOGovSWxSVnF1NmdtU2dPRUhrLzlldVlCYi9lRGJkNWR3YU9NeTA0QXhEYWdiWi9FSEUxZ1ZpRkxhRUpMcmdkd3hPWDhKWUwzQzU5SXJvbFlGMGVha1c5UjJyTkw1QW1kaVFYZ2lWNTJpRjlycUtVRE9ud1dUMVE5b3B4eThVRXpWMTcrdGtiVVpCQVdRczNPZTFTOUtnY0JEckZ4OHBoNyt1N1BlaERYWC9tYlFvaVNaTzJyM3RXeWh4VnNNZTlqRlNqNDlCRjZIbmJCVFVoZmdhOHJzYVZhUThadUZIT3ZEYjVXdWFKVlFlaFhVVCtVZHoxUzhzZmJoaExjU1pERjBXTkd4Y2hBV1VWU3Z2M2pUaDBVR3EzckEwYWY4QnJFN1pObi82SHN2ZGtCQkhXVzBqMzMyOTlPbENNTzZyWWtxSGZnT1I2NXdpN1dqVmdsWnlwY3Jnd0FBQUQvIn1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.ipa.membership.accept",
+      "operation": "map_proof",
+      "backend": "ipa",
+      "category": "membership",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni",
+          "key": [
+            "present"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": true,
+          "target": "bafkreighzv2bcbenehazfz5q5slq2wip3gbqlcxmh4pqvbzu33toajdzva",
+          "prooflist": {
+            "root": {
+              "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+            },
+            "query": "present",
+            "steps": [
+              {
+                "kind": "map_step",
+                "from": {
+                  "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+                },
+                "query": "present",
+                "coordinate": "present",
+                "path": "present",
+                "target": {
+                  "/": "bafkreighzv2bcbenehazfz5q5slq2wip3gbqlcxmh4pqvbzu33toajdzva"
+                },
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sic2xvdCI6IkFWVUFSRzFoYkhRNmJXRndPbkpoWkdsNE9teGxZV1k2ZGpFNkFBZHdjbVZ6Wlc1MEFWVVNJTWZOZEJFRWpTSEJrdWV3N0pjTldRL1pnd1dLN0Q4ZkNvYzAzdWJnSkhtbyIsInByb29mIjoiQUFBQUNCVFI1NFkwc29hZkVCVjRTZzAvUi91eGFQQzhFZXBMbHdoSlhoUUFsKzNyT01MSzQyQ1o0Rjd6bHJySDlYZmF3MmZ1SUtYL2NuMkV5RHZUSFpURGY5eHhmSU41bEx5clBERjdYUTJOQ1owMFdueDVxWDdMbnJVWUNCdFNPMll0QXc5bENkVUZFcTFJWGNLUzVuU0ZGb2w5RDFRb2FVS01COG92UC9wdG9GeTdLYVlkcmJkMHJ6MkJ4aHBtZmYyQUpzTFU3N0hsYjM4RVhvVitZNzQ1S1ZBcGlhbXZRWWFENXJSN3EwOHFUUGF6emgwelBqdzYraVBZNSt2UlFiSDNjZ2xaUzg3RUJvUlVzUGxCaUwrL3AzWm53T3Rlb2pnVlNkYm9KbytOeEMrS1VjY2VGRnpBMUQ1TTQrZmRodTFlUGorU09BZ2FueTZsY1BhL1IwWTUxUndlSzc3blpLY2pubnpoRzd2VUJ4aUtNRktJdnFqK01EdkhNQ0VUcit2ckhXSllPYzBoR0IwbDRFeUtZcXdMNC9uMTJ3dWtla2FUZ0o2SUFKbG9EQUd4UXU0MWFZaDB6ZHFTNVRKNm5mdlhJM09pakN0VThibEZMd3JVN2tXWFJvSkZmakE1OWJsZU51L05veVBndjNDVFNnYmYrQUVqRzdFQjhaSzU2RkxHUEEyQ3RvcU1saG93Vlc2YXZjRHNOMUNGRWdmdTVLSzlFVTRkeGpNVnAvNGpjYVB4OUtvY2w0US92RndmdGNHQ1hyemJUeXpocGZTRnJ0YXlkaVhCWW53eHB2ZFBlaHhscUxBaE04TkVKNFkvZUtlK3FRVEtqWEI1eVl4Ym9iTThYeUVqUjB4SnQ5bDcwSzdiYmR6dURQakxaQTdRYVJWL3VYbkI3QVdaVnBDYmNkRzRaTTRzS0RYQWNTRUR6YzdKZkhzR1hZK1lDbVg5WGRwZktMTjdxQWtBQUFCTiJ9XX0="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "map-proof.ipa.proof-tamper.reject",
+      "operation": "map_proof",
+      "backend": "ipa",
+      "category": "tamper",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni",
+          "key": [
+            "missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJBQUFBQ0JzVnhtRFYvVk94VVduY1NGTHN2dFJ0VDRaZ05YYk1PYmFYRDYwMlR1ZE1TT0d3LzByMVlRckZrVnlEOExMM0UybVlZbGVnWHFTaDkrU3R5UDA0K2xNK3JMRFhvM1FuMDhxb1ZrZERnYmxORHdXQ3ZOZGdnS05sRHFkaTI3MG5Wd25JcitjYmxRc1ZHV3IydUgxd0k0L1pUcld5emNPZW5NZm5tYzVBVno4d1JIMTAzVTFuWTBDV2ZnSVZraW9adzU0VHJNamRka2lQVHRndGk0WFVKcnNnakc4S3NienFrMklsVXNKaXRVbXZRZXVqZHN3akJDUGtoeXVCalEzSlRqaERyYW1aSmh0VndvL0FHc3lucGRZOUVPNElIdWxScVdHVGIxb0xIZi8vVnJKcmI2bFFoK1ZTV3V3Ni8vMXlPdC9vVUpNSkx4ZVE1U0FlSFExRk1VazlndG1pak9IVWtjeWE2d3JSOFJ6bC83elVUNTRKbkJ2MHpPWW9nQThVOGovSWxSVnF1NmdtU2dPRUhrLzlldVlCYi9lRGJkNWR3YU9NeTA0QXhEYWdiWi9FSEUxZ1ZpRkxhRUpMcmdkd3hPWDhKWUwzQzU5SXJvbFlGMGVha1c5UjJyTkw1QW1kaVFYZ2lWNTJpRjlycUtVRE9ud1dUMVE5b3B4eThVRXpWMTcrdGtiVVpCQVdRczNPZTFTOUtnY0JEckZ4OHBoNyt1N1BlaERYWC9tYlFvaVNaTzJyM3RXeWh4VnNNZTlqRlNqNDlCRjZIbmJCVFVoZmdhOHJzYVZhUThadUZIT3ZEYjVXdWFKVlFlaFhVVCtVZHoxUzhzZmJoaExjU1pERjBXTkd4Y2hBV1VWU3Z2M2pUaDBVR3EzckEwYWY4QnJFN1pObi82SHN2ZGtCQkhXVzBqMzMyOTlPbENNTzZyWWtxSGZnT1I2NXdpN1dqVmdsWnlwY3Jnd0FBQUQrIn1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.ipa.target-tamper.reject",
+      "operation": "map_proof",
+      "backend": "ipa",
+      "category": "target_tamper",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni",
+          "key": [
+            "present"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": true,
+          "target": "bafkreiaeaheukgf5assryh2lswuqhilxppuibagnwxvplxnxm64bfnfq74",
+          "prooflist": {
+            "root": {
+              "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+            },
+            "query": "present",
+            "steps": [
+              {
+                "kind": "map_step",
+                "from": {
+                  "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+                },
+                "query": "present",
+                "coordinate": "present",
+                "path": "present",
+                "target": {
+                  "/": "bafkreighzv2bcbenehazfz5q5slq2wip3gbqlcxmh4pqvbzu33toajdzva"
+                },
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sic2xvdCI6IkFWVUFSRzFoYkhRNmJXRndPbkpoWkdsNE9teGxZV1k2ZGpFNkFBZHdjbVZ6Wlc1MEFWVVNJTWZOZEJFRWpTSEJrdWV3N0pjTldRL1pnd1dLN0Q4ZkNvYzAzdWJnSkhtbyIsInByb29mIjoiQUFBQUNCVFI1NFkwc29hZkVCVjRTZzAvUi91eGFQQzhFZXBMbHdoSlhoUUFsKzNyT01MSzQyQ1o0Rjd6bHJySDlYZmF3MmZ1SUtYL2NuMkV5RHZUSFpURGY5eHhmSU41bEx5clBERjdYUTJOQ1owMFdueDVxWDdMbnJVWUNCdFNPMll0QXc5bENkVUZFcTFJWGNLUzVuU0ZGb2w5RDFRb2FVS01COG92UC9wdG9GeTdLYVlkcmJkMHJ6MkJ4aHBtZmYyQUpzTFU3N0hsYjM4RVhvVitZNzQ1S1ZBcGlhbXZRWWFENXJSN3EwOHFUUGF6emgwelBqdzYraVBZNSt2UlFiSDNjZ2xaUzg3RUJvUlVzUGxCaUwrL3AzWm53T3Rlb2pnVlNkYm9KbytOeEMrS1VjY2VGRnpBMUQ1TTQrZmRodTFlUGorU09BZ2FueTZsY1BhL1IwWTUxUndlSzc3blpLY2pubnpoRzd2VUJ4aUtNRktJdnFqK01EdkhNQ0VUcit2ckhXSllPYzBoR0IwbDRFeUtZcXdMNC9uMTJ3dWtla2FUZ0o2SUFKbG9EQUd4UXU0MWFZaDB6ZHFTNVRKNm5mdlhJM09pakN0VThibEZMd3JVN2tXWFJvSkZmakE1OWJsZU51L05veVBndjNDVFNnYmYrQUVqRzdFQjhaSzU2RkxHUEEyQ3RvcU1saG93Vlc2YXZjRHNOMUNGRWdmdTVLSzlFVTRkeGpNVnAvNGpjYVB4OUtvY2w0US92RndmdGNHQ1hyemJUeXpocGZTRnJ0YXlkaVhCWW53eHB2ZFBlaHhscUxBaE04TkVKNFkvZUtlK3FRVEtqWEI1eVl4Ym9iTThYeUVqUjB4SnQ5bDcwSzdiYmR6dURQakxaQTdRYVJWL3VYbkI3QVdaVnBDYmNkRzRaTTRzS0RYQWNTRUR6YzdKZkhzR1hZK1lDbVg5WGRwZktMTjdxQWtBQUFCTiJ9XX0="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.ipa.unknown-field.reject",
+      "operation": "map_proof",
+      "backend": "ipa",
+      "category": "strict_json",
+      "verification": {
+        "request": {
+          "key": [
+            "missing"
+          ],
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+        },
+        "result": {
+          "present": false,
+          "profile": "malt.map-proof/v0alpha1",
+          "prooflist": {
+            "query": "missing",
+            "root": {
+              "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+            },
+            "steps": [
+              {
+                "coordinate": "missing",
+                "evidence_backend": "map",
+                "evidence_kind": "structure",
+                "from": {
+                  "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+                },
+                "kind": "map_absence",
+                "path": "missing",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJBQUFBQ0JzVnhtRFYvVk94VVduY1NGTHN2dFJ0VDRaZ05YYk1PYmFYRDYwMlR1ZE1TT0d3LzByMVlRckZrVnlEOExMM0UybVlZbGVnWHFTaDkrU3R5UDA0K2xNK3JMRFhvM1FuMDhxb1ZrZERnYmxORHdXQ3ZOZGdnS05sRHFkaTI3MG5Wd25JcitjYmxRc1ZHV3IydUgxd0k0L1pUcld5emNPZW5NZm5tYzVBVno4d1JIMTAzVTFuWTBDV2ZnSVZraW9adzU0VHJNamRka2lQVHRndGk0WFVKcnNnakc4S3NienFrMklsVXNKaXRVbXZRZXVqZHN3akJDUGtoeXVCalEzSlRqaERyYW1aSmh0VndvL0FHc3lucGRZOUVPNElIdWxScVdHVGIxb0xIZi8vVnJKcmI2bFFoK1ZTV3V3Ni8vMXlPdC9vVUpNSkx4ZVE1U0FlSFExRk1VazlndG1pak9IVWtjeWE2d3JSOFJ6bC83elVUNTRKbkJ2MHpPWW9nQThVOGovSWxSVnF1NmdtU2dPRUhrLzlldVlCYi9lRGJkNWR3YU9NeTA0QXhEYWdiWi9FSEUxZ1ZpRkxhRUpMcmdkd3hPWDhKWUwzQzU5SXJvbFlGMGVha1c5UjJyTkw1QW1kaVFYZ2lWNTJpRjlycUtVRE9ud1dUMVE5b3B4eThVRXpWMTcrdGtiVVpCQVdRczNPZTFTOUtnY0JEckZ4OHBoNyt1N1BlaERYWC9tYlFvaVNaTzJyM3RXeWh4VnNNZTlqRlNqNDlCRjZIbmJCVFVoZmdhOHJzYVZhUThadUZIT3ZEYjVXdWFKVlFlaFhVVCtVZHoxUzhzZmJoaExjU1pERjBXTkd4Y2hBV1VWU3Z2M2pUaDBVR3EzckEwYWY4QnJFN1pObi82SHN2ZGtCQkhXVzBqMzMyOTlPbENNTzZyWWtxSGZnT1I2NXdpN1dqVmdsWnlwY3Jnd0FBQUQvIn1dfQ==",
+                "query": "missing",
+                "target": null
+              }
+            ]
+          }
+        },
+        "unknown": true
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.ipa.wrong-key.reject",
+      "operation": "map_proof",
+      "backend": "ipa",
+      "category": "wrong_key",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni",
+          "key": [
+            "another-missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "bagbofqabaaqbqn6kkrndg5l3p4jfzmxrr5litbea7xrlhp5i5k3knx74ubiumni"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJBQUFBQ0JzVnhtRFYvVk94VVduY1NGTHN2dFJ0VDRaZ05YYk1PYmFYRDYwMlR1ZE1TT0d3LzByMVlRckZrVnlEOExMM0UybVlZbGVnWHFTaDkrU3R5UDA0K2xNK3JMRFhvM1FuMDhxb1ZrZERnYmxORHdXQ3ZOZGdnS05sRHFkaTI3MG5Wd25JcitjYmxRc1ZHV3IydUgxd0k0L1pUcld5emNPZW5NZm5tYzVBVno4d1JIMTAzVTFuWTBDV2ZnSVZraW9adzU0VHJNamRka2lQVHRndGk0WFVKcnNnakc4S3NienFrMklsVXNKaXRVbXZRZXVqZHN3akJDUGtoeXVCalEzSlRqaERyYW1aSmh0VndvL0FHc3lucGRZOUVPNElIdWxScVdHVGIxb0xIZi8vVnJKcmI2bFFoK1ZTV3V3Ni8vMXlPdC9vVUpNSkx4ZVE1U0FlSFExRk1VazlndG1pak9IVWtjeWE2d3JSOFJ6bC83elVUNTRKbkJ2MHpPWW9nQThVOGovSWxSVnF1NmdtU2dPRUhrLzlldVlCYi9lRGJkNWR3YU9NeTA0QXhEYWdiWi9FSEUxZ1ZpRkxhRUpMcmdkd3hPWDhKWUwzQzU5SXJvbFlGMGVha1c5UjJyTkw1QW1kaVFYZ2lWNTJpRjlycUtVRE9ud1dUMVE5b3B4eThVRXpWMTcrdGtiVVpCQVdRczNPZTFTOUtnY0JEckZ4OHBoNyt1N1BlaERYWC9tYlFvaVNaTzJyM3RXeWh4VnNNZTlqRlNqNDlCRjZIbmJCVFVoZmdhOHJzYVZhUThadUZIT3ZEYjVXdWFKVlFlaFhVVCtVZHoxUzhzZmJoaExjU1pERjBXTkd4Y2hBV1VWU3Z2M2pUaDBVR3EzckEwYWY4QnJFN1pObi82SHN2ZGtCQkhXVzBqMzMyOTlPbENNTzZyWWtxSGZnT1I2NXdpN1dqVmdsWnlwY3Jnd0FBQUQvIn1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.kzg.absence.accept",
+      "operation": "map_proof",
+      "backend": "kzg",
+      "category": "absence",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x",
+          "key": [
+            "missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJyMDF2eW84S1FwYmE2UEZRbzQwQlhnbE5nL3MvdU0ydDc4MmhiUmg0QWFveFRxZG12bFVEbjVqbkJiZ0VTdFZhYjhNYzcyOWVuc3hud2h6QWo4M2hIdFB3bmVGa25UZE5wSldaSEhoU3VGUUFBQS82In1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "map-proof.kzg.cross-root.reject",
+      "operation": "map_proof",
+      "backend": "kzg",
+      "category": "cross_root",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "baga6fqabaayiweppp2qtr3hbph3ets374lhpx3lmxsu4e37rnj52bxfl2xfahlaojcgruxkbf3jqktmebyixdv6r",
+          "key": [
+            "missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "baga6fqabaayiweppp2qtr3hbph3ets374lhpx3lmxsu4e37rnj52bxfl2xfahlaojcgruxkbf3jqktmebyixdv6r"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "baga6fqabaayiweppp2qtr3hbph3ets374lhpx3lmxsu4e37rnj52bxfl2xfahlaojcgruxkbf3jqktmebyixdv6r"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJyMDF2eW84S1FwYmE2UEZRbzQwQlhnbE5nL3MvdU0ydDc4MmhiUmg0QWFveFRxZG12bFVEbjVqbkJiZ0VTdFZhYjhNYzcyOWVuc3hud2h6QWo4M2hIdFB3bmVGa25UZE5wSldaSEhoU3VGUUFBQS82In1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.kzg.membership.accept",
+      "operation": "map_proof",
+      "backend": "kzg",
+      "category": "membership",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x",
+          "key": [
+            "present"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": true,
+          "target": "bafkreiadmxmk2pb6smowq6qthlcy7izj6g35kut7hzz2sheauby2vc5fl4",
+          "prooflist": {
+            "root": {
+              "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+            },
+            "query": "present",
+            "steps": [
+              {
+                "kind": "map_step",
+                "from": {
+                  "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+                },
+                "query": "present",
+                "coordinate": "present",
+                "path": "present",
+                "target": {
+                  "/": "bafkreiadmxmk2pb6smowq6qthlcy7izj6g35kut7hzz2sheauby2vc5fl4"
+                },
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sic2xvdCI6IkFWVUFSRzFoYkhRNmJXRndPbkpoWkdsNE9teGxZV1k2ZGpFNkFBZHdjbVZ6Wlc1MEFWVVNJQU5sMkswOFBwTWRhSG9UT3NXUG95bnh0OVZTZno1enFSeUFvSEdxaTZWZiIsInByb29mIjoicE5BdEVJM3JsLzhiUEg5Qkl3RzlCdTJpU2lNWlRZNGgwam5VWXJHUGdQVjBjazZUcE01SkxFam5ZSHVZVWhlRUIzUkdiTGc5T1hkazRqRDRuaFJwakJuUUkwSXJiRk10ZFd4SVJob1RQM3dBQUFUVSJ9XX0="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "map-proof.kzg.proof-tamper.reject",
+      "operation": "map_proof",
+      "backend": "kzg",
+      "category": "tamper",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x",
+          "key": [
+            "missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJyMDF2eW84S1FwYmE2UEZRbzQwQlhnbE5nL3MvdU0ydDc4MmhiUmg0QWFveFRxZG12bFVEbjVqbkJiZ0VTdFZhYjhNYzcyOWVuc3hud2h6QWo4M2hIdFB3bmVGa25UZE5wSldaSEhoU3VGUUFBQS83In1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.kzg.target-tamper.reject",
+      "operation": "map_proof",
+      "backend": "kzg",
+      "category": "target_tamper",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x",
+          "key": [
+            "present"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": true,
+          "target": "bafkreiddgn7gnphtrfkdfbeto6c5dge7ogmbhb5x5bepqbybdabjczx5w4",
+          "prooflist": {
+            "root": {
+              "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+            },
+            "query": "present",
+            "steps": [
+              {
+                "kind": "map_step",
+                "from": {
+                  "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+                },
+                "query": "present",
+                "coordinate": "present",
+                "path": "present",
+                "target": {
+                  "/": "bafkreiadmxmk2pb6smowq6qthlcy7izj6g35kut7hzz2sheauby2vc5fl4"
+                },
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sic2xvdCI6IkFWVUFSRzFoYkhRNmJXRndPbkpoWkdsNE9teGxZV1k2ZGpFNkFBZHdjbVZ6Wlc1MEFWVVNJQU5sMkswOFBwTWRhSG9UT3NXUG95bnh0OVZTZno1enFSeUFvSEdxaTZWZiIsInByb29mIjoicE5BdEVJM3JsLzhiUEg5Qkl3RzlCdTJpU2lNWlRZNGgwam5VWXJHUGdQVjBjazZUcE01SkxFam5ZSHVZVWhlRUIzUkdiTGc5T1hkazRqRDRuaFJwakJuUUkwSXJiRk10ZFd4SVJob1RQM3dBQUFUVSJ9XX0="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.kzg.unknown-field.reject",
+      "operation": "map_proof",
+      "backend": "kzg",
+      "category": "strict_json",
+      "verification": {
+        "request": {
+          "key": [
+            "missing"
+          ],
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+        },
+        "result": {
+          "present": false,
+          "profile": "malt.map-proof/v0alpha1",
+          "prooflist": {
+            "query": "missing",
+            "root": {
+              "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+            },
+            "steps": [
+              {
+                "coordinate": "missing",
+                "evidence_backend": "map",
+                "evidence_kind": "structure",
+                "from": {
+                  "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+                },
+                "kind": "map_absence",
+                "path": "missing",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJyMDF2eW84S1FwYmE2UEZRbzQwQlhnbE5nL3MvdU0ydDc4MmhiUmg0QWFveFRxZG12bFVEbjVqbkJiZ0VTdFZhYjhNYzcyOWVuc3hud2h6QWo4M2hIdFB3bmVGa25UZE5wSldaSEhoU3VGUUFBQS82In1dfQ==",
+                "query": "missing",
+                "target": null
+              }
+            ]
+          }
+        },
+        "unknown": true
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "map-proof.kzg.wrong-key.reject",
+      "operation": "map_proof",
+      "backend": "kzg",
+      "category": "wrong_key",
+      "verification": {
+        "request": {
+          "profile": "malt.map-proof/v0alpha1",
+          "root": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x",
+          "key": [
+            "another-missing"
+          ]
+        },
+        "result": {
+          "profile": "malt.map-proof/v0alpha1",
+          "present": false,
+          "prooflist": {
+            "root": {
+              "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+            },
+            "query": "missing",
+            "steps": [
+              {
+                "kind": "map_absence",
+                "from": {
+                  "/": "baga6fqabaaykjog7lzfjnuexatroip3jbhg6lvssjjavg7yaeiwett2dxi3eg245ybhkduhilfeji43tyy446e5x"
+                },
+                "query": "missing",
+                "coordinate": "missing",
+                "path": "missing",
+                "target": null,
+                "evidence_kind": "structure",
+                "evidence_backend": "map",
+                "proof": "eyJzdGVwcyI6W3sicHJvb2YiOiJyMDF2eW84S1FwYmE2UEZRbzQwQlhnbE5nL3MvdU0ydDc4MmhiUmg0QWFveFRxZG12bFVEbjVqbkJiZ0VTdFZhYjhNYzcyOWVuc3hud2h6QWo4M2hIdFB3bmVGa25UZE5wSldaSEhoU3VGUUFBQS82In1dfQ=="
+              }
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    }
+  ]
+}

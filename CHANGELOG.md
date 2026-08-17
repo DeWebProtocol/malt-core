@@ -12,6 +12,15 @@ This release moves the application-neutral MALT SDK from
 `DeWebProtocol/malt` to `DeWebProtocol/malt-core` and publishes it under the
 new Go module path `github.com/dewebprotocol/malt-core`.
 
+### Added
+
+- Freeze the language-neutral Map-proof v1 corpus for KZG and IPA membership,
+  non-membership, and adversarial rejection behavior.
+- Freeze the language-neutral client-root v1 corpus for exact candidate,
+  materialization, next-view, and receipt outputs plus fail-closed inputs.
+- Make the native Go and browser/WASM gates consume the same checked-in corpus
+  bytes.
+
 ### Changed
 
 - Rename the Core repository to `DeWebProtocol/malt-core`.
@@ -24,9 +33,11 @@ new Go module path `github.com/dewebprotocol/malt-core`.
 
 - The Go module namespace change is an intentional pre-v1 source break;
   dependants must update their imports and pin `malt-core@v0.0.7`.
-- Relative to `v0.0.7-rc.5`, this migration does not alter roots, CIDs,
+- Relative to `v0.0.7-rc.5`, this release does not alter roots, CIDs,
   commitment parameters, commitments, proofs, transcripts, ProofLists,
-  mutations, receipts, schemas, or wire encodings.
+  mutations, receipts, existing protocol schemas, existing Resolve/Read
+  corpus vectors, or wire encodings. It adds only new conformance corpus
+  envelopes, schemas, and vectors.
 - The `v0.0.7` line remains wire-incompatible with the flat root codecs
   emitted by `v0.0.6`, as documented in the release notes.
 - All previous Core tags, releases, commits, and assets remain immutable in

@@ -28,6 +28,7 @@ remains frozen for compatibility. See [MIP-1012](../mips/mip-1012-segment-path-r
 - [Writer receipts](./writer-receipts.md)
 - [Resolve and read contracts](./resolve-read-contracts.md)
 - [Client-root contract](./client-root-contract.md)
+- [Language-neutral conformance corpora](./conformance-corpora.md)
 - [Frozen artifact compatibility profile](./artifacts.md)
 - [Segment paths and resolution](./segment-paths.md)
 - [Commitment model](./commitment.md)

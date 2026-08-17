@@ -7,11 +7,11 @@ MALT core uses source tags for experimental releases.
 Run from the repository root:
 
 Set `MALT_RELEASE_BASE` to the previous authoritative source tag. For
-v0.0.7-rc.5, that tag is `v0.0.7-rc.4`.
+v0.0.7, that tag is `v0.0.7-rc.5`.
 
 ```bash
 set -euo pipefail
-MALT_RELEASE_BASE=v0.0.7-rc.4
+MALT_RELEASE_BASE=v0.0.7-rc.5
 git fetch --prune --tags origin
 git rev-parse --verify "${MALT_RELEASE_BASE}^{commit}"
 git merge-base --is-ancestor "$MALT_RELEASE_BASE" HEAD

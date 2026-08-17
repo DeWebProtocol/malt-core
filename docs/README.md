@@ -45,6 +45,7 @@ research narrative remain in `DeWebProtocol/documents`.
 - [Specification index](./spec/README.md)
 - [Resolve and read contracts](./spec/resolve-read-contracts.md)
 - [Client-root contract](./spec/client-root-contract.md)
+- [Language-neutral conformance corpora](./spec/conformance-corpora.md)
 
 ## MALT Improvement Proposals
 

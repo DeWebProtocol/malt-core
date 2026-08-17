@@ -2,11 +2,11 @@ import { webcrypto } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
-const [wasmPath, wasmExecPath, corpusPath, selectedBackend = "all", mapProofFixturePath] =
+const [wasmPath, wasmExecPath, corpusPath, selectedBackend = "all", mapProofCorpusPath] =
   process.argv.slice(2);
 if (!wasmPath || !wasmExecPath || !corpusPath) {
   console.error(
-    "usage: node run-verifier-wasm-vectors.mjs <verifier.wasm> <wasm_exec.js> <vectors.json> [all|kzg|ipa] [map-proof-fixtures.json]",
+    "usage: node run-verifier-wasm-vectors.mjs <verifier.wasm> <wasm_exec.js> <resolve-read-vectors.json> [all|kzg|ipa] [map-proof-vectors.json]",
   );
   process.exit(2);
 }
@@ -27,11 +27,11 @@ const corpus = JSON.parse(await readFile(corpusPath, "utf8"));
 if (!Array.isArray(corpus.vectors) || corpus.vectors.length === 0) {
   throw new Error(`${corpusPath} does not contain a non-empty vectors array`);
 }
-const mapProofFixtures = mapProofFixturePath
-  ? JSON.parse(await readFile(mapProofFixturePath, "utf8"))
+const mapProofCorpus = mapProofCorpusPath
+  ? JSON.parse(await readFile(mapProofCorpusPath, "utf8"))
   : { vectors: [] };
-if (!Array.isArray(mapProofFixtures.vectors)) {
-  throw new Error(`${mapProofFixturePath} does not contain a vectors array`);
+if (!Array.isArray(mapProofCorpus.vectors)) {
+  throw new Error(`${mapProofCorpusPath} does not contain a vectors array`);
 }
 
 globalThis.maltVerifierBackend = selectedBackend;
@@ -49,7 +49,7 @@ if (invalidMapProof.valid !== false || invalidMapProof.profile !== "malt.map-pro
   throw new Error("maltVerifyMapProof did not fail closed on an invalid verification envelope");
 }
 
-const allVectors = [...corpus.vectors, ...mapProofFixtures.vectors];
+const allVectors = [...corpus.vectors, ...mapProofCorpus.vectors];
 const vectors =
   selectedBackend === "all"
     ? allVectors
@@ -88,7 +88,7 @@ if (failures.length > 0) {
 
 const mapProofCount = vectors.filter((vector) => vector.operation === "map_proof").length;
 console.log(
-  `WASM ${selectedBackend} verification passed (${vectors.length - mapProofCount} Resolve/Read conformance vectors; ${mapProofCount} Map-proof smoke vectors)`,
+  `WASM ${selectedBackend} verification passed (${vectors.length - mapProofCount} Resolve/Read conformance vectors; ${mapProofCount} Map-proof conformance vectors)`,
 );
 process.exit(0);
 

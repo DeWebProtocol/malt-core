@@ -58,6 +58,10 @@ release_root="${temporary}/release"
 mkdir -p "${build_source}" "${verifier_staging}" "${writer_staging}" "${release_root}"
 git -C "${repo_root}" archive --format=tar "${source_commit}" | tar -x -C "${build_source}"
 
+resolve_read_corpus_sha256="$(sha256sum "${build_source}/conformance/resolve-read/v2/vectors.json" | awk '{print $1}')"
+map_proof_corpus_sha256="$(sha256sum "${build_source}/conformance/map-proof/v1/vectors.json" | awk '{print $1}')"
+client_root_corpus_sha256="$(sha256sum "${build_source}/conformance/client-root/v1/vectors.json" | awk '{print $1}')"
+
 go_directive="$(awk '$1 == "go" { print $2; exit }' "${build_source}/go.mod")"
 if [[ ! "${go_directive}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 	printf 'go.mod must pin an exact release toolchain version\n' >&2
@@ -124,6 +128,8 @@ cp "${build_source}/cmd/malt-writer-wasm/browser/malt-writer-workers.mjs" "${wri
 
 MALT_VERSION="${release_version}" MALT_COMMIT="${source_commit}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
+RESOLVE_READ_CORPUS_SHA256="${resolve_read_corpus_sha256}" \
+MAP_PROOF_CORPUS_SHA256="${map_proof_corpus_sha256}" \
 PROVENANCE_PATH="${verifier_staging}/PROVENANCE.json" node -e '
 	const fs = require("node:fs")
 	const provenance = {
@@ -135,6 +141,10 @@ PROVENANCE_PATH="${verifier_staging}/PROVENANCE.json" node -e '
 		go_version: process.env.GO_VERSION,
 		go_toolchain: process.env.GO_TOOLCHAIN,
 		target: "js/wasm",
+		conformance_corpora: {
+			resolve_read: {schema: "malt.resolve-read.conformance/v2", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
+			map_proof: {schema: "malt.map-proof.conformance/v1", sha256: process.env.MAP_PROOF_CORPUS_SHA256}
+		},
 		build_flags: ["-mod=readonly", "-buildvcs=false", "-trimpath"],
 		build_environment: {GO111MODULE: "on", GOENV: "off", GOWORK: "off", GOFLAGS: "", GOTOOLCHAIN: "local"},
 		codegen_environment: {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"}
@@ -145,6 +155,7 @@ PROVENANCE_PATH="${verifier_staging}/PROVENANCE.json" node -e '
 MALT_VERSION="${release_version}" MALT_COMMIT="${source_commit}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
 IPA_PARAMETERS_JSON="${ipa_parameters_json}" \
+CLIENT_ROOT_CORPUS_SHA256="${client_root_corpus_sha256}" \
 PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 	const fs = require("node:fs")
 	const parameters = JSON.parse(process.env.IPA_PARAMETERS_JSON)
@@ -157,6 +168,9 @@ PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 		go_version: process.env.GO_VERSION,
 		go_toolchain: process.env.GO_TOOLCHAIN,
 		target: "js/wasm",
+		conformance_corpora: {
+			client_root: {schema: "malt.client-root.conformance/v1", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		},
 		parameters,
 		build_flags: ["-mod=readonly", "-buildvcs=false", "-trimpath"],
 		artifacts: {
@@ -215,6 +229,9 @@ mv "${temporary}/writer.tar.gz" "${temporary}/${writer_archive}"
 
 MALT_VERSION="${release_version}" MALT_COMMIT="${source_commit}" SOURCE_EPOCH="${source_epoch}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
+RESOLVE_READ_CORPUS_SHA256="${resolve_read_corpus_sha256}" \
+MAP_PROOF_CORPUS_SHA256="${map_proof_corpus_sha256}" \
+CLIENT_ROOT_CORPUS_SHA256="${client_root_corpus_sha256}" \
 VERIFIER_DIGEST="${verifier_digest}" VERIFIER_ARCHIVE="${verifier_archive}" \
 VERIFIER_ARCHIVE_SHA256="${verifier_archive_sha256}" \
 WRITER_DIGEST="${writer_digest}" WRITER_ARCHIVE="${writer_archive}" \
@@ -238,6 +255,11 @@ MANIFEST_PATH="${temporary}/WASM-RELEASE.json" node -e '
 		go_toolchain: process.env.GO_TOOLCHAIN,
 		target: "js/wasm",
 		archive_format: "ustar+gzip",
+		conformance_corpora: {
+			resolve_read: {schema: "malt.resolve-read.conformance/v2", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
+			map_proof: {schema: "malt.map-proof.conformance/v1", sha256: process.env.MAP_PROOF_CORPUS_SHA256},
+			client_root: {schema: "malt.client-root.conformance/v1", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		},
 		codegen_environment: {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"},
 		components: {verifier: component("VERIFIER"), writer: component("WRITER")}
 	}

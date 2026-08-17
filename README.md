@@ -3,7 +3,7 @@
 [![Go CI](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml/badge.svg)](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**MALT is an SDK and protocol implementation for arc-granularity graph data
+**MALT Core is an SDK and protocol implementation for arc-granularity graph data
 authentication.**
 
 MALT keeps payload bytes in content-addressed storage (CAS) and authenticates
@@ -20,6 +20,7 @@ line client, daemon, UnixFS model, or website.
 [Documentation](./docs/README.md) · [Architecture](./ARCHITECTURE.md) ·
 [Resolve/read contracts](./docs/spec/resolve-read-contracts.md) ·
 [Client-root contract](./docs/spec/client-root-contract.md) ·
+[Conformance corpora](./docs/spec/conformance-corpora.md) ·
 [ProofList](./docs/spec/prooflist-format.md) ·
 [Compatibility](./docs/policy/compatibility.md) ·
 [v0.0.7 release](./docs/releases/v0.0.7.md) ·
@@ -43,6 +44,8 @@ MALT core owns:
   `malt.map-proof/v0alpha1` values and JSON Schemas;
 - complete-view client-root values, schemas, and local candidate computation;
 - ProofList generation/verification semantics;
+- frozen language-neutral Resolve/Read, Map-proof, and client-root conformance
+  corpora;
 - portable mutation and receipt values;
 - untrusted resolve/read/apply composition over caller-injected capabilities;
 - native Go and browser/WASM verification and exact client-root computation.
