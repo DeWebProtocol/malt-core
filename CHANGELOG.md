@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-08-17
+
+This release moves the application-neutral MALT SDK from
+`DeWebProtocol/malt` to `DeWebProtocol/malt-core` and publishes it under the
+new Go module path `github.com/dewebprotocol/malt-core`.
+
+### Added
+
+- Freeze the language-neutral Map-proof v1 corpus for KZG and IPA membership,
+  non-membership, and adversarial rejection behavior.
+- Freeze the language-neutral client-root v1 corpus for exact candidate,
+  materialization, next-view, and receipt outputs plus fail-closed inputs.
+- Make the native Go and browser/WASM gates consume the same checked-in corpus
+  bytes.
+
+### Changed
+
+- Rename the Core repository to `DeWebProtocol/malt-core`.
+- Change every current Go import from `github.com/dewebprotocol/malt` to
+  `github.com/dewebprotocol/malt-core`.
+- Rebind release scripts, CI badges, documentation, and WASM provenance to the
+  new repository and module namespace.
+
+### Compatibility
+
+- The Go module namespace change is an intentional pre-v1 source break;
+  dependants must update their imports and pin `malt-core@v0.0.7`.
+- Relative to `v0.0.7-rc.5`, this release does not alter roots, CIDs,
+  commitment parameters, commitments, proofs, transcripts, ProofLists,
+  mutations, receipts, existing protocol schemas, existing Resolve/Read
+  corpus vectors, or wire encodings. It adds only new conformance corpus
+  envelopes, schemas, and vectors.
+- The `v0.0.7` line remains wire-incompatible with the flat root codecs
+  emitted by `v0.0.6`, as documented in the release notes.
+- All previous Core tags, releases, commits, and assets remain immutable in
+  `DeWebProtocol/malt-core`; none were deleted, retracted, moved, or retagged.
+
 ## [0.0.7-rc.5] - 2026-08-16
 
 This release-candidate delta lets trusted clients persist and authenticate
@@ -353,13 +390,14 @@ for the trusted CLI/daemon and UnixFS application, and
 - KZG verification rejects out-of-range proof indices and non-canonical proof
   lengths instead of allowing malformed input to panic or reuse a commitment.
 
-[Unreleased]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.5...HEAD
-[0.0.7-rc.5]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.4...v0.0.7-rc.5
-[0.0.7-rc.4]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.3...v0.0.7-rc.4
-[0.0.7-rc.3]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.2...v0.0.7-rc.3
-[0.0.7-rc.2]: https://github.com/DeWebProtocol/malt/compare/v0.0.7-rc.1...v0.0.7-rc.2
-[0.0.7-rc.1]: https://github.com/DeWebProtocol/malt/compare/v0.0.6...v0.0.7-rc.1
-[0.0.6]: https://github.com/DeWebProtocol/malt/compare/v0.0.5...v0.0.6
-[0.0.5]: https://github.com/DeWebProtocol/malt/compare/v0.0.4...v0.0.5
-[0.0.4]: https://github.com/DeWebProtocol/malt/compare/v0.0.3...v0.0.4
-[0.0.3]: https://github.com/DeWebProtocol/malt/compare/v0.0.2...v0.0.3
+[Unreleased]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.5...v0.0.7
+[0.0.7-rc.5]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.4...v0.0.7-rc.5
+[0.0.7-rc.4]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.3...v0.0.7-rc.4
+[0.0.7-rc.3]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.2...v0.0.7-rc.3
+[0.0.7-rc.2]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.1...v0.0.7-rc.2
+[0.0.7-rc.1]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.6...v0.0.7-rc.1
+[0.0.6]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.5...v0.0.6
+[0.0.5]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.4...v0.0.5
+[0.0.4]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.3...v0.0.4
+[0.0.3]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.2...v0.0.3

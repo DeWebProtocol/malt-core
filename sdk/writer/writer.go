@@ -12,14 +12,14 @@ import (
 	"slices"
 	"time"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	materializer "github.com/dewebprotocol/malt/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
-	runtimegraph "github.com/dewebprotocol/malt/graph/runtime"
-	"github.com/dewebprotocol/malt/mutation"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	materializer "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	runtimegraph "github.com/dewebprotocol/malt-core/graph/runtime"
+	"github.com/dewebprotocol/malt-core/mutation"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

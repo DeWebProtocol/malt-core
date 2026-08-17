@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	structure "github.com/dewebprotocol/malt/auth/semantic"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
-	"github.com/dewebprotocol/malt/auth/semantic/nodegeometry"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	structure "github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )

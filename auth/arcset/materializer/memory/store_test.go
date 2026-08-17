@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )

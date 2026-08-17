@@ -3,8 +3,8 @@ package ipa
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/common"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
 )
 
 // domainSize will always equal 256, which is the same

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	"github.com/dewebprotocol/malt/protocol"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	"github.com/dewebprotocol/malt-core/protocol"
 )
 
 func TestDecodeResolveVerificationStrict(t *testing.T) {

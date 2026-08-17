@@ -10,7 +10,7 @@ import (
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	blsfr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
-	"github.com/dewebprotocol/malt/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
 )
 
 type kzgDomain struct {

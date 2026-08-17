@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"slices"
 
-	malt "github.com/dewebprotocol/malt"
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	structure "github.com/dewebprotocol/malt/auth/semantic"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping"
-	"github.com/dewebprotocol/malt/mutation"
+	malt "github.com/dewebprotocol/malt-core"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	structure "github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	"github.com/dewebprotocol/malt-core/mutation"
 	cid "github.com/ipfs/go-cid"
 )
 

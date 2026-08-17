@@ -2,11 +2,11 @@ import { webcrypto } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
-const [wasmPath, wasmExecPath, corpusPath, selectedBackend = "all", mapProofFixturePath] =
+const [wasmPath, wasmExecPath, corpusPath, selectedBackend, mapProofCorpusPath] =
   process.argv.slice(2);
-if (!wasmPath || !wasmExecPath || !corpusPath) {
+if (!wasmPath || !wasmExecPath || !corpusPath || !mapProofCorpusPath) {
   console.error(
-    "usage: node run-verifier-wasm-vectors.mjs <verifier.wasm> <wasm_exec.js> <vectors.json> [all|kzg|ipa] [map-proof-fixtures.json]",
+    "usage: node run-verifier-wasm-vectors.mjs <verifier.wasm> <wasm_exec.js> <resolve-read-vectors.json> <all|kzg|ipa> <map-proof-vectors.json>",
   );
   process.exit(2);
 }
@@ -24,14 +24,20 @@ if (typeof globalThis.Go !== "function") {
 }
 
 const corpus = JSON.parse(await readFile(corpusPath, "utf8"));
-if (!Array.isArray(corpus.vectors) || corpus.vectors.length === 0) {
-  throw new Error(`${corpusPath} does not contain a non-empty vectors array`);
+if (
+  corpus.schema_version !== "malt.resolve-read.conformance/v2" ||
+  !Array.isArray(corpus.vectors) ||
+  corpus.vectors.length === 0
+) {
+  throw new Error(`${corpusPath} is not a non-empty Resolve/Read v2 corpus`);
 }
-const mapProofFixtures = mapProofFixturePath
-  ? JSON.parse(await readFile(mapProofFixturePath, "utf8"))
-  : { vectors: [] };
-if (!Array.isArray(mapProofFixtures.vectors)) {
-  throw new Error(`${mapProofFixturePath} does not contain a vectors array`);
+const mapProofCorpus = JSON.parse(await readFile(mapProofCorpusPath, "utf8"));
+if (
+  mapProofCorpus.schema_version !== "malt.map-proof.conformance/v1" ||
+  !Array.isArray(mapProofCorpus.vectors) ||
+  mapProofCorpus.vectors.length === 0
+) {
+  throw new Error(`${mapProofCorpusPath} is not a non-empty Map-proof v1 corpus`);
 }
 
 globalThis.maltVerifierBackend = selectedBackend;
@@ -49,13 +55,24 @@ if (invalidMapProof.valid !== false || invalidMapProof.profile !== "malt.map-pro
   throw new Error("maltVerifyMapProof did not fail closed on an invalid verification envelope");
 }
 
-const allVectors = [...corpus.vectors, ...mapProofFixtures.vectors];
+const allVectors = [...corpus.vectors, ...mapProofCorpus.vectors];
 const vectors =
   selectedBackend === "all"
     ? allVectors
     : allVectors.filter(
         (vector) => vector.backend === selectedBackend || vector.backend === "none",
       );
+if (
+  selectedBackend !== "all" &&
+  (!vectors.some((vector) => vector.operation === "map_proof" && vector.backend === selectedBackend) ||
+    !vectors.some(
+      (vector) =>
+        (vector.operation === "resolve" || vector.operation === "read") &&
+        vector.backend === selectedBackend,
+    ))
+) {
+  throw new Error(`conformance corpora have no complete ${selectedBackend} backend selection`);
+}
 const seen = new Set();
 const failures = [];
 for (const vector of vectors) {
@@ -88,7 +105,7 @@ if (failures.length > 0) {
 
 const mapProofCount = vectors.filter((vector) => vector.operation === "map_proof").length;
 console.log(
-  `WASM ${selectedBackend} verification passed (${vectors.length - mapProofCount} Resolve/Read conformance vectors; ${mapProofCount} Map-proof smoke vectors)`,
+  `WASM ${selectedBackend} verification passed (${vectors.length - mapProofCount} Resolve/Read conformance vectors; ${mapProofCount} Map-proof conformance vectors)`,
 );
 process.exit(0);
 

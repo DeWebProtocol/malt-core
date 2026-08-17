@@ -1,6 +1,7 @@
-// Package conformance exposes the checked-in, language-neutral resolve/read
-// verification corpus. The corpus is immutable protocol test data; producing
-// runtime evidence remains the responsibility of the deterministic generator.
+// Package conformance exposes checked-in, language-neutral Resolve/Read,
+// Map-proof, and client-root corpora. The corpora are immutable protocol test
+// data; producing runtime evidence remains the responsibility of deterministic
+// generators.
 package conformance
 
 import (
@@ -13,7 +14,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/dewebprotocol/malt/protocol"
+	"github.com/dewebprotocol/malt-core/protocol"
 )
 
 const (
@@ -33,7 +34,7 @@ const (
 
 //go:generate go run ../internal/conformancegen/cmd -out resolve-read/v2/vectors.json
 
-//go:embed resolve-read/v1/*.json resolve-read/v2/*.json
+//go:embed resolve-read/v1/*.json resolve-read/v2/*.json map-proof/v1/*.json client-root/v1/*.json
 var corpusFiles embed.FS
 
 // Corpus is the stable, ordered envelope shared by every verifier adapter.

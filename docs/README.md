@@ -1,7 +1,7 @@
 # MALT Docs
 
 This directory is the implementation-bound documentation surface for
-`DeWebProtocol/malt`.
+`DeWebProtocol/malt-core`.
 
 Use these documents as the source of truth for behavior that must stay aligned
 with code, tests, schemas, and wire formats. Public
@@ -11,8 +11,10 @@ should link back here for protocol, policy, and compatibility details.
 Managed gateway service behavior, including tenancy, identity, authorization,
 root publication, backend orchestration, S3/Filecoin/IPFS deployment policy,
 quota, cache policy, and operations, belongs in `DeWebProtocol/gateway` or
-private deployment overlays. Client/daemon and UnixFS behavior belongs in
-`DeWebProtocol/malt-client`; this repository contains neither product layer.
+private deployment overlays. Local runtime, daemon, trust, transport, and
+UnixFS behavior belongs in the MALT runtime repository (currently
+`DeWebProtocol/malt-client`, scheduled to become `DeWebProtocol/malt`); this
+repository contains neither product layer.
 Executable benchmark suites, evaluator plans, comparison adapters, and result
 schemas live in `DeWebProtocol/malt-evaluation`; paper interpretation and
 research narrative remain in `DeWebProtocol/documents`.
@@ -28,7 +30,8 @@ research narrative remain in `DeWebProtocol/documents`.
 - [Threat model](./policy/threat-model.md)
 - [Compatibility policy](./policy/compatibility.md)
 - [Release process](./policy/releasing.md)
-- [v0.0.7-rc.5 release notes](./releases/v0.0.7.md)
+- [v0.0.7 release notes](./releases/v0.0.7.md)
+- [Repository and module migration](./releases/repository-migration.md)
 - [v0.0.6 release notes](./releases/v0.0.6.md)
 - [v0.0.5 release notes](./releases/v0.0.5.md)
 - [v0.0.4 release notes](./releases/v0.0.4.md)
@@ -42,6 +45,7 @@ research narrative remain in `DeWebProtocol/documents`.
 - [Specification index](./spec/README.md)
 - [Resolve and read contracts](./spec/resolve-read-contracts.md)
 - [Client-root contract](./spec/client-root-contract.md)
+- [Language-neutral conformance corpora](./spec/conformance-corpora.md)
 
 ## MALT Improvement Proposals
 

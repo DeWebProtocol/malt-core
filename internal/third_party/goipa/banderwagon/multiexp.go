@@ -1,8 +1,8 @@
 package banderwagon
 
 import (
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
 )
 
 // MultiExpConfig enables to set optional configuration attribute to a call to MultiExp

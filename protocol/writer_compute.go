@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/mutation"
+	"github.com/dewebprotocol/malt-core/mutation"
 )
 
 const (

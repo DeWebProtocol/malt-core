@@ -6,11 +6,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/proof/evidence"
-	"github.com/dewebprotocol/malt/graph/resolver/step"
-	"github.com/dewebprotocol/malt/graph/resolver/step/explicit"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/proof/evidence"
+	"github.com/dewebprotocol/malt-core/graph/resolver/step"
+	"github.com/dewebprotocol/malt-core/graph/resolver/step/explicit"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

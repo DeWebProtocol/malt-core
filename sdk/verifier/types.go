@@ -3,7 +3,7 @@ package verifier
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/artifact"
+	"github.com/dewebprotocol/malt-core/artifact"
 	cid "github.com/ipfs/go-cid"
 )
 

@@ -7,7 +7,7 @@ const [wasmPath, wasmExecPath, fixturePath, selectedBackend = "kzg", selectedPro
   process.argv.slice(2);
 if (!wasmPath || !wasmExecPath || !fixturePath) {
   console.error(
-    "usage: node run-writer-wasm-smoke.mjs <writer.wasm> <wasm_exec.js> <fixtures.json> [kzg|ipa] [direct|compact|fast]",
+    "usage: node run-writer-wasm-smoke.mjs <writer.wasm> <wasm_exec.js> <client-root-vectors.json> [kzg|ipa] [direct|compact|fast]",
   );
   process.exit(2);
 }
@@ -20,7 +20,14 @@ if (selectedBackend === "kzg" ? selectedProfile !== "" : !["direct", "compact", 
 if (!globalThis.crypto) {
   globalThis.crypto = webcrypto;
 }
-const fixtures = JSON.parse(await readFile(fixturePath, "utf8"));
+const corpus = JSON.parse(await readFile(fixturePath, "utf8"));
+if (
+  corpus.schema_version !== "malt.client-root.conformance/v1" ||
+  !Array.isArray(corpus.vectors) ||
+  corpus.vectors.length === 0
+) {
+  throw new Error(`${fixturePath} is not a non-empty client-root v1 conformance corpus`);
+}
 
 await import(pathToFileURL(wasmExecPath).href);
 if (typeof globalThis.Go !== "function") {
@@ -161,16 +168,32 @@ if (
 }
 await globalThis.maltWriterCloseSessionV1();
 
-const selectedFixtures = fixtures.filter(
+const selectedVectors = corpus.vectors.filter(
   ({ backend }) => backend === selectedBackend,
 );
-const expectedFixtureCount = 1;
-if (selectedFixtures.length !== expectedFixtureCount) {
+const validFixtures = selectedVectors.filter(({ expected }) => expected?.valid === true);
+const invalidFixtures = selectedVectors.filter(({ expected }) => expected?.valid === false);
+if (validFixtures.length !== 1 || invalidFixtures.length === 0) {
   throw new Error(
-    `selected ${selectedFixtures.length} fixtures for ${selectedBackend}, expected ${expectedFixtureCount}`,
+    `selected ${validFixtures.length} valid and ${invalidFixtures.length} invalid vectors for ${selectedBackend}`,
   );
 }
-for (const fixture of selectedFixtures) {
+for (const fixture of invalidFixtures) {
+  let rejected = false;
+  try {
+    await globalThis.maltComputeClientRootV1(
+      encoder.encode(fixture.operation_id),
+      encoder.encode(JSON.stringify(fixture.update_view)),
+      encoder.encode(JSON.stringify(fixture.semantic_intent)),
+    );
+  } catch {
+    rejected = true;
+  }
+  if (!rejected) {
+    throw new Error(`${fixture.id} was accepted, want rejection`);
+  }
+}
+for (const fixture of validFixtures) {
   const operationID = encoder.encode(fixture.operation_id);
   Object.defineProperty(operationID, "byteLength", { value: -1 });
   const updateView = encoder.encode(JSON.stringify(fixture.update_view));
@@ -196,13 +219,18 @@ for (const fixture of selectedFixtures) {
   }
   assert.deepStrictEqual(
     result.bundle,
-    fixture.expected_bundle,
+    fixture.expected.bundle,
     `${fixture.backend} WASM bundle differs from the native canonical bundle`,
   );
   assert.deepStrictEqual(
     result.next_view,
-    fixture.expected_next_view,
+    fixture.expected.next_view,
     `${fixture.backend} WASM next view differs from the native canonical next view`,
+  );
+  assert.deepStrictEqual(
+    result.materialization,
+    fixture.expected.materialization,
+    `${fixture.backend} WASM materialization differs from the native canonical materialization`,
   );
   assert.deepStrictEqual(
     Object.keys(result.metrics).sort(),
@@ -238,9 +266,9 @@ for (const fixture of selectedFixtures) {
     sessionOperationID,
     sessionIntent,
   );
-  if (candidate !== fixture.expected_bundle.candidate) {
+  if (candidate !== fixture.expected.bundle.candidate) {
     throw new Error(
-      `${fixture.backend} session prepared ${candidate}, expected ${fixture.expected_bundle.candidate}`,
+      `${fixture.backend} session prepared ${candidate}, expected ${fixture.expected.bundle.candidate}`,
     );
   }
   const preparedJSON = await globalThis.maltWriterGetPreparedResultV1(
@@ -254,13 +282,18 @@ for (const fixture of selectedFixtures) {
   const prepared = JSON.parse(preparedJSON);
   assert.deepStrictEqual(
     prepared.bundle,
-    fixture.expected_bundle,
+    fixture.expected.bundle,
     `${fixture.backend} session bundle differs from the stateless reference`,
   );
   assert.deepStrictEqual(
     prepared.next_view,
-    fixture.expected_next_view,
+    fixture.expected.next_view,
     `${fixture.backend} session next view differs from the stateless reference`,
+  );
+  assert.deepStrictEqual(
+    prepared.materialization,
+    fixture.expected.materialization,
+    `${fixture.backend} session materialization differs from the stateless reference`,
   );
 
   const discarded = await globalThis.maltWriterDiscardSessionCandidateV1(
@@ -284,7 +317,7 @@ for (const fixture of selectedFixtures) {
   );
   assert.equal(
     candidateAfterDiscard,
-    fixture.expected_bundle.candidate,
+    fixture.expected.bundle.candidate,
     `${fixture.backend} re-prepared a different candidate after discard`,
   );
   const preparedAfterDiscardJSON = await globalThis.maltWriterGetPreparedResultV1(
@@ -293,31 +326,36 @@ for (const fixture of selectedFixtures) {
   const preparedAfterDiscard = JSON.parse(preparedAfterDiscardJSON);
   assert.deepStrictEqual(
     preparedAfterDiscard.bundle,
-    fixture.expected_bundle,
+    fixture.expected.bundle,
     `${fixture.backend} re-prepared bundle differs from the reference`,
   );
   assert.deepStrictEqual(
     preparedAfterDiscard.next_view,
-    fixture.expected_next_view,
+    fixture.expected.next_view,
     `${fixture.backend} re-prepared next view differs from the reference`,
   );
-  const expectedReceiptJSON = encoder.encode(JSON.stringify(fixture.expected_receipt));
+  assert.deepStrictEqual(
+    preparedAfterDiscard.materialization,
+    fixture.expected.materialization,
+    `${fixture.backend} re-prepared materialization differs from the reference`,
+  );
+  const expectedReceiptJSON = encoder.encode(JSON.stringify(fixture.expected.receipt));
   const validatedRoot = await globalThis.maltWriterValidateReceiptV1(
     encoder.encode(preparedAfterDiscardJSON),
     expectedReceiptJSON,
   );
-  if (validatedRoot !== fixture.expected_bundle.candidate) {
+  if (validatedRoot !== fixture.expected.bundle.candidate) {
     throw new Error(
-      `${fixture.backend} stateless receipt validation returned ${validatedRoot}, expected ${fixture.expected_bundle.candidate}`,
+      `${fixture.backend} stateless receipt validation returned ${validatedRoot}, expected ${fixture.expected.bundle.candidate}`,
     );
   }
   const acceptedRoot = await globalThis.maltWriterAcceptSessionReceiptV1(
     sessionOperationID,
     expectedReceiptJSON,
   );
-  if (acceptedRoot !== fixture.expected_bundle.candidate) {
+  if (acceptedRoot !== fixture.expected.bundle.candidate) {
     throw new Error(
-      `${fixture.backend} session accepted ${acceptedRoot}, expected ${fixture.expected_bundle.candidate}`,
+      `${fixture.backend} session accepted ${acceptedRoot}, expected ${fixture.expected.bundle.candidate}`,
     );
   }
 
@@ -358,6 +396,6 @@ for (const fixture of selectedFixtures) {
   await globalThis.maltWriterCloseSessionV1();
 }
 console.log(
-  `WASM ${selectedBackend} stateless/session smoke passed (${selectedFixtures.length} valid fixture(s))`,
+  `WASM ${selectedBackend} client-root conformance passed (${validFixtures.length} accepted; ${invalidFixtures.length} rejected)`,
 );
 process.exit(0);

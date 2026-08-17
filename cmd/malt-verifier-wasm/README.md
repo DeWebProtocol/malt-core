@@ -40,10 +40,11 @@ non-membership pair. The caller constructs the request from its trusted root and
 passing the untrusted result to WASM. Schemas live in `protocol/schemas/`.
 
 The release gate `scripts/test-verifier-wasm-vectors.sh` runs the current
-Resolve/Read v2 conformance corpus together with runtime-generated Map-proof
-non-membership smoke vectors. It checks the same WASM artifact with all
-backends enabled and in backend-selected KZG and IPA runs, including
-acceptance, proof-tamper, cross-root, and wrong-key cases.
+Resolve/Read v2 corpus together with the frozen
+`conformance/map-proof/v1/vectors.json` corpus. It checks the same WASM artifact
+with all backends enabled and in backend-selected KZG and IPA runs. The
+Map-proof corpus covers membership, non-membership, proof tampering, cross-root
+relabeling, wrong-key requests, target tampering, and strict JSON rejection.
 
 For example:
 

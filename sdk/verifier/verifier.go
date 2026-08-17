@@ -7,15 +7,15 @@ import (
 	"context"
 	"fmt"
 
-	malt "github.com/dewebprotocol/malt"
-	"github.com/dewebprotocol/malt/artifact"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	authverifier "github.com/dewebprotocol/malt/auth/verifier"
-	"github.com/dewebprotocol/malt/protocol"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	malt "github.com/dewebprotocol/malt-core"
+	"github.com/dewebprotocol/malt-core/artifact"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	authverifier "github.com/dewebprotocol/malt-core/auth/verifier"
+	"github.com/dewebprotocol/malt-core/protocol"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 type Verifier struct {

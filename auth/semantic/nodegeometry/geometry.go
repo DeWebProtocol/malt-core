@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 const (

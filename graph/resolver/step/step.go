@@ -8,8 +8,8 @@ package step
 import (
 	"context"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/auth/proof/evidence"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/auth/proof/evidence"
 	cid "github.com/ipfs/go-cid"
 )
 

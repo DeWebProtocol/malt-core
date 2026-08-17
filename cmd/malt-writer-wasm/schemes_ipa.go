@@ -5,9 +5,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 // ipaCommitterProfile is fixed independently in each release artifact with

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 )
 
 func TestIPACommitterProfilesAreWireIdentical(t *testing.T) {

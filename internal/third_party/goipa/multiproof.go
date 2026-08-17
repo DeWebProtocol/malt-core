@@ -7,10 +7,10 @@ import (
 	"io"
 	"runtime"
 
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/banderwagon"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/common"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/ipa"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/banderwagon"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/ipa"
 )
 
 // The following are unexported labels to be used in Fiat-Shamir during the

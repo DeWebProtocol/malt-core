@@ -1,5 +1,5 @@
 // Package conformancegen deterministically produces the checked-in portable
-// resolve/read verification vectors from the reference runtime.
+// Resolve/Read, Map-proof, and client-root vectors from the reference runtime.
 package conformancegen
 
 import (
@@ -9,18 +9,18 @@ import (
 	"fmt"
 	"slices"
 
-	malt "github.com/dewebprotocol/malt"
-	"github.com/dewebprotocol/malt/auth/arcset"
-	materialmemory "github.com/dewebprotocol/malt/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt/auth/commitment"
-	"github.com/dewebprotocol/malt/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt/auth/proof/prooflist"
-	"github.com/dewebprotocol/malt/auth/semantic/list"
-	"github.com/dewebprotocol/malt/conformance"
-	"github.com/dewebprotocol/malt/execution"
-	runtimegraph "github.com/dewebprotocol/malt/graph/runtime"
-	"github.com/dewebprotocol/malt/protocol"
+	malt "github.com/dewebprotocol/malt-core"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	"github.com/dewebprotocol/malt-core/auth/semantic/list"
+	"github.com/dewebprotocol/malt-core/conformance"
+	"github.com/dewebprotocol/malt-core/execution"
+	runtimegraph "github.com/dewebprotocol/malt-core/graph/runtime"
+	"github.com/dewebprotocol/malt-core/protocol"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )

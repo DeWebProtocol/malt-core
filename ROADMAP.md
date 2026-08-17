@@ -15,7 +15,7 @@ v0.0.6 turns this repository into an SDK-only core:
   `malt-client`; managed browser application behavior lives in
   `gateway/console`.
 
-## v0.0.7 release-candidate boundary
+## v0.0.7 boundary
 
 v0.0.7-rc.1 adds:
 
@@ -28,15 +28,15 @@ v0.0.7-rc.1 adds:
 - unified verifier and writer browser/WASM builds; and
 - optional request-scoped phase observations.
 
-The Resolve/Read v2 corpus is first frozen by this release candidate. The WASM
-gate also runs runtime-generated Map-proof smoke vectors for KZG and IPA.
-Before a final v0.0.7, a dedicated language-neutral Map-proof and client-root
-corpus remains a stabilization follow-up rather than an RC compatibility claim.
+The final release freezes dedicated language-neutral Resolve/Read v2,
+Map-proof v1, and client-root v1 corpora. Native Go and browser/WASM gates
+consume the same checked-in bytes for KZG and IPA. These corpus identifiers are
+independent of their enclosed wire-profile identifiers.
 
 ## Next core work
 
-1. Define language-neutral Map-proof and client-root conformance corpora for
-   independent Go, WASM, TypeScript, and Rust consumers.
+1. Add independent TypeScript and Rust adapters that execute the frozen
+   language-neutral corpora without changing the corpus bytes.
 2. Define verifiable mutation transition semantics before introducing a new
    mutation artifact/profile. Current receipts remain operational only.
 3. Harden variable-size measured-list evidence and native multi-open proofs.

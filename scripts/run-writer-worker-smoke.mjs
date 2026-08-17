@@ -7,7 +7,7 @@ const [wasmPath, wasmExecPath, controllerPath, workerPath, fixturePath, backend,
   process.argv.slice(2);
 if (!wasmPath || !wasmExecPath || !controllerPath || !workerPath || !fixturePath || !backend) {
   console.error(
-    "usage: node run-writer-worker-smoke.mjs <writer.wasm> <wasm_exec.js> <controller.mjs> <worker.mjs> <fixtures.json> <kzg|ipa> [direct|compact|fast]",
+    "usage: node run-writer-worker-smoke.mjs <writer.wasm> <wasm_exec.js> <controller.mjs> <worker.mjs> <client-root-vectors.json> <kzg|ipa> [direct|compact|fast]",
   );
   process.exit(2);
 }
@@ -18,8 +18,12 @@ const [{ createMaltWriterWorker }, wasm, fixtureJSON] = await Promise.all([
   readFile(fixturePath, "utf8"),
 ]);
 const module = await WebAssembly.compile(wasm);
-const fixtures = JSON.parse(fixtureJSON);
-const fixture = fixtures.find((candidate) => candidate.backend === backend);
+const corpus = JSON.parse(fixtureJSON);
+assert.equal(corpus.schema_version, "malt.client-root.conformance/v1");
+assert.ok(Array.isArray(corpus.vectors), "client-root corpus has no vectors array");
+const fixture = corpus.vectors.find(
+  (candidate) => candidate.backend === backend && candidate.expected?.valid === true,
+);
 assert.ok(fixture, `missing ${backend} fixture`);
 const nodeWorkerWrapper = new URL("./run-writer-worker-node.mjs", import.meta.url);
 const workerThreads = [];
@@ -71,14 +75,15 @@ try {
     encoder.encode(fixture.operation_id),
     encoder.encode(JSON.stringify(fixture.semantic_intent)),
   );
-  assert.equal(candidate, fixture.expected_bundle.candidate);
+  assert.equal(candidate, fixture.expected.bundle.candidate);
   const preparedJSON = await writer.getPreparedResult(
     backend,
     encoder.encode(fixture.operation_id),
   );
   const prepared = JSON.parse(preparedJSON);
-  assert.deepStrictEqual(prepared.bundle, fixture.expected_bundle);
-  assert.deepStrictEqual(prepared.next_view, fixture.expected_next_view);
+  assert.deepStrictEqual(prepared.bundle, fixture.expected.bundle);
+  assert.deepStrictEqual(prepared.materialization, fixture.expected.materialization);
+  assert.deepStrictEqual(prepared.next_view, fixture.expected.next_view);
 
   const orderedReload = writer.load(
     backend,

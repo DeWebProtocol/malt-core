@@ -49,7 +49,10 @@ when this checkout is part of the combined MALT workspace.
 - Put ArcTable/KV/CAS implementations, runtime composition, managed-service
   policy, and product E2E in `gateway/`.
 - Put trusted-root policy, CLI/daemon lifecycle, UnixFS behavior, payload-byte
-  binding, Gateway transport, and Merkle DAG import in `malt-client/`.
+  binding, pluggable transport, and Merkle DAG import in the MALT local runtime
+  repository. During the repository migration it remains available as
+  `DeWebProtocol/malt-client`; its target repository name is
+  `DeWebProtocol/malt`.
 - Put executable benchmark runners, adapters, plans, and result schemas in
   `malt-evaluation/`.
 - Put public tutorials and product narrative in `web/`, and research/paper

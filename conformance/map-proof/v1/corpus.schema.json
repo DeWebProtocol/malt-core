@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deweb.world/schemas/malt/conformance/map-proof/v1/corpus.schema.json",
+  "title": "MALT Map-proof Conformance Corpus v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "vectors"],
+  "properties": {
+    "schema_version": {
+      "const": "malt.map-proof.conformance/v1"
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "vector.schema.json"
+      }
+    }
+  }
+}

@@ -18,23 +18,16 @@ if go list -buildvcs=false -deps -tags=writer_ipa,malt_no_default_kzg ./cmd/malt
 fi
 
 sh "$repo_root/scripts/build-writer-wasm.sh" "$work_dir/writer"
-(
-  cd "$repo_root"
-  MALT_WRITER_WASM_FIXTURE_OUT="$work_dir/fixtures.json" \
-    go test ./cmd/malt-writer-wasm \
-    -run '^TestGenerateWASMFixtures$' \
-    -count=1
-)
 node "$repo_root/scripts/run-writer-wasm-smoke.mjs" \
   "$work_dir/writer/malt-writer-kzg.wasm" \
   "$work_dir/writer/wasm_exec.js" \
-  "$work_dir/fixtures.json" \
+  "$repo_root/conformance/client-root/v1/vectors.json" \
   kzg
 for profile in direct compact fast; do
   node "$repo_root/scripts/run-writer-wasm-smoke.mjs" \
     "$work_dir/writer/malt-writer-ipa-$profile.wasm" \
     "$work_dir/writer/wasm_exec.js" \
-    "$work_dir/fixtures.json" \
+    "$repo_root/conformance/client-root/v1/vectors.json" \
     ipa "$profile"
 done
 node "$repo_root/scripts/run-writer-worker-smoke.mjs" \
@@ -42,5 +35,5 @@ node "$repo_root/scripts/run-writer-worker-smoke.mjs" \
   "$work_dir/writer/wasm_exec.js" \
   "$work_dir/writer/malt-writer-workers.mjs" \
   "$work_dir/writer/malt-writer-worker.mjs" \
-  "$work_dir/fixtures.json" \
+  "$repo_root/conformance/client-root/v1/vectors.json" \
   ipa compact

@@ -8,13 +8,13 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/commitment"
-	multiproof "github.com/dewebprotocol/malt/internal/third_party/goipa"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/banderwagon"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/common"
-	ipa "github.com/dewebprotocol/malt/internal/third_party/goipa/ipa"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/commitment"
+	multiproof "github.com/dewebprotocol/malt-core/internal/third_party/goipa"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/banderwagon"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
+	ipa "github.com/dewebprotocol/malt-core/internal/third_party/goipa/ipa"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

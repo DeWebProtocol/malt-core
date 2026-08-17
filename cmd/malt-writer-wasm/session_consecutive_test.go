@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/mutation"
-	"github.com/dewebprotocol/malt/protocol"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/mutation"
+	"github.com/dewebprotocol/malt-core/protocol"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 
 	gnarkbandersnatch "github.com/consensys/gnark-crypto/ecc/bls12-381/bandersnatch"
 	gnarkfr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
-	"github.com/dewebprotocol/malt/internal/third_party/goipa/bandersnatch/fp"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fp"
 )
 
 var CurveParams = gnarkbandersnatch.GetEdwardsCurve()

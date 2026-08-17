@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dewebprotocol/malt/artifact"
-	clientverifier "github.com/dewebprotocol/malt/sdk/verifier"
-	"github.com/dewebprotocol/malt/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/artifact"
+	clientverifier "github.com/dewebprotocol/malt-core/sdk/verifier"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 func TestDefaultVerifierAcceptsRootIdentityArtifact(t *testing.T) {

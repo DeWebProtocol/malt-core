@@ -5,12 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	materializer "github.com/dewebprotocol/malt/auth/arcset/materializer"
-	materialmemory "github.com/dewebprotocol/malt/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt/auth/commitment/kzg"
-	semanticmapping "github.com/dewebprotocol/malt/auth/semantic/mapping"
-	"github.com/dewebprotocol/malt/auth/semantic/mapping/radix"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	materializer "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
+	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
+	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	semanticmapping "github.com/dewebprotocol/malt-core/auth/semantic/mapping"
+	"github.com/dewebprotocol/malt-core/auth/semantic/mapping/radix"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )

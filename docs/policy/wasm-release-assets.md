@@ -24,7 +24,8 @@ names the exact compressed archive bytes. Either a payload change or an archive
 encoding change therefore produces a new release filename.
 
 The verifier set contains its WASM module, the matching `wasm_exec.js`,
-`PROVENANCE.json`, and `SHA256SUMS`. The writer set additionally contains all
+`PROVENANCE.json`, and `SHA256SUMS`. Provenance binds the SHA-256 digests of the
+exact checked-in conformance corpora exercised by each runtime. The writer set additionally contains all
 KZG and IPA profile modules plus its Worker and controller modules. Consumers
 must select one complete set and must not mix files from different digests.
 
@@ -46,8 +47,9 @@ entrypoint must reload before starting another verifier or writer runtime.
 
 ## Provenance
 
-Each set binds the exact MALT version and commit, Go version and toolchain,
-build target and flags, and file checksums. Writer provenance additionally
+Each set binds the exact Core repository, Go module path, MALT version and
+commit, Go version and toolchain, build target and flags, and file checksums.
+Writer provenance additionally
 binds build tags, IPA committer profiles, IPA parameter identity, retained
 table metadata, and the Core runtime invariants of one runtime per controller
 and exact backend/profile targeting. Device selection and retrying another

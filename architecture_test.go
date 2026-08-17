@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	modulePath             = "github.com/dewebprotocol/malt"
+	modulePath             = "github.com/dewebprotocol/malt-core"
 	materializerImportPath = modulePath + "/auth/arcset/materializer"
 )
 
@@ -182,7 +182,7 @@ func TestAggregateMaterializerStoreImportDetection(t *testing.T) {
 			name: "default import",
 			src: `package fixture
 
-import "github.com/dewebprotocol/malt/auth/arcset/materializer"
+import "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 
 var _ materializer.Store
 `,
@@ -192,7 +192,7 @@ var _ materializer.Store
 			name: "named import alias cannot bypass guard",
 			src: `package fixture
 
-import mat "github.com/dewebprotocol/malt/auth/arcset/materializer"
+import mat "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 
 var _ mat.Store
 `,
@@ -202,7 +202,7 @@ var _ mat.Store
 			name: "local variable shadowing import alias is not a package reference",
 			src: `package fixture
 
-import mat "github.com/dewebprotocol/malt/auth/arcset/materializer"
+import mat "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 
 var _ mat.Lookup
 
@@ -220,7 +220,7 @@ func useLocalMaterializer() {
 			name: "dot import is rejected",
 			src: `package fixture
 
-import . "github.com/dewebprotocol/malt/auth/arcset/materializer"
+import . "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 
 var _ Store
 `,
@@ -230,7 +230,7 @@ var _ Store
 			name: "narrow capability through alias",
 			src: `package fixture
 
-import mat "github.com/dewebprotocol/malt/auth/arcset/materializer"
+import mat "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 
 var _ mat.Lookup
 `,
@@ -239,7 +239,7 @@ var _ mat.Lookup
 			name: "blank import has no aggregate reference",
 			src: `package fixture
 
-import _ "github.com/dewebprotocol/malt/auth/arcset/materializer"
+import _ "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 `,
 		},
 		{

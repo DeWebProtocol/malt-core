@@ -3,8 +3,8 @@ package protocol
 import (
 	"fmt"
 
-	"github.com/dewebprotocol/malt/auth/arcset"
-	"github.com/dewebprotocol/malt/mutation"
+	"github.com/dewebprotocol/malt-core/auth/arcset"
+	"github.com/dewebprotocol/malt-core/mutation"
 )
 
 const (

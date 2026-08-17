@@ -1,0 +1,1229 @@
+{
+  "schema_version": "malt.client-root.conformance/v1",
+  "vectors": [
+    {
+      "id": "client-root.ipa.replace.accept",
+      "backend": "ipa",
+      "category": "replace",
+      "operation_id": "client-root-ipa-replace",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "profile": "malt.semantic-intent/v1",
+        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "transitions": [
+          {
+            "id": "root-output",
+            "object_id": "root",
+            "old_root": {
+              "state": "present",
+              "cid": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq"
+            },
+            "kind": "map",
+            "backend": "ipa",
+            "changes": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "before": {
+                  "state": "present",
+                  "kind": "cas",
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                },
+                "after": {
+                  "state": "present",
+                  "kind": "cas",
+                  "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq"
+                },
+                "output": {
+                  "state": "absent",
+                  "id": "",
+                  "kind": ""
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            },
+            "expected_uses": 0
+          }
+        ],
+        "top_output_id": "root-output"
+      },
+      "expected": {
+        "valid": true,
+        "bundle": {
+          "profile": "malt.client-root-bundle/v1",
+          "operation_id": "client-root-ipa-replace",
+          "view": {
+            "profile": "malt.update-view/v1",
+            "state_profile": "stateful-complete-vectors-v1",
+            "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+            "bounds": {
+              "max_objects": 8,
+              "max_total_entries": 64,
+              "max_depth": 8
+            },
+            "objects": [
+              {
+                "object_id": "root",
+                "root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+                "kind": "map",
+                "entries": [
+                  {
+                    "coordinate": {
+                      "kind": "map",
+                      "map_path": "file",
+                      "list_index": 0
+                    },
+                    "target": {
+                      "kind": "cas",
+                      "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                    }
+                  }
+                ],
+                "commit": {
+                  "mode": "default",
+                  "total_size": 0,
+                  "chunk_size": 0
+                }
+              }
+            ]
+          },
+          "intent": {
+            "profile": "malt.semantic-intent/v1",
+            "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+            "transitions": [
+              {
+                "id": "root-output",
+                "object_id": "root",
+                "old_root": {
+                  "state": "present",
+                  "cid": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq"
+                },
+                "kind": "map",
+                "backend": "ipa",
+                "changes": [
+                  {
+                    "coordinate": {
+                      "kind": "map",
+                      "map_path": "file",
+                      "list_index": 0
+                    },
+                    "before": {
+                      "state": "present",
+                      "kind": "cas",
+                      "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                    },
+                    "after": {
+                      "state": "present",
+                      "kind": "cas",
+                      "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq"
+                    },
+                    "output": {
+                      "state": "absent",
+                      "id": "",
+                      "kind": ""
+                    }
+                  }
+                ],
+                "commit": {
+                  "mode": "default",
+                  "total_size": 0,
+                  "chunk_size": 0
+                },
+                "expected_uses": 0
+              }
+            ],
+            "top_output_id": "root-output"
+          },
+          "outputs": [
+            {
+              "transition_id": "root-output",
+              "root": "bagbofqabaaqekjfb4mmrmowijfkn6fmstt3lef4cmnlrevctn6j4lp43h4cnoji"
+            }
+          ],
+          "candidate": "bagbofqabaaqekjfb4mmrmowijfkn6fmstt3lef4cmnlrevctn6j4lp43h4cnoji",
+          "payload_cids": [
+            "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq"
+          ],
+          "view_digest": "9847d2cde4763479ffc6998537481b45d86cdc7dd0663e1cde7d89d979aec3ba",
+          "intent_digest": "487f52904ba2efeb6f863c3279d6f4431cffe90f022c7752cffbbe48d183f04d"
+        },
+        "materialization": {
+          "profile": "malt.client-root-materialization/v1",
+          "maps": [
+            {
+              "transition_id": "root-output",
+              "root": "bagbofqabaaqekjfb4mmrmowijfkn6fmstt3lef4cmnlrevctn6j4lp43h4cnoji",
+              "entries": [
+                {
+                  "path": "runtime/map/radix/nodes/bagbofqabaaqekjfb4mmrmowijfkn6fmstt3lef4cmnlrevctn6j4lp43h4cnoji/slots/59",
+                  "cid": "bafkqaqlnmfwhiotnmfydu4tbmruxqotmmvqwmotwge5aabdgnfwgkakvciqkrq5yhputu7aindfzeskavc2vbrpc7vqqurvv3pbdlzmxbuxzxfa"
+                }
+              ]
+            }
+          ]
+        },
+        "next_view": {
+          "profile": "malt.update-view/v1",
+          "state_profile": "stateful-complete-vectors-v1",
+          "base_root": "bagbofqabaaqekjfb4mmrmowijfkn6fmstt3lef4cmnlrevctn6j4lp43h4cnoji",
+          "bounds": {
+            "max_objects": 8,
+            "max_total_entries": 64,
+            "max_depth": 8
+          },
+          "objects": [
+            {
+              "object_id": "root",
+              "root": "bagbofqabaaqekjfb4mmrmowijfkn6fmstt3lef4cmnlrevctn6j4lp43h4cnoji",
+              "kind": "map",
+              "entries": [
+                {
+                  "coordinate": {
+                    "kind": "map",
+                    "map_path": "file",
+                    "list_index": 0
+                  },
+                  "target": {
+                    "kind": "cas",
+                    "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq"
+                  }
+                }
+              ],
+              "commit": {
+                "mode": "default",
+                "total_size": 0,
+                "chunk_size": 0
+              }
+            }
+          ]
+        },
+        "receipt": {
+          "profile": "malt.materialization-receipt/v1",
+          "operation_id": "client-root-ipa-replace",
+          "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+          "candidate": "bagbofqabaaqekjfb4mmrmowijfkn6fmstt3lef4cmnlrevctn6j4lp43h4cnoji",
+          "bundle_digest": "2e2cac1531047e4662728d194f25ac98fb4ad3f037db714af12a2534d299ade6",
+          "durable_boundary": "conformance-memory-v1"
+        }
+      }
+    },
+    {
+      "id": "client-root.ipa.stale-base.reject",
+      "backend": "ipa",
+      "category": "stale_base",
+      "operation_id": "client-root.ipa.stale-base.reject",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "base_root": "bafkreifuu2cpgk65d62kj5lbyazwmrsxi4gmegkphx6icjsnzamlvajbby",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "ipa",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+              "state": "present"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "client-root.ipa.unknown-field.reject",
+      "backend": "ipa",
+      "category": "strict_json",
+      "operation_id": "client-root.ipa.unknown-field.reject",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "ipa",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+              "state": "present"
+            }
+          }
+        ],
+        "unknown": true
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "client-root.ipa.view-root-tamper.reject",
+      "backend": "ipa",
+      "category": "view_tamper",
+      "operation_id": "client-root.ipa.view-root-tamper.reject",
+      "update_view": {
+        "base_root": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i",
+        "bounds": {
+          "max_depth": 8,
+          "max_objects": 8,
+          "max_total_entries": 64
+        },
+        "objects": [
+          {
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "target": {
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm",
+                  "kind": "cas"
+                }
+              }
+            ],
+            "kind": "map",
+            "object_id": "root",
+            "root": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i"
+          }
+        ],
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1"
+      },
+      "semantic_intent": {
+        "base_root": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "ipa",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i",
+              "state": "present"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "client-root.ipa.wrong-backend.reject",
+      "backend": "ipa",
+      "category": "wrong_backend",
+      "operation_id": "client-root.ipa.wrong-backend.reject",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "kzg",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+              "state": "present"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "client-root.kzg.replace.accept",
+      "backend": "kzg",
+      "category": "replace",
+      "operation_id": "client-root-kzg-replace",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "profile": "malt.semantic-intent/v1",
+        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "transitions": [
+          {
+            "id": "root-output",
+            "object_id": "root",
+            "old_root": {
+              "state": "present",
+              "cid": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd"
+            },
+            "kind": "map",
+            "backend": "kzg",
+            "changes": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "before": {
+                  "state": "present",
+                  "kind": "cas",
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                },
+                "after": {
+                  "state": "present",
+                  "kind": "cas",
+                  "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae"
+                },
+                "output": {
+                  "state": "absent",
+                  "id": "",
+                  "kind": ""
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            },
+            "expected_uses": 0
+          }
+        ],
+        "top_output_id": "root-output"
+      },
+      "expected": {
+        "valid": true,
+        "bundle": {
+          "profile": "malt.client-root-bundle/v1",
+          "operation_id": "client-root-kzg-replace",
+          "view": {
+            "profile": "malt.update-view/v1",
+            "state_profile": "stateful-complete-vectors-v1",
+            "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+            "bounds": {
+              "max_objects": 8,
+              "max_total_entries": 64,
+              "max_depth": 8
+            },
+            "objects": [
+              {
+                "object_id": "root",
+                "root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+                "kind": "map",
+                "entries": [
+                  {
+                    "coordinate": {
+                      "kind": "map",
+                      "map_path": "file",
+                      "list_index": 0
+                    },
+                    "target": {
+                      "kind": "cas",
+                      "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                    }
+                  }
+                ],
+                "commit": {
+                  "mode": "default",
+                  "total_size": 0,
+                  "chunk_size": 0
+                }
+              }
+            ]
+          },
+          "intent": {
+            "profile": "malt.semantic-intent/v1",
+            "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+            "transitions": [
+              {
+                "id": "root-output",
+                "object_id": "root",
+                "old_root": {
+                  "state": "present",
+                  "cid": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd"
+                },
+                "kind": "map",
+                "backend": "kzg",
+                "changes": [
+                  {
+                    "coordinate": {
+                      "kind": "map",
+                      "map_path": "file",
+                      "list_index": 0
+                    },
+                    "before": {
+                      "state": "present",
+                      "kind": "cas",
+                      "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                    },
+                    "after": {
+                      "state": "present",
+                      "kind": "cas",
+                      "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae"
+                    },
+                    "output": {
+                      "state": "absent",
+                      "id": "",
+                      "kind": ""
+                    }
+                  }
+                ],
+                "commit": {
+                  "mode": "default",
+                  "total_size": 0,
+                  "chunk_size": 0
+                },
+                "expected_uses": 0
+              }
+            ],
+            "top_output_id": "root-output"
+          },
+          "outputs": [
+            {
+              "transition_id": "root-output",
+              "root": "baga6fqabaayjlt6nextlo5a5234d6swyz63mjwjnanoprdx2qwhefduzssfqatedb6n3mikmc7uh6rei322yexmn"
+            }
+          ],
+          "candidate": "baga6fqabaayjlt6nextlo5a5234d6swyz63mjwjnanoprdx2qwhefduzssfqatedb6n3mikmc7uh6rei322yexmn",
+          "payload_cids": [
+            "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae"
+          ],
+          "view_digest": "fdc2ad6d43df54201fe4669c2912ed0251f13b6f5c3f7d325bb98f6c46673bf8",
+          "intent_digest": "822afd237485382b2bbb85038b35c95a76ba797169d0dd65cea52e455c9c2795"
+        },
+        "materialization": {
+          "profile": "malt.client-root-materialization/v1",
+          "maps": [
+            {
+              "transition_id": "root-output",
+              "root": "baga6fqabaayjlt6nextlo5a5234d6swyz63mjwjnanoprdx2qwhefduzssfqatedb6n3mikmc7uh6rei322yexmn",
+              "entries": [
+                {
+                  "path": "runtime/map/radix/nodes/baga6fqabaayjlt6nextlo5a5234d6swyz63mjwjnanoprdx2qwhefduzssfqatedb6n3mikmc7uh6rei322yexmn/slots/953",
+                  "cid": "bafkqaqlnmfwhiotnmfydu4tbmruxqotmmvqwmotwge5aabdgnfwgkakvciqc2xcvgqjui36cowzwhf3f76no2jigtbefnwopig6udihxexywsai"
+                }
+              ]
+            }
+          ]
+        },
+        "next_view": {
+          "profile": "malt.update-view/v1",
+          "state_profile": "stateful-complete-vectors-v1",
+          "base_root": "baga6fqabaayjlt6nextlo5a5234d6swyz63mjwjnanoprdx2qwhefduzssfqatedb6n3mikmc7uh6rei322yexmn",
+          "bounds": {
+            "max_objects": 8,
+            "max_total_entries": 64,
+            "max_depth": 8
+          },
+          "objects": [
+            {
+              "object_id": "root",
+              "root": "baga6fqabaayjlt6nextlo5a5234d6swyz63mjwjnanoprdx2qwhefduzssfqatedb6n3mikmc7uh6rei322yexmn",
+              "kind": "map",
+              "entries": [
+                {
+                  "coordinate": {
+                    "kind": "map",
+                    "map_path": "file",
+                    "list_index": 0
+                  },
+                  "target": {
+                    "kind": "cas",
+                    "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae"
+                  }
+                }
+              ],
+              "commit": {
+                "mode": "default",
+                "total_size": 0,
+                "chunk_size": 0
+              }
+            }
+          ]
+        },
+        "receipt": {
+          "profile": "malt.materialization-receipt/v1",
+          "operation_id": "client-root-kzg-replace",
+          "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+          "candidate": "baga6fqabaayjlt6nextlo5a5234d6swyz63mjwjnanoprdx2qwhefduzssfqatedb6n3mikmc7uh6rei322yexmn",
+          "bundle_digest": "4c69a7f05bd4865b87e93ee126747afbfe40b9f634e32963b910f0d296076da9",
+          "durable_boundary": "conformance-memory-v1"
+        }
+      }
+    },
+    {
+      "id": "client-root.kzg.stale-base.reject",
+      "backend": "kzg",
+      "category": "stale_base",
+      "operation_id": "client-root.kzg.stale-base.reject",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "base_root": "bafkreids5ds67b7hdw4j7q2rbr2wlcwnitwkgpjtki3gt3fbctldh3yssu",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "kzg",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+              "state": "present"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "client-root.kzg.unknown-field.reject",
+      "backend": "kzg",
+      "category": "strict_json",
+      "operation_id": "client-root.kzg.unknown-field.reject",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "kzg",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+              "state": "present"
+            }
+          }
+        ],
+        "unknown": true
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "client-root.kzg.view-root-tamper.reject",
+      "backend": "kzg",
+      "category": "view_tamper",
+      "operation_id": "client-root.kzg.view-root-tamper.reject",
+      "update_view": {
+        "base_root": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw",
+        "bounds": {
+          "max_depth": 8,
+          "max_objects": 8,
+          "max_total_entries": 64
+        },
+        "objects": [
+          {
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "target": {
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue",
+                  "kind": "cas"
+                }
+              }
+            ],
+            "kind": "map",
+            "object_id": "root",
+            "root": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw"
+          }
+        ],
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1"
+      },
+      "semantic_intent": {
+        "base_root": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "kzg",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw",
+              "state": "present"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "client-root.kzg.wrong-backend.reject",
+      "backend": "kzg",
+      "category": "wrong_backend",
+      "operation_id": "client-root.kzg.wrong-backend.reject",
+      "update_view": {
+        "profile": "malt.update-view/v1",
+        "state_profile": "stateful-complete-vectors-v1",
+        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "bounds": {
+          "max_objects": 8,
+          "max_total_entries": 64,
+          "max_depth": 8
+        },
+        "objects": [
+          {
+            "object_id": "root",
+            "root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+            "kind": "map",
+            "entries": [
+              {
+                "coordinate": {
+                  "kind": "map",
+                  "map_path": "file",
+                  "list_index": 0
+                },
+                "target": {
+                  "kind": "cas",
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                }
+              }
+            ],
+            "commit": {
+              "mode": "default",
+              "total_size": 0,
+              "chunk_size": 0
+            }
+          }
+        ]
+      },
+      "semantic_intent": {
+        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "profile": "malt.semantic-intent/v1",
+        "top_output_id": "root-output",
+        "transitions": [
+          {
+            "backend": "ipa",
+            "changes": [
+              {
+                "after": {
+                  "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "before": {
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue",
+                  "kind": "cas",
+                  "state": "present"
+                },
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
+                },
+                "output": {
+                  "id": "",
+                  "kind": "",
+                  "state": "absent"
+                }
+              }
+            ],
+            "commit": {
+              "chunk_size": 0,
+              "mode": "default",
+              "total_size": 0
+            },
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+              "state": "present"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "valid": false
+      }
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dewebprotocol/malt/mutation"
+	"github.com/dewebprotocol/malt-core/mutation"
 	cid "github.com/ipfs/go-cid"
 )
 
