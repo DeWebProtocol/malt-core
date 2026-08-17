@@ -207,7 +207,11 @@ func (s *Map) Prove(ctx context.Context, namespace string, root cid.Cid, key arc
 
 	for depth := 0; depth < s.geometry.MapDepth(len(digest)); depth++ {
 		finishMaterialization := observation.Start(ctx, observation.PhaseMaterialization)
-		slots, err := s.loadValidatedNode(ctx, namespace, currentRoot)
+		// ProveSlot below is root-bound: every supported commitment backend either
+		// opens directly against currentRoot or recomputes and compares the root.
+		// Loading through loadValidatedNode here would therefore perform a second
+		// cryptographic opening at slot zero before opening the requested slot.
+		slots, err := s.loadNodeSlots(ctx, namespace, currentRoot)
 		var materializedBytes uint64
 		if observation.Enabled(ctx) {
 			materializedBytes = cidVectorBytes(slots)

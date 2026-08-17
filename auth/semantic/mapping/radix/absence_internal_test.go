@@ -226,6 +226,7 @@ type commitCountingRootScheme struct {
 	commitment.IndexCommitment
 	rootProver commitment.IndexRootProver
 	commits    int
+	proves     int
 }
 
 func (s *commitCountingRootScheme) Commit(values []commitment.Cell) (cid.Cid, error) {
@@ -234,6 +235,7 @@ func (s *commitCountingRootScheme) Commit(values []commitment.Cell) (cid.Cid, er
 }
 
 func (s *commitCountingRootScheme) ProveAtRoot(root cid.Cid, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+	s.proves++
 	return s.rootProver.ProveAtRoot(root, values, index)
 }
 
