@@ -64,6 +64,34 @@ func TestProveReportsMaterializationOpenAndSerialization(t *testing.T) {
 	}
 }
 
+func TestProveUsesOneRootBoundOpeningPerVisitedNode(t *testing.T) {
+	base, err := kzg.NewScheme()
+	if err != nil {
+		t.Fatal(err)
+	}
+	scheme := &commitCountingRootScheme{IndexCommitment: base, rootProver: base}
+	semanticMap, err := NewMap(scheme, materializermemory.New(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := observedRawCID(t, []byte("single-root-bound-opening"))
+	root, err := semanticMap.Commit(t.Context(), "prove-once", mapping.NewViewFrom(map[string]cid.Cid{"payload": target}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	scheme.proves = 0
+	binding, proof, err := semanticMap.Prove(t.Context(), "prove-once", root, arcset.Path("payload"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !binding.Present || !binding.Value.Equals(target) || len(proof) == 0 {
+		t.Fatalf("binding=%#v proof=%d", binding, len(proof))
+	}
+	if scheme.proves != 1 {
+		t.Fatalf("ProveAtRoot calls = %d, want one opening for one visited radix node", scheme.proves)
+	}
+}
+
 func observedRawCID(t *testing.T, data []byte) cid.Cid {
 	t.Helper()
 	digest, err := mh.Sum(data, mh.SHA2_256, -1)
