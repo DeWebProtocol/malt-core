@@ -2,11 +2,11 @@ import { webcrypto } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
-const [wasmPath, wasmExecPath, corpusPath, selectedBackend = "all", mapProofCorpusPath] =
+const [wasmPath, wasmExecPath, corpusPath, selectedBackend, mapProofCorpusPath] =
   process.argv.slice(2);
-if (!wasmPath || !wasmExecPath || !corpusPath) {
+if (!wasmPath || !wasmExecPath || !corpusPath || !mapProofCorpusPath) {
   console.error(
-    "usage: node run-verifier-wasm-vectors.mjs <verifier.wasm> <wasm_exec.js> <resolve-read-vectors.json> [all|kzg|ipa] [map-proof-vectors.json]",
+    "usage: node run-verifier-wasm-vectors.mjs <verifier.wasm> <wasm_exec.js> <resolve-read-vectors.json> <all|kzg|ipa> <map-proof-vectors.json>",
   );
   process.exit(2);
 }
@@ -31,9 +31,7 @@ if (
 ) {
   throw new Error(`${corpusPath} is not a non-empty Resolve/Read v2 corpus`);
 }
-const mapProofCorpus = mapProofCorpusPath
-  ? JSON.parse(await readFile(mapProofCorpusPath, "utf8"))
-  : { vectors: [] };
+const mapProofCorpus = JSON.parse(await readFile(mapProofCorpusPath, "utf8"));
 if (
   mapProofCorpus.schema_version !== "malt.map-proof.conformance/v1" ||
   !Array.isArray(mapProofCorpus.vectors) ||

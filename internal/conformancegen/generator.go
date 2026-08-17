@@ -1,5 +1,5 @@
 // Package conformancegen deterministically produces the checked-in portable
-// resolve/read verification vectors from the reference runtime.
+// Resolve/Read, Map-proof, and client-root vectors from the reference runtime.
 package conformancegen
 
 import (
