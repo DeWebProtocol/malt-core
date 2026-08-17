@@ -437,7 +437,7 @@
       "category": "view_tamper",
       "operation_id": "client-root.ipa.view-root-tamper.reject",
       "update_view": {
-        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "base_root": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i",
         "bounds": {
           "max_depth": 8,
           "max_objects": 8,
@@ -465,58 +465,58 @@
             ],
             "kind": "map",
             "object_id": "root",
-            "root": "bafkreif5esng55qnqb5lm3pepobl2l6cffrm4q4xi3hbd6sn4msfhdqjqy"
+            "root": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i"
           }
         ],
         "profile": "malt.update-view/v1",
         "state_profile": "stateful-complete-vectors-v1"
       },
       "semantic_intent": {
+        "base_root": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i",
         "profile": "malt.semantic-intent/v1",
-        "base_root": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq",
+        "top_output_id": "root-output",
         "transitions": [
           {
-            "id": "root-output",
-            "object_id": "root",
-            "old_root": {
-              "state": "present",
-              "cid": "bagbofqabaaqczmcxqakkrvgudwcx7g4ozabfgzxokir3f4moblolqdvgxlopfcq"
-            },
-            "kind": "map",
             "backend": "ipa",
             "changes": [
               {
-                "coordinate": {
-                  "kind": "map",
-                  "map_path": "file",
-                  "list_index": 0
+                "after": {
+                  "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq",
+                  "kind": "cas",
+                  "state": "present"
                 },
                 "before": {
-                  "state": "present",
+                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm",
                   "kind": "cas",
-                  "cid": "bafkreidx2or7lbtuvqsszd273m5ffd727ixrwofwlthahgi4k7zo6rugjm"
+                  "state": "present"
                 },
-                "after": {
-                  "state": "present",
-                  "kind": "cas",
-                  "cid": "bafkreifiyo4dx2j2pqegrs4sjfakrnkqyxrp2yiki225xqrv4wlq2l43sq"
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
                 },
                 "output": {
-                  "state": "absent",
                   "id": "",
-                  "kind": ""
+                  "kind": "",
+                  "state": "absent"
                 }
               }
             ],
             "commit": {
+              "chunk_size": 0,
               "mode": "default",
-              "total_size": 0,
-              "chunk_size": 0
+              "total_size": 0
             },
-            "expected_uses": 0
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "bagbofqabaaqghawgbpjzov2rsjg2ryw7x2wcld4tvxcqnzuwy3lgx2qcg2jup4i",
+              "state": "present"
+            }
           }
-        ],
-        "top_output_id": "root-output"
+        ]
       },
       "expected": {
         "valid": false
@@ -1049,7 +1049,7 @@
       "category": "view_tamper",
       "operation_id": "client-root.kzg.view-root-tamper.reject",
       "update_view": {
-        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "base_root": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw",
         "bounds": {
           "max_depth": 8,
           "max_objects": 8,
@@ -1077,58 +1077,58 @@
             ],
             "kind": "map",
             "object_id": "root",
-            "root": "bafkreid72srojvggnb5ortjb56yixonnvbbzgny2sws4g552awkiglkt7i"
+            "root": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw"
           }
         ],
         "profile": "malt.update-view/v1",
         "state_profile": "stateful-complete-vectors-v1"
       },
       "semantic_intent": {
+        "base_root": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw",
         "profile": "malt.semantic-intent/v1",
-        "base_root": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd",
+        "top_output_id": "root-output",
         "transitions": [
           {
-            "id": "root-output",
-            "object_id": "root",
-            "old_root": {
-              "state": "present",
-              "cid": "baga6fqabaaylbwskb6spgeuqdnelq6l36jlt5cau7rylht34jzc4tkfuhjvix4ab3kadbcaztvakirdyigmmhqhd"
-            },
-            "kind": "map",
             "backend": "kzg",
             "changes": [
               {
-                "coordinate": {
-                  "kind": "map",
-                  "map_path": "file",
-                  "list_index": 0
+                "after": {
+                  "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae",
+                  "kind": "cas",
+                  "state": "present"
                 },
                 "before": {
-                  "state": "present",
+                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue",
                   "kind": "cas",
-                  "cid": "bafkreicno67zijixddwcjfmunfcffnxgp2pwcdkfzzitbprwg4hsyv47ue"
+                  "state": "present"
                 },
-                "after": {
-                  "state": "present",
-                  "kind": "cas",
-                  "cid": "bafkreibnlrktie2en7bhlm3ds5s77gxneudjqscw3hhudpkbud3sl4ljae"
+                "coordinate": {
+                  "kind": "map",
+                  "list_index": 0,
+                  "map_path": "file"
                 },
                 "output": {
-                  "state": "absent",
                   "id": "",
-                  "kind": ""
+                  "kind": "",
+                  "state": "absent"
                 }
               }
             ],
             "commit": {
+              "chunk_size": 0,
               "mode": "default",
-              "total_size": 0,
-              "chunk_size": 0
+              "total_size": 0
             },
-            "expected_uses": 0
+            "expected_uses": 0,
+            "id": "root-output",
+            "kind": "map",
+            "object_id": "root",
+            "old_root": {
+              "cid": "baga6fqabaaykqhcc2llofyfut2vtuyfhlfpga3m67ckz7jmurvxqwismwkwx72nnofadayy22y7gfdvd2gdgabpw",
+              "state": "present"
+            }
           }
-        ],
-        "top_output_id": "root-output"
+        ]
       },
       "expected": {
         "valid": false

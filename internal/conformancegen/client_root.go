@@ -149,6 +149,25 @@ func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.Clien
 	}
 	appendInvalid(prefix+"stale-base.reject", "stale_base", viewJSON, staleIntent)
 
+	tamperedTarget, err := rawCID("client-root-view-tamper-" + string(backend))
+	if err != nil {
+		return nil, err
+	}
+	tamperSemantic, err := mapradix.NewMap(scheme, materialmemory.New(true))
+	if err != nil {
+		return nil, err
+	}
+	tamperedRoot, err := tamperSemantic.Commit(
+		ctx,
+		"client-root-conformance-v1-tamper",
+		mapping.NewViewFrom(map[string]cid.Cid{"file": tamperedTarget}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if tamperedRoot.Equals(view.BaseRoot) {
+		return nil, fmt.Errorf("generated client-root tamper root matches the original root")
+	}
 	tamperedView, err := mutateJSONObject(viewJSON, func(value map[string]any) error {
 		objects, ok := value["objects"].([]any)
 		if !ok || len(objects) == 0 {
@@ -158,17 +177,30 @@ func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.Clien
 		if !ok {
 			return fmt.Errorf("generated client-root object is invalid")
 		}
-		other, err := rawCID("client-root-view-tamper-" + string(backend))
-		if err != nil {
-			return err
-		}
-		object["root"] = other.String()
+		value["base_root"] = tamperedRoot.String()
+		object["root"] = tamperedRoot.String()
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	appendInvalid(prefix+"view-root-tamper.reject", "view_tamper", tamperedView, intentJSON)
+	tamperedIntent, err := mutateJSONObject(intentJSON, func(value map[string]any) error {
+		transitions, ok := value["transitions"].([]any)
+		if !ok || len(transitions) == 0 {
+			return fmt.Errorf("generated client-root intent has no transitions")
+		}
+		transition, ok := transitions[0].(map[string]any)
+		if !ok {
+			return fmt.Errorf("generated client-root transition is invalid")
+		}
+		value["base_root"] = tamperedRoot.String()
+		transition["old_root"] = map[string]any{"state": "present", "cid": tamperedRoot.String()}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	appendInvalid(prefix+"view-root-tamper.reject", "view_tamper", tamperedView, tamperedIntent)
 
 	wrongBackendIntent, err := mutateJSONObject(intentJSON, func(value map[string]any) error {
 		transitions, ok := value["transitions"].([]any)

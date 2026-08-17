@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
@@ -86,7 +87,7 @@ func TestClientRootCorpusDigestIsImmutable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != "6404296b4d22e3579e350fd3b4bf3fbeafbe5aa46552adfe7f593b98c957ec21" {
+	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != "4346f06abcc1ed2bebfd1a24d56fc400dca56468c15613bd052034c0b4babc50" {
 		t.Fatalf("client-root v1 corpus digest changed: %s", got)
 	}
 }
@@ -117,6 +118,58 @@ func TestClientRootCoverageMatrix(t *testing.T) {
 				t.Errorf("missing coverage: backend=%s category=%s valid=%t", required.backend, required.category, required.valid)
 			}
 		}
+	}
+}
+
+func TestClientRootViewTamperReachesRootRecomputation(t *testing.T) {
+	corpus, err := conformance.LoadClientRoot()
+	if err != nil {
+		t.Fatalf("LoadClientRoot: %v", err)
+	}
+	tested := 0
+	for _, vector := range corpus.Vectors {
+		if vector.Category != "view_tamper" {
+			continue
+		}
+		vector := vector
+		tested++
+		t.Run(vector.ID, func(t *testing.T) {
+			wireView, err := protocol.DecodeUpdateView(vector.UpdateView)
+			if err != nil {
+				t.Fatalf("tampered view must pass strict wire decoding: %v", err)
+			}
+			view, err := wireView.Core()
+			if err != nil {
+				t.Fatalf("tampered view must pass semantic normalization: %v", err)
+			}
+			wireIntent, err := protocol.DecodeSemanticIntent(vector.SemanticIntent, view)
+			if err != nil {
+				t.Fatalf("tampered intent must validate against the declared view: %v", err)
+			}
+			if _, err := wireIntent.Core(view); err != nil {
+				t.Fatalf("tampered intent must pass semantic normalization: %v", err)
+			}
+			backend := maltcid.BackendKind(vector.Backend)
+			scheme, err := clientRootTestScheme(backend)
+			if err != nil {
+				t.Fatal(err)
+			}
+			runtime, err := clientwriter.NewRuntime(
+				materialmemory.New(true),
+				map[maltcid.BackendKind]commitment.IndexCommitment{backend: scheme},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := runtime.VerifyUpdateView(t.Context(), view); err == nil {
+				t.Fatal("VerifyUpdateView accepted entries under a different valid typed root")
+			} else if !strings.Contains(err.Error(), "recomputed root") {
+				t.Fatalf("VerifyUpdateView rejected before root recomputation: %v", err)
+			}
+		})
+	}
+	if tested == 0 {
+		t.Fatal("client-root corpus has no view_tamper vectors")
 	}
 }
 

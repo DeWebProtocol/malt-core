@@ -1,6 +1,7 @@
-// Package conformance exposes the checked-in, language-neutral resolve/read
-// verification corpus. The corpus is immutable protocol test data; producing
-// runtime evidence remains the responsibility of the deterministic generator.
+// Package conformance exposes checked-in, language-neutral Resolve/Read,
+// Map-proof, and client-root corpora. The corpora are immutable protocol test
+// data; producing runtime evidence remains the responsibility of deterministic
+// generators.
 package conformance
 
 import (

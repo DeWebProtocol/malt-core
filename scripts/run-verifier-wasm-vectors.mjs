@@ -24,14 +24,22 @@ if (typeof globalThis.Go !== "function") {
 }
 
 const corpus = JSON.parse(await readFile(corpusPath, "utf8"));
-if (!Array.isArray(corpus.vectors) || corpus.vectors.length === 0) {
-  throw new Error(`${corpusPath} does not contain a non-empty vectors array`);
+if (
+  corpus.schema_version !== "malt.resolve-read.conformance/v2" ||
+  !Array.isArray(corpus.vectors) ||
+  corpus.vectors.length === 0
+) {
+  throw new Error(`${corpusPath} is not a non-empty Resolve/Read v2 corpus`);
 }
 const mapProofCorpus = mapProofCorpusPath
   ? JSON.parse(await readFile(mapProofCorpusPath, "utf8"))
   : { vectors: [] };
-if (!Array.isArray(mapProofCorpus.vectors)) {
-  throw new Error(`${mapProofCorpusPath} does not contain a vectors array`);
+if (
+  mapProofCorpus.schema_version !== "malt.map-proof.conformance/v1" ||
+  !Array.isArray(mapProofCorpus.vectors) ||
+  mapProofCorpus.vectors.length === 0
+) {
+  throw new Error(`${mapProofCorpusPath} is not a non-empty Map-proof v1 corpus`);
 }
 
 globalThis.maltVerifierBackend = selectedBackend;
@@ -56,6 +64,17 @@ const vectors =
     : allVectors.filter(
         (vector) => vector.backend === selectedBackend || vector.backend === "none",
       );
+if (
+  selectedBackend !== "all" &&
+  (!vectors.some((vector) => vector.operation === "map_proof" && vector.backend === selectedBackend) ||
+    !vectors.some(
+      (vector) =>
+        (vector.operation === "resolve" || vector.operation === "read") &&
+        vector.backend === selectedBackend,
+    ))
+) {
+  throw new Error(`conformance corpora have no complete ${selectedBackend} backend selection`);
+}
 const seen = new Set();
 const failures = [];
 for (const vector of vectors) {
