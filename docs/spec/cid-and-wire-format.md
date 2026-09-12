@@ -8,6 +8,14 @@ objects remain ordinary CAS CIDs.
 Experimental and implementation-bound. Constructors emit the current layout;
 the immediately preceding v2 layout remains accepted for read/proof compatibility.
 
+This reference describes the checked-in `0x30VSBB` implementation, inspected
+at `c90b4d35ec95003b14422546b777fbf9ada2b0c7`. The maintainer's newer
+[Root version policy](../policy/root-versioning.md) requires the planned
+self-describing Root refactor to use `V=0` until an explicit production-ready
+go-live declaration authorizes `V=1`. It does not change current code or
+historical Root bytes. [MIP-1014](../mips/mip-1014-self-describing-roots.md)
+records the proposed `0x30VLAA`/multicommitment boundary and migration scope.
+
 ## MALT Root Codec Namespace
 
 Multicodec reserves `0x300000-0x3FFFFF` as a Private Use Area. MALT typed
@@ -40,8 +48,11 @@ codec = 0x300000
 The current `MALTVersionID` is `3`. It identifies this typed-root layout;
 it is not the CID version, a source release, a Resolve/Read profile, or a
 conformance-corpus version. Adding a semantic kind or backend suite does not
-change it. It changes only when the interpretation of the root codec or
-commitment envelope changes incompatibly.
+change it. Earlier experimental revisions incremented it when codec or
+commitment-envelope interpretation changed incompatibly. Future allocation
+follows the Root version policy above and keeps pre-production `V=0` even
+across experimental refactors; compatible parsing still requires explicit
+profile and framing rules.
 
 ### Semantic Registry
 

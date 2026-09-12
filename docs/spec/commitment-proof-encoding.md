@@ -7,6 +7,11 @@ Resolve/Read conformance corpus v2. It complements the typed-root rules in
 
 ## Status And Scope
 
+The [Root version policy](../policy/root-versioning.md) now reserves `V=0`
+for pre-production refactoring and gates `V=1` on an explicit maintainer
+production-ready declaration. The encodings and corpus versions below retain
+their existing implementation-bound meaning until a coordinated migration.
+
 These encodings are experimental. Before the first release, an intentional
 wire change may regenerate the checked-in v1 vectors in the same change. Once
 the corpus is released, its vectors are immutable conformance inputs and a

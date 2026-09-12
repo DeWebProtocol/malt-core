@@ -29,6 +29,7 @@ research narrative remain in `DeWebProtocol/documents`.
 
 - [Threat model](./policy/threat-model.md)
 - [Compatibility policy](./policy/compatibility.md)
+- [MALT Root version policy](./policy/root-versioning.md)
 - [Release process](./policy/releasing.md)
 - [v0.0.7 release notes](./releases/v0.0.7.md)
 - [Repository and module migration](./releases/repository-migration.md)
