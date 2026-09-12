@@ -22,6 +22,7 @@ func main() {
 		js.Global().Set("maltVerifierInitError", initErr.Error())
 	}
 	js.Global().Set("maltVerifierLoadedBackend", backend)
+	registerAuthenticationVerifier(backend)
 	artifactFunction := js.FuncOf(func(_ js.Value, args []js.Value) any {
 		if initErr != nil {
 			return encodeResponse(clientverifier.Result{Profile: artifact.Profile, Error: fmt.Sprintf("initialize verifier: %v", initErr)})

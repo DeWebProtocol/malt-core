@@ -2,6 +2,7 @@ package runtimegraph
 
 import (
 	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
@@ -15,12 +16,13 @@ type Options struct {
 	DefaultBackend maltcid.BackendKind
 	Namespace      string
 	MALTVersion    uint8
+	InputRules     *input.Registry
 }
 
 func defaultOptions() *Options {
 	return &Options{
 		Backends:    make(map[maltcid.BackendKind]commitment.IndexCommitment),
-		MALTVersion: maltcid.MALTVersionID,
+		MALTVersion: maltcid.RootVersion,
 	}
 }
 
@@ -70,3 +72,7 @@ func WithNamespace(id string) Option {
 		o.Namespace = id
 	}
 }
+
+// WithInputRules installs deterministic application-input rules for the typed
+// authentication API. Unknown rules fail; Root parsing never loads plugins.
+func WithInputRules(rules *input.Registry) Option { return func(o *Options) { o.InputRules = rules } }

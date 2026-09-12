@@ -9,7 +9,11 @@ import (
 
 	malt "github.com/dewebprotocol/malt-core"
 	materializer "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
+	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/encoded"
+	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
+	"github.com/dewebprotocol/malt-core/auth/semantic/layoutcompat"
 	"github.com/dewebprotocol/malt-core/auth/semantic/list"
 	listtree "github.com/dewebprotocol/malt-core/auth/semantic/list/tree"
 	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
@@ -19,20 +23,24 @@ import (
 	"github.com/dewebprotocol/malt-core/graph/resolver/step/explicit"
 	"github.com/dewebprotocol/malt-core/graph/writer"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	cid "github.com/ipfs/go-cid"
 )
 
 // RuntimeGraph is a per-graph runtime composition of semantic implementations,
 // resolver, and writer. It does not own authoritative heads or freshness policy.
 // The root CID is always supplied by callers.
 type RuntimeGraph struct {
-	id           string
-	namespace    string
-	semantic     mapping.Semantics
-	listSemantic list.Semantics
-	resolver     graph.Resolver
-	wr           graph.MutationWriter
-	structures   graph.StructureCreator
-	reference    graph.ReferenceWriter
+	authentication *engine.Engine
+	nodeStore      materializer.NodeStore
+	rootVersion    uint8
+	id             string
+	namespace      string
+	semantic       mapping.Semantics
+	listSemantic   list.Semantics
+	resolver       graph.Resolver
+	wr             graph.MutationWriter
+	structures     graph.StructureCreator
+	reference      graph.ReferenceWriter
 }
 
 // NewGraph creates a new per-graph instance with its own semantic layer,
@@ -54,6 +62,11 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 		namespace = id
 	}
 
+	profiles := engine.NewRegistry()
+	rules := o.InputRules
+	if rules == nil {
+		rules = input.DefaultRegistry()
+	}
 	var semantic mapping.Semantics
 	var listSemantic list.Semantics
 	if len(o.Backends) > 0 || o.DefaultBackend != "" {
@@ -64,6 +77,15 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 		maps := make(map[maltcid.BackendKind]mapping.Semantics, len(o.Backends))
 		lists := make(map[maltcid.BackendKind]list.MeasuredSemantics, len(o.Backends))
 		for kind, scheme := range o.Backends {
+			if o.MALTVersion == maltcid.RootVersion {
+				profile, ok := scheme.(engine.ProfileVerifier)
+				if !ok {
+					return nil, fmt.Errorf("unprofiled VC implementation")
+				}
+				if err := profiles.Register(profile); err != nil {
+					return nil, err
+				}
+			}
 			maps[kind], err = mappingradix.NewMapForVersion(scheme, materializer, o.MALTVersion)
 			if err != nil {
 				return nil, fmt.Errorf("create %s mapping semantic: %w", kind, err)
@@ -86,6 +108,15 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 			scheme = s
 		}
 
+		if o.MALTVersion == maltcid.RootVersion {
+			profile, ok := scheme.(engine.ProfileVerifier)
+			if !ok {
+				return nil, fmt.Errorf("unprofiled VC implementation")
+			}
+			if err := profiles.Register(profile); err != nil {
+				return nil, err
+			}
+		}
 		var err error
 		semantic, err = mappingradix.NewMapForVersion(scheme, materializer, o.MALTVersion)
 		if err != nil {
@@ -107,6 +138,8 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 	wr := writer.NewWriter(semantic, materializer, listSemantic)
 
 	return &RuntimeGraph{
+		authentication: engine.New(rules, profiles),
+		nodeStore:      materializer, rootVersion: o.MALTVersion,
 		id:           id,
 		namespace:    namespace,
 		semantic:     semantic,
@@ -192,3 +225,34 @@ func (g *RuntimeGraph) StructureCreator() graph.StructureCreator {
 func (g *RuntimeGraph) ReferenceWriter() graph.ReferenceWriter {
 	return g.reference
 }
+
+// Authentication exposes the V=0 input/layout engine. Callers inject narrow
+// NodeLookup/NodeUpdater capabilities and retain application inputs themselves.
+func (g *RuntimeGraph) Authentication() *engine.Engine { return g.authentication }
+
+// CommitPrefix preserves the complete descriptor when rebuilding an existing
+// Prefix through the compatibility string-view API. Native typed callers use
+// Authentication().Build with input.Value entries directly.
+func (g *RuntimeGraph) CommitPrefix(ctx context.Context, scope string, d maltcid.RootDescriptor, view mapping.View) (cid.Cid, error) {
+	if d.Layout != maltcid.Prefix || g.rootVersion != maltcid.RootVersion {
+		return cid.Undef, fmt.Errorf("Prefix descriptor requires V=0 graph")
+	}
+	state := engine.State{Descriptor: d}
+	it := view.Iterate()
+	for {
+		key, target, ok := it.Next()
+		if !ok {
+			break
+		}
+		value, err := layoutcompat.PathInput(d.InputRule, key)
+		if err != nil {
+			return cid.Undef, err
+		}
+		state.Entries = append(state.Entries, engine.Entry{Input: value, Target: target})
+	}
+	if err := it.Err(); err != nil {
+		return cid.Undef, err
+	}
+	return g.authentication.Build(ctx, state, encoded.Nodes{Lookup: g.nodeStore, Updater: g.nodeStore, Scope: scope})
+}
+func (g *RuntimeGraph) RootVersion() uint8 { return g.rootVersion }

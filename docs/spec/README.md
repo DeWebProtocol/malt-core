@@ -21,8 +21,12 @@ client-root contracts are included in v0.0.7-rc.1. The v0.0.4
 remains frozen for compatibility. See [MIP-1012](../mips/mip-1012-segment-path-resolution.md) and
 [MIP-1013](../mips/mip-1013-client-gateway-core-boundary.md).
 
+The current typed-input API uses `malt.authentication/0`; see the
+[self-describing Root and input specification](./authentication-inputs.md).
+
 ## Documents
 
+- [Authentication inputs and self-describing Roots](./authentication-inputs.md)
 - [Semantic model](./semantic.md)
 - [ProofList format](./prooflist-format.md)
 - [Writer receipts](./writer-receipts.md)
@@ -42,6 +46,13 @@ remains frozen for compatibility. See [MIP-1012](../mips/mip-1012-segment-path-r
 Every filename returned by `protocol.SchemaNames()` is indexed here:
 
 <!-- schema-catalog:protocol:start -->
+- [`authentication-candidate.schema.json`](../../protocol/schemas/authentication-candidate.schema.json)
+- [`authentication-request.schema.json`](../../protocol/schemas/authentication-request.schema.json)
+- [`authentication-result.schema.json`](../../protocol/schemas/authentication-result.schema.json)
+- [`authentication-state.schema.json`](../../protocol/schemas/authentication-state.schema.json)
+- [`authentication-verification.schema.json`](../../protocol/schemas/authentication-verification.schema.json)
+- [`authentication.schema.json`](../../protocol/schemas/authentication.schema.json)
+
 - [`client-root-bundle.schema.json`](../../protocol/schemas/client-root-bundle.schema.json)
 - [`client-root-materialization.schema.json`](../../protocol/schemas/client-root-materialization.schema.json)
 - [`map-proof-request.schema.json`](../../protocol/schemas/map-proof-request.schema.json)

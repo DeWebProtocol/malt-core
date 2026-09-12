@@ -138,7 +138,7 @@ func (s *Session) AcceptReceipt(receipt mutation.MaterializationReceipt, prepare
 	if len(prepared.seal.workingRoots) != len(next.Objects) {
 		return fmt.Errorf("prepared working-root seal does not match next view")
 	}
-	nextWorkingRoots, err := workingRootsForView(next, prepared.seal.workingRoots)
+	nextWorkingRoots, err := workingRootsForView(next, prepared.seal.workingRoots, s.runtime.targetVersion)
 	if err != nil {
 		return fmt.Errorf("prepared working-root seal: %w", err)
 	}

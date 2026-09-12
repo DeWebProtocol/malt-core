@@ -80,7 +80,7 @@ func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.Clien
 		return nil, err
 	}
 	operationID := "client-root-" + string(backend) + "-replace"
-	runtime, err := clientwriter.NewRuntime(
+	runtime, err := clientwriter.NewHistoricalRuntime(
 		materialmemory.New(true),
 		map[maltcid.BackendKind]commitment.IndexCommitment{backend: scheme},
 	)
@@ -153,7 +153,7 @@ func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.Clien
 	if err != nil {
 		return nil, err
 	}
-	tamperSemantic, err := mapradix.NewMap(scheme, materialmemory.New(true))
+	tamperSemantic, err := mapradix.NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func clientRootScheme(backend maltcid.BackendKind) (commitment.IndexCommitment, 
 }
 
 func clientRootInput(ctx context.Context, backend maltcid.BackendKind, scheme commitment.IndexCommitment) (mutation.UpdateView, mutation.SemanticIntent, error) {
-	semantic, err := mapradix.NewMap(scheme, materialmemory.New(true))
+	semantic, err := mapradix.NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		return mutation.UpdateView{}, mutation.SemanticIntent{}, err
 	}

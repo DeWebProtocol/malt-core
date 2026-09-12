@@ -5,16 +5,12 @@ objects remain ordinary CAS CIDs.
 
 ## Status
 
-Experimental and implementation-bound. Constructors emit the current layout;
-the immediately preceding v2 layout remains accepted for read/proof compatibility.
-
-This reference describes the checked-in `0x30VSBB` implementation, inspected
-at `c90b4d35ec95003b14422546b777fbf9ada2b0c7`. The maintainer's newer
-[Root version policy](../policy/root-versioning.md) requires the planned
-self-describing Root refactor to use `V=0` until an explicit production-ready
-go-live declaration authorizes `V=1`. It does not change current code or
-historical Root bytes. [MIP-1014](../mips/mip-1014-self-describing-roots.md)
-records the proposed `0x30VLAA`/multicommitment boundary and migration scope.
+New default construction uses [self-describing V0 Roots](./authentication-inputs.md)
+with `0x30VLAA` and an identity-wrapped multicommitment. The reference below
+records **historical V2/V3** interpretation retained for compatibility; its
+`MALTVersionID=3` and codec constants are not current construction defaults.
+Historical bytes and frozen corpora remain unchanged. Follow the
+[Root version policy](../policy/root-versioning.md) for the production gate.
 
 ## MALT Root Codec Namespace
 
@@ -45,7 +41,7 @@ codec = 0x300000
       | backend_id
 ```
 
-The current `MALTVersionID` is `3`. It identifies this typed-root layout;
+The historical `MALTVersionID` is `3`. It identifies this typed-root layout;
 it is not the CID version, a source release, a Resolve/Read profile, or a
 conformance-corpus version. Adding a semantic kind or backend suite does not
 change it. Earlier experimental revisions incremented it when codec or
@@ -79,7 +75,7 @@ from digest length.
 An incompatible parameter set or commitment encoding receives a new backend
 ID even when it belongs to the same broad cryptographic family.
 
-### Current Codecs
+### Historical V3 Codecs
 
 | Name | Value | Semantic kind | Backend |
 | --- | ---: | --- | --- |

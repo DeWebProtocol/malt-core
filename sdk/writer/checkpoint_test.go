@@ -144,3 +144,7 @@ func TestAuthenticatedCheckpointRejectsWrongKeyAndMutatedBindings(t *testing.T) 
 		t.Fatal("checkpoint restored with incomplete working roots")
 	}
 }
+
+func (c *checkpointCommitCounter) ProfileID() maltcid.ProfileID {
+	return c.IndexCommitment.(interface{ ProfileID() maltcid.ProfileID }).ProfileID()
+}

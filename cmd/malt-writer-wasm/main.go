@@ -31,6 +31,7 @@ func main() {
 	js.Global().Set("maltWriterLoadedBackend", backend)
 	js.Global().Set("maltWriterLoadedProfile", profile)
 	registerStatelessCompute(writer, initErr)
+	registerAuthenticationWriter(writer, initErr)
 	registerReceiptValidation()
 	registerSessionFunctions(sessionWriter, initErr)
 	js.Global().Set("maltWriterReady", true)

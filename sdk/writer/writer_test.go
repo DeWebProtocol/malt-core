@@ -459,7 +459,7 @@ func TestLegacyV2MapAndListViewsComputeCurrentCandidatesAcrossBackends(t *testin
 					if !result.Bundle.Candidate.Equals(expected) {
 						t.Fatalf("candidate = %s, want %s", result.Bundle.Candidate, expected)
 					}
-					if maltcid.VersionIDOf(result.Bundle.Candidate) != maltcid.MALTVersionID ||
+					if maltcid.VersionIDOf(result.Bundle.Candidate) != maltcid.RootVersion ||
 						!result.Bundle.View.Objects[0].Root.Equals(root) {
 						t.Fatal("bundle did not preserve v2 evidence while producing a current candidate")
 					}

@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://malt.dev/schemas/authentication-state.schema.json",
+  "$ref": "authentication.schema.json#/$defs/state"
+}

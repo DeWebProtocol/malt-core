@@ -7,8 +7,10 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	structure "github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/layoutcompat"
 	"github.com/dewebprotocol/malt-core/auth/semantic/list"
 	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 
@@ -59,6 +61,13 @@ func newTreeListVerifier(scheme commitment.IndexVerifier, geometry nodegeometry.
 }
 
 func (v *treeListVerifier) Verify(root cid.Cid, index uint64, expected list.Query, proof structure.Proof) (bool, error) {
+	if v != nil && maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		e, _, err := layoutcompat.Engine(v.scheme, nil)
+		if err != nil {
+			return false, err
+		}
+		return layoutcompat.VerifyPositional(e, root, index, expected, proof)
+	}
 	if v == nil || v.scheme == nil {
 		return false, fmt.Errorf("tree verifier commitment scheme is nil")
 	}
@@ -129,6 +138,13 @@ func (v *treeListVerifier) Verify(root cid.Cid, index uint64, expected list.Quer
 }
 
 func (v *treeListVerifier) VerifyRange(root cid.Cid, start uint64, end *uint64, expected list.RangeResult, proof structure.Proof) (bool, error) {
+	if v != nil && maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		e, _, err := layoutcompat.Engine(v.scheme, nil)
+		if err != nil {
+			return false, err
+		}
+		return layoutcompat.VerifyRange(e, root, start, end, expected, proof)
+	}
 	if v == nil || v.scheme == nil {
 		return false, fmt.Errorf("tree verifier commitment scheme is nil")
 	}

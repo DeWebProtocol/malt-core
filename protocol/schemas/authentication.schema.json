@@ -1,0 +1,536 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://malt.dev/schemas/authentication.schema.json",
+  "$defs": {
+    "input": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "key"
+            },
+            "data": {
+              "type": "string",
+              "contentEncoding": "base64"
+            }
+          },
+          "required": [
+            "kind",
+            "data"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "label"
+            },
+            "data": {
+              "type": "string",
+              "contentEncoding": "base64"
+            }
+          },
+          "required": [
+            "kind",
+            "data"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "index"
+            },
+            "number": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          },
+          "required": [
+            "kind",
+            "number"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "system"
+            },
+            "number": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          },
+          "required": [
+            "kind",
+            "number"
+          ]
+        }
+      ]
+    },
+    "descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 0,
+          "default": 0
+        },
+        "layout": {
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "input_rule": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 0
+        },
+        "vc_profile": {
+          "enum": [
+            1,
+            2
+          ]
+        }
+      },
+      "required": [
+        "layout",
+        "vc_profile"
+      ]
+    },
+    "opening": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cell": {
+          "type": "string",
+          "contentEncoding": "base64"
+        },
+        "proof": {
+          "type": "string",
+          "contentEncoding": "base64"
+        },
+        "metadata": {
+          "type": "string",
+          "contentEncoding": "base64"
+        },
+        "metadata_proof": {
+          "type": "string",
+          "contentEncoding": "base64"
+        }
+      },
+      "required": []
+    },
+    "proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "malt.binding/0"
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/opening"
+          }
+        }
+      },
+      "required": [
+        "format",
+        "nodes"
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "present": {
+          "type": "boolean"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "/": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "/"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "proof": {
+          "$ref": "#/$defs/proof"
+        }
+      },
+      "required": [
+        "present",
+        "proof"
+      ]
+    },
+    "traversal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "results": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        }
+      },
+      "required": [
+        "results"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "count": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "chunk_size": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "total_size": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      },
+      "required": [
+        "height",
+        "count",
+        "chunk_size",
+        "total_size"
+      ]
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "metadata_evidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        }
+      },
+      "required": [
+        "metadata",
+        "metadata_evidence",
+        "segments"
+      ]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "const": "malt.authentication/0"
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/input"
+          }
+        },
+        "operation": {
+          "enum": [
+            "resolve",
+            "binding",
+            "range"
+          ]
+        },
+        "input": {
+          "$ref": "#/$defs/input"
+        },
+        "start": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "end": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      },
+      "required": [
+        "profile",
+        "root",
+        "operation"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "binding"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "input"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "start"
+                  ]
+                },
+                {
+                  "required": [
+                    "end"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "range"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "start"
+            ],
+            "not": {
+              "required": [
+                "input"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "resolve"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "input"
+                  ]
+                },
+                {
+                  "required": [
+                    "start"
+                  ]
+                },
+                {
+                  "required": [
+                    "end"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "const": "malt.authentication/0"
+        },
+        "resolved": {
+          "type": "string",
+          "minLength": 1
+        },
+        "traversal": {
+          "$ref": "#/$defs/traversal"
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "range": {
+          "$ref": "#/$defs/range"
+        }
+      },
+      "required": [
+        "profile",
+        "resolved",
+        "traversal"
+      ]
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "descriptor": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "entries": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/input"
+              },
+              "target": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "/": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "/"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "target"
+            ]
+          }
+        },
+        "chunk_size": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "total_size": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      },
+      "required": [
+        "descriptor"
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "const": "malt.authentication/0"
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "previous": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reference": {
+                "type": "string",
+                "contentEncoding": "base64"
+              },
+              "cells": {
+                "type": "array",
+                "minItems": 256,
+                "maxItems": 4096,
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "contentEncoding": "base64"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "reference",
+              "cells"
+            ]
+          }
+        }
+      },
+      "required": [
+        "profile",
+        "root",
+        "state",
+        "nodes"
+      ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "result": {
+          "$ref": "#/$defs/result"
+        }
+      },
+      "required": [
+        "request",
+        "result"
+      ]
+    }
+  }
+}

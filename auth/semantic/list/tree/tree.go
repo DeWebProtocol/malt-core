@@ -15,6 +15,7 @@ import (
 	materializer "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/layoutcompat"
 	"github.com/dewebprotocol/malt-core/auth/semantic/list"
 	"github.com/dewebprotocol/malt-core/auth/semantic/list/tree/internal"
 	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
@@ -23,6 +24,7 @@ import (
 )
 
 type TreeList struct {
+	modern       *layoutcompat.Positional
 	commitment   *list.Commitment
 	materializer materializer.NodeStore
 	geometry     nodegeometry.Geometry
@@ -52,7 +54,7 @@ type rangeIndexProof struct {
 }
 
 func NewList(scheme commitment.IndexCommitment, materializer materializer.NodeStore) (*TreeList, error) {
-	return NewListForVersion(scheme, materializer, maltcid.MALTVersionID)
+	return NewListForVersion(scheme, materializer, maltcid.RootVersion)
 }
 
 // NewListForVersion creates list semantics that emit an exact supported typed
@@ -71,15 +73,22 @@ func NewListForVersion(scheme commitment.IndexCommitment, materializer materiali
 		return nil, fmt.Errorf("failed to create list commitment: %w", err)
 	}
 
-	if version != maltcid.MALTVersionID && version != maltcid.LegacyMALTVersionID {
+	if version != maltcid.RootVersion && version != maltcid.MALTVersionID && version != maltcid.LegacyMALTVersionID {
 		return nil, fmt.Errorf("unsupported MALT version %d", version)
 	}
-	return &TreeList{
+	result := &TreeList{
 		commitment:   commitmentHandler,
 		materializer: materializer,
 		geometry:     geometry,
 		version:      version,
-	}, nil
+	}
+	if version == maltcid.RootVersion {
+		result.modern, err = layoutcompat.NewPositional(scheme, materializer)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
 }
 
 // Commitment returns the underlying commitment primitives.
@@ -95,6 +104,9 @@ func (s *TreeList) validateMutationRootVersion(root cid.Cid) error {
 }
 
 func (s *TreeList) Commit(ctx context.Context, namespace string, view list.View) (cid.Cid, error) {
+	if s.modern != nil {
+		return s.modern.Commit(ctx, namespace, view)
+	}
 	values, err := valuesFromView(view)
 	if err != nil {
 		return cid.Undef, err
@@ -106,6 +118,9 @@ func (s *TreeList) Commit(ctx context.Context, namespace string, view list.View)
 // remains compatible with base index proofs while also supporting byte-range
 // proofs over authenticated fixed chunk metadata.
 func (s *TreeList) CommitFixed(ctx context.Context, namespace string, chunks []cid.Cid, chunkSize, totalSize uint64) (cid.Cid, error) {
+	if s.modern != nil {
+		return s.modern.CommitFixed(ctx, namespace, chunks, chunkSize, totalSize)
+	}
 	if chunkSize == 0 {
 		return cid.Undef, fmt.Errorf("chunk size must be positive")
 	}
@@ -122,6 +137,13 @@ func (s *TreeList) CommitFixed(ctx context.Context, namespace string, chunks []c
 }
 
 func (s *TreeList) Prove(ctx context.Context, namespace string, root cid.Cid, index uint64) (list.Query, structure.Proof, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return list.Query{}, nil, err
+		}
+		return modern.Prove(ctx, namespace, root, index)
+	}
 	rootSlots, length, err := s.loadRoot(ctx, namespace, root)
 	if err != nil {
 		return list.Query{}, nil, err
@@ -188,6 +210,13 @@ func (s *TreeList) Prove(ctx context.Context, namespace string, root cid.Cid, in
 }
 
 func (s *TreeList) Verify(root cid.Cid, index uint64, expected list.Query, proof structure.Proof) (bool, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return false, err
+		}
+		return modern.Verify(root, index, expected, proof)
+	}
 	var envelope proofEnvelope
 	if err := json.Unmarshal(proof, &envelope); err != nil {
 		return false, err
@@ -255,6 +284,13 @@ func (s *TreeList) Verify(root cid.Cid, index uint64, expected list.Query, proof
 }
 
 func (s *TreeList) ProveRange(ctx context.Context, namespace string, root cid.Cid, start uint64, end *uint64) (list.RangeResult, structure.Proof, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return list.RangeResult{}, nil, err
+		}
+		return modern.ProveRange(ctx, namespace, root, start, end)
+	}
 	rootSlots, _, err := s.loadRoot(ctx, namespace, root)
 	if err != nil {
 		return list.RangeResult{}, nil, err
@@ -310,6 +346,13 @@ func (s *TreeList) ProveRange(ctx context.Context, namespace string, root cid.Ci
 }
 
 func (s *TreeList) VerifyRange(root cid.Cid, start uint64, end *uint64, expected list.RangeResult, proof structure.Proof) (bool, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return false, err
+		}
+		return modern.VerifyRange(root, start, end, expected, proof)
+	}
 	var envelope rangeProofEnvelope
 	if err := json.Unmarshal(proof, &envelope); err != nil {
 		return false, err
@@ -362,6 +405,13 @@ func (s *TreeList) VerifyRange(root cid.Cid, start uint64, end *uint64, expected
 }
 
 func (s *TreeList) Replace(ctx context.Context, namespace string, root cid.Cid, index uint64, oldKey, newKey cid.Cid) (cid.Cid, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return cid.Undef, err
+		}
+		return modern.Replace(ctx, namespace, root, index, oldKey, newKey)
+	}
 	if err := s.validateMutationRootVersion(root); err != nil {
 		return cid.Undef, err
 	}
@@ -382,6 +432,13 @@ func (s *TreeList) Replace(ctx context.Context, namespace string, root cid.Cid, 
 }
 
 func (s *TreeList) Append(ctx context.Context, namespace string, root cid.Cid, key cid.Cid) (cid.Cid, uint64, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return cid.Undef, 0, err
+		}
+		return modern.Append(ctx, namespace, root, key)
+	}
 	if err := s.validateMutationRootVersion(root); err != nil {
 		return cid.Undef, 0, err
 	}
@@ -473,6 +530,13 @@ func (s *TreeList) Append(ctx context.Context, namespace string, root cid.Cid, k
 // updated measured root. The existing measured list must end on a chunk
 // boundary; extending a partial final chunk requires replacing that chunk first.
 func (s *TreeList) AppendFixed(ctx context.Context, namespace string, root cid.Cid, key cid.Cid, totalSize uint64) (cid.Cid, uint64, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return cid.Undef, 0, err
+		}
+		return modern.AppendFixed(ctx, namespace, root, key, totalSize)
+	}
 	if err := s.validateMutationRootVersion(root); err != nil {
 		return cid.Undef, 0, err
 	}
@@ -570,6 +634,13 @@ func (s *TreeList) AppendFixed(ctx context.Context, namespace string, root cid.C
 }
 
 func (s *TreeList) Truncate(ctx context.Context, namespace string, root cid.Cid, newLen uint64) (cid.Cid, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPositional(s.commitment.Scheme(), s.materializer)
+		if err != nil {
+			return cid.Undef, err
+		}
+		return modern.Truncate(ctx, namespace, root, newLen)
+	}
 	if err := s.validateMutationRootVersion(root); err != nil {
 		return cid.Undef, err
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset"
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
+	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/encoded"
 	cid "github.com/ipfs/go-cid"
 )
 
@@ -223,6 +224,9 @@ func (s *Store) RetainRoots(retain map[string][]cid.Cid) int {
 		for _, root := range roots {
 			if root.Defined() {
 				pending = append(pending, root.KeyString())
+				if node, err := encoded.RootIdentity(root); err == nil {
+					pending = append(pending, node.KeyString())
+				}
 			}
 		}
 		for len(pending) > 0 {
@@ -232,14 +236,23 @@ func (s *Store) RetainRoots(retain map[string][]cid.Cid) int {
 			if _, seen := reachable[key]; seen {
 				continue
 			}
+			if root, err := cid.Cast([]byte(key)); err == nil {
+				if node, err := encoded.RootIdentity(root); err == nil {
+					pending = append(pending, node.KeyString())
+				}
+			}
 			snapshot, exists := state.roots[key]
 			nodePaths, nodeExists := state.nodeRoots[key]
 			if !exists && !nodeExists {
 				continue
 			}
 			reachable[key] = struct{}{}
+
 			for _, target := range snapshot {
 				if target.Defined() {
+					if node, err := encoded.RootIdentity(target); err == nil {
+						pending = append(pending, node.KeyString())
+					}
 					targetKey := target.KeyString()
 					if _, rootExists := state.roots[targetKey]; rootExists {
 						pending = append(pending, targetKey)
@@ -250,7 +263,13 @@ func (s *Store) RetainRoots(retain map[string][]cid.Cid) int {
 			}
 			for path := range nodePaths {
 				target := state.nodes[path]
+				for _, reference := range encoded.References(target) {
+					pending = append(pending, reference.KeyString())
+				}
 				if target.Defined() {
+					if node, err := encoded.RootIdentity(target); err == nil {
+						pending = append(pending, node.KeyString())
+					}
 					targetKey := target.KeyString()
 					if _, rootExists := state.roots[targetKey]; rootExists {
 						pending = append(pending, targetKey)

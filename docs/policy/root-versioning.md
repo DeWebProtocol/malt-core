@@ -2,7 +2,7 @@
 
 Decision date: 2026-09-12.
 Status: maintainer-directed policy for the self-describing Root refactor;
-the executable migration has not been implemented.
+new construction implements V0; V2/V3 readers retain historical interpretation.
 
 ## Production-readiness gate
 
@@ -39,8 +39,8 @@ compatibility between every experimental build.
   must explicitly choose rejection, reconstruction, or a specified reader;
   changing `V` is not the default way to resolve that boundary.
 
-The exact experimental framing and migration contract are still design work
-under [MIP-1014](../mips/mip-1014-self-describing-roots.md).
+The implemented framing is specified in [authentication inputs and Roots](../spec/authentication-inputs.md)
+and tracked by [MIP-1014](../mips/mip-1014-self-describing-roots.md).
 
 ## Existing experimental encodings
 
@@ -50,14 +50,9 @@ retain explicit version-2 compatibility. Earlier experiments also used
 version-1 structured roots and flat codecs `0x300001` through `0x300004`.
 None of those historical numbers declares production readiness.
 
-This documentation change does not change `MALTVersionID`, rewrite stored
-Roots, or relabel released conformance vectors. The refactor must move new
-construction to `V=0` and explicitly distinguish the old experimental
-formats. In particular, masking the old flat codecs as `V=0` is not sufficient
-to identify the new format. Do not migrate by replacing a Root prefix alone;
-the selected state, dependent internal nodes, parent bindings, and retained
-proof-serving material must agree with the resulting Root.
-
-Historical release notes and fixtures retain their original bytes and dates.
-The [current CID and wire reference](../spec/cid-and-wire-format.md) continues
-to describe the checked-in implementation until its coordinated migration.
+New default construction now uses `RootVersion=0`. Historical `MALTVersionID=3`
+and explicit V2/V3 constructors/readers retain their frozen meanings. Old flat
+codecs are not aliases of the new format. Do not migrate by replacing a Root
+prefix alone: reconstruct the selected state and recompute dependent parents.
+Payload CIDs can be reused. Historical release notes and fixtures retain their
+original bytes and dates. See the [current Root specification](../spec/authentication-inputs.md).

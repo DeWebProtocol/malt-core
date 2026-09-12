@@ -1,5 +1,7 @@
 package radix_test
 
+import "github.com/dewebprotocol/malt-core/wire/maltcid"
+
 import (
 	"context"
 	"crypto/sha256"
@@ -49,7 +51,7 @@ func newMap(t *testing.T, factory schemeFactory, store *materialmemory.Store) ma
 	if store == nil {
 		store = materialmemory.New(true)
 	}
-	semantic, err := mappingradix.NewMap(factory(t), store)
+	semantic, err := mappingradix.NewMapForVersion(factory(t), store, maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatalf("radix.NewMap failed: %v", err)
 	}
@@ -186,7 +188,7 @@ func TestMapProvesEmptySlotAndConflictingLeafAbsence(t *testing.T) {
 	for name, factory := range mappingSchemes() {
 		t.Run(name, func(t *testing.T) {
 			scheme := factory(t)
-			semantic, err := mappingradix.NewMap(scheme, materialmemory.New(true))
+			semantic, err := mappingradix.NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 			if err != nil {
 				t.Fatal(err)
 			}

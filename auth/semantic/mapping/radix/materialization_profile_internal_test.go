@@ -21,7 +21,7 @@ func TestValidateMaterializationRejectsMixedVersionInternalNodeAcrossBackends(t 
 			if err != nil {
 				t.Fatal(err)
 			}
-			current, err := NewMap(scheme, store)
+			current, err := NewMapForVersion(scheme, store, maltcid.MALTVersionID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -102,7 +102,7 @@ func TestMaterializationWalkerRejectsV1BucketUnderV3Root(t *testing.T) {
 	if !ok {
 		t.Fatal("IPA backend does not implement root-bound validation")
 	}
-	maps, err := NewMap(scheme, materialmemory.New(true))
+	maps, err := NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -34,7 +34,7 @@ func TestLoadBucketEntriesRejectsOversizedCountBeforeAllocation(t *testing.T) {
 		t.Fatal(err)
 	}
 	store := materialmemory.New(true)
-	maps, err := NewMap(scheme, store)
+	maps, err := NewMapForVersion(scheme, store, maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestBucketAbsenceWitnessOpensCompleteCanonicalVector(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	maps, err := NewMap(scheme, materialmemory.New(true))
+	maps, err := NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,7 +261,7 @@ func TestV2BucketMembershipOpensFixedDomainAcrossBackends(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctx := context.Background()
 			store := materialmemory.New(true)
-			maps, err := NewMap(scheme, store)
+			maps, err := NewMapForVersion(scheme, store, maltcid.MALTVersionID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -359,7 +359,7 @@ func TestMutationRejectsLegacyRootBeforePartialVersionUpgradeAcrossBackends(t *t
 			if err != nil {
 				t.Fatal(err)
 			}
-			current, err := NewMap(scheme, store)
+			current, err := NewMapForVersion(scheme, store, maltcid.MALTVersionID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -416,7 +416,7 @@ func TestMutationRejectsLegacyRootBeforePartialVersionUpgradeAcrossBackends(t *t
 
 func TestRuntimeVerifyRejectsV1BucketAbsenceUnderV3Root(t *testing.T) {
 	scheme := absenceSchemes(t)["ipa"]
-	maps, err := NewMap(scheme, materialmemory.New(true))
+	maps, err := NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}

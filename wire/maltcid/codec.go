@@ -17,8 +17,9 @@
 //	malt-map-ipa  = 0x303102
 //	malt-list-ipa = 0x303202
 //
-// Version 2 remains decode-compatible for roots created before fixed-domain
-// collision-bucket absence proofs. New roots are always encoded as version 3.
+// This file preserves historical V=2/V=3 roots exactly. Current SDK builders
+// emit V=0 self-describing Roots defined in root.go (0x30VLAA +
+// multicommitment). Historical constants are not the current Root version.
 package maltcid
 
 import (
@@ -29,8 +30,8 @@ import (
 	mh "github.com/multiformats/go-multihash"
 )
 
-// MALTVersionID identifies the current typed-root wire layout. It is not a
-// source release or protocol-profile version.
+// MALTVersionID is the frozen historical V=3 typed-root identifier.
+// Deprecated: use RootVersion for current Roots. Kept for exact old replay.
 const MALTVersionID uint8 = 3
 
 // LegacyMALTVersionID identifies version-2 roots retained for decode, proof,
@@ -232,6 +233,19 @@ func ExtractCommitment(c cid.Cid) ([]byte, error) {
 }
 
 func decodeRoot(c cid.Cid) (codecParts, []byte, error) {
+	if c.Defined() && VersionIDOf(c) == RootVersion {
+		d, commitment, err := ParseRoot(c)
+		if err != nil {
+			return codecParts{}, nil, err
+		}
+		profile, _ := Profile(d.Profile)
+		backend, _ := backendDescriptorForKind(profile.Algorithm)
+		semantic := SemanticKindMap
+		if d.Layout == Positional {
+			semantic = SemanticKindList
+		}
+		return codecParts{versionID: d.Version, semantic: semantic, backend: backend}, commitment, nil
+	}
 	parts, ok := decodeCodec(c.Prefix().Codec)
 	if !ok {
 		return codecParts{}, nil, fmt.Errorf("not a MALT commitment CID: codec=%x", c.Prefix().Codec)
@@ -265,7 +279,7 @@ func EqualCommitment(a, b cid.Cid) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if BackendKindOf(a) != BackendKindOf(b) {
+	if profileIdentity(a) != profileIdentity(b) {
 		return false, nil
 	}
 	return bytes.Equal(ab, bb), nil
@@ -273,6 +287,12 @@ func EqualCommitment(a, b cid.Cid) (bool, error) {
 
 // CodecName returns the locked wire name for a typed MALT multicodec.
 func CodecName(codec uint64) string {
+	if codec >= 0x300000 && codec <= 0x3002ff {
+		layout, aa := Layout((codec>>8)&15), uint8(codec&255)
+		if layout == Prefix || (layout == Positional && aa == 0) {
+			return fmt.Sprintf("malt-v0-layout%d-aa%02x", layout, aa)
+		}
+	}
 	parts, ok := decodeCodec(codec)
 	if !ok {
 		return fmt.Sprintf("unknown-%x", codec)
@@ -372,4 +392,17 @@ func backendDescriptorForID(id uint8) (backendDescriptor, bool) {
 		}
 	}
 	return backendDescriptor{}, false
+}
+
+func profileIdentity(root cid.Cid) ProfileID {
+	if d, _, err := ParseRoot(root); err == nil {
+		return d.Profile
+	}
+	switch BackendKindOf(root) {
+	case BackendKindKZG:
+		return KZG4096
+	case BackendKindIPA:
+		return IPA256
+	}
+	return 0
 }

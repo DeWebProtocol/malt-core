@@ -18,11 +18,13 @@ VC profile identifying a commitment. This draft records the proposed boundary
 and source-inspected refactor scope. The maintainer has separately fixed the
 [Root version policy](../policy/root-versioning.md): pre-production Roots use
 `V=0`, and only an explicit production-ready declaration permits `V=1`.
-No executable Root, profile, or schema migration is performed by this draft.
+The experimental implementation and exact framing now live in the
+[Root/input specification](../spec/authentication-inputs.md). This MIP remains
+Draft pending review and coordinated downstream adoption.
 
 ## Motivation
 
-Current `wire/maltcid` encodes version, Map/List semantics, and KZG/IPA backend
+Before this refactor, `wire/maltcid` encoded version, Map/List semantics, and KZG/IPA backend
 in `0x30VSBB`. Radix construction and verification hash canonical paths and
 authenticate the original path in terminal markers. Backend registration
 selects one configuration per broad algorithm kind. These interfaces do not
@@ -35,8 +37,7 @@ The proposed codec notation is `0x30VLAA`: `V` selects the MALT Root format,
 `L` selects Positional/Prefix authentication interpretation, and `AA` selects
 an input rule. A multicommitment identifies the exact VC profile and carries
 the commitment. The preferred container under review remains CIDv1 with an
-identity multihash containing that multicommitment. This notation does not
-allocate layout, input-rule, or VC profile IDs or freeze their byte framing.
+identity multihash containing that multicommitment. The reference specification now defines experimental IDs and canonical byte framing.
 
 Positional/direct consumes a canonical integer index. Prefix/direct consumes
 a native byte key under an explicit key-width rule. Prefix/label consumes a
@@ -51,10 +52,10 @@ and the required primitive verification rules. Cell to scalar conversion
 needs a fixed owner. Runtime-only MSM/precomputation choices must not allocate
 different cryptographic profiles.
 
-Open specification work includes native-key widths, selector encoding,
-Positional system/payload metadata, internal-node framing, standalone
-multicommitment framing, and distinguishable experimental format changes
-while `V` remains zero. Future normative definitions belong in
+The implementation fixes native keys at 32 bytes, uses tagged input values,
+keeps system bindings exclusively in Prefix, and gives internal nodes
+AA-independent identities. Exact multicommitment framing and rule IDs are
+recorded in the reference specification. Future normative definitions belong in
 [the reference specifications](../spec/README.md), with executable schemas
 and conformance vectors in this repository.
 
@@ -68,7 +69,7 @@ sequence and key-binding constraints still need exact definitions.
 
 Keeping CIDv1 avoids replacing the common identifier container throughout
 downstream systems. Bare codec plus multicommitment would require a new Root
-container and transport/value adapters. The envelope remains a review item.
+container and transport/value adapters. The implementation uses this envelope.
 
 ## Backwards Compatibility
 
@@ -95,10 +96,9 @@ Roots remain operational outputs, not portable transition proofs.
 
 ## Implementation Plan
 
-This is a requested impact assessment, not authorization to implement the
-protocol or an active implementation queue. After remaining decisions are
-accepted, turn these candidate review boundaries into a phased implementation
-plan with exact integration revisions.
+The maintainer authorized implementation after fixing the input/selector and
+Prefix-only system-binding decisions. The following boundaries guide review
+of the experimental change; they are not a production-readiness declaration.
 
 | Candidate boundary | Current Core touchpoints | Necessary evidence |
 | --- | --- | --- |

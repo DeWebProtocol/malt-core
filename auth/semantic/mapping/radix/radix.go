@@ -17,8 +17,10 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset"
 	materializer "github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/auth/observation"
 	"github.com/dewebprotocol/malt-core/auth/semantic"
+	"github.com/dewebprotocol/malt-core/auth/semantic/layoutcompat"
 	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
 	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -59,6 +61,7 @@ func matchesRadixRootProfile(root cid.Cid, version uint8, backend maltcid.Backen
 }
 
 type Map struct {
+	modern       *layoutcompat.Prefix
 	commitment   *mapping.Commitment
 	materializer materializer.NodeStore
 	geometry     nodegeometry.Geometry
@@ -104,7 +107,7 @@ type bucketWitness struct {
 }
 
 func NewMap(scheme commitment.IndexCommitment, e materializer.NodeStore) (*Map, error) {
-	return NewMapForVersion(scheme, e, maltcid.MALTVersionID)
+	return NewMapForVersion(scheme, e, maltcid.RootVersion)
 }
 
 // NewMapForVersion creates radix-map semantics that emit an exact supported
@@ -127,10 +130,17 @@ func NewMapForVersion(scheme commitment.IndexCommitment, e materializer.NodeStor
 		return nil, fmt.Errorf("failed to create map commitment: %w", err)
 	}
 
-	if version != maltcid.MALTVersionID && version != maltcid.LegacyMALTVersionID {
+	if version != maltcid.RootVersion && version != maltcid.MALTVersionID && version != maltcid.LegacyMALTVersionID {
 		return nil, fmt.Errorf("unsupported MALT version %d", version)
 	}
-	return &Map{commitment: commitmentHandler, materializer: e, geometry: geometry, version: version}, nil
+	result := &Map{commitment: commitmentHandler, materializer: e, geometry: geometry, version: version}
+	if version == maltcid.RootVersion {
+		result.modern, err = layoutcompat.NewPrefix(scheme, e, nil, input.BytesSHA256)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
 }
 
 // Commitment returns the underlying commitment primitives.
@@ -180,6 +190,9 @@ func (s *Map) validateMutationRootVersion(root cid.Cid) error {
 }
 
 func (s *Map) Commit(ctx context.Context, namespace string, view mapping.View) (cid.Cid, error) {
+	if s.modern != nil {
+		return s.modern.Commit(ctx, namespace, view)
+	}
 	bindings, err := extractBindings(view)
 	if err != nil {
 		return cid.Undef, err
@@ -188,6 +201,13 @@ func (s *Map) Commit(ctx context.Context, namespace string, view mapping.View) (
 }
 
 func (s *Map) Prove(ctx context.Context, namespace string, root cid.Cid, key arcset.Path) (mapping.Binding, structure.Proof, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPrefix(s.commitment.Scheme(), s.materializer, nil, input.BytesSHA256)
+		if err != nil {
+			return mapping.Binding{}, nil, err
+		}
+		return modern.Prove(ctx, namespace, root, key)
+	}
 	if !root.Defined() {
 		return mapping.Binding{}, nil, fmt.Errorf("root is undefined")
 	}
@@ -456,6 +476,13 @@ func (s *Map) verifyBucketAbsence(root cid.Cid, key arcset.Path, witness *bucket
 }
 
 func (s *Map) Verify(root cid.Cid, key arcset.Path, expected mapping.Binding, proof structure.Proof) (bool, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPrefix(s.commitment.Scheme(), s.materializer, nil, input.BytesSHA256)
+		if err != nil {
+			return false, err
+		}
+		return modern.Verify(root, key, expected, proof)
+	}
 	if !root.Defined() {
 		return false, fmt.Errorf("root is undefined")
 	}
@@ -561,6 +588,13 @@ func (s *Map) Verify(root cid.Cid, key arcset.Path, expected mapping.Binding, pr
 }
 
 func (s *Map) Update(ctx context.Context, namespace string, root cid.Cid, key arcset.Path, oldValue, newValue cid.Cid) (cid.Cid, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPrefix(s.commitment.Scheme(), s.materializer, nil, input.BytesSHA256)
+		if err != nil {
+			return cid.Undef, err
+		}
+		return modern.Update(ctx, namespace, root, key, oldValue, newValue)
+	}
 	if !root.Defined() {
 		return cid.Undef, fmt.Errorf("root is undefined")
 	}
@@ -764,6 +798,13 @@ func (s *Map) updateSubtreeWithoutPersistCached(
 // once after every subtree succeeds. If any update fails, no state is persisted
 // to the ArcSet materializer.
 func (s *Map) BatchUpdate(ctx context.Context, namespace string, root cid.Cid, updates []mapping.BatchUpdate) (cid.Cid, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPrefix(s.commitment.Scheme(), s.materializer, nil, input.BytesSHA256)
+		if err != nil {
+			return cid.Undef, err
+		}
+		return modern.BatchUpdate(ctx, namespace, root, updates)
+	}
 	if !root.Defined() {
 		return cid.Undef, fmt.Errorf("root is undefined")
 	}

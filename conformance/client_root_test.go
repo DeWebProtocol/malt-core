@@ -154,7 +154,7 @@ func TestClientRootViewTamperReachesRootRecomputation(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			runtime, err := clientwriter.NewRuntime(
+			runtime, err := clientwriter.NewHistoricalRuntime(
 				materialmemory.New(true),
 				map[maltcid.BackendKind]commitment.IndexCommitment{backend: scheme},
 			)
@@ -200,7 +200,7 @@ func computeClientRootVector(ctx context.Context, vector conformance.ClientRootV
 	if err != nil {
 		return protocol.ClientRootBundle{}, protocol.ClientRootMaterialization{}, protocol.UpdateView{}, false
 	}
-	runtime, err := clientwriter.NewRuntime(
+	runtime, err := clientwriter.NewHistoricalRuntime(
 		materialmemory.New(true),
 		map[maltcid.BackendKind]commitment.IndexCommitment{backend: scheme},
 	)

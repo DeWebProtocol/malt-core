@@ -403,7 +403,7 @@ func TestSessionComputerRetainsLegacyWorkingRootsAcrossAcceptedOperations(t *tes
 			}
 			workingRoots := session.session.WorkingRoots()
 			childWorkingRoot := workingRoots["child"]
-			if !childWorkingRoot.Defined() || maltcid.VersionIDOf(childWorkingRoot) != maltcid.MALTVersionID || childWorkingRoot.Equals(childRoot) {
+			if !childWorkingRoot.Defined() || maltcid.VersionIDOf(childWorkingRoot) != maltcid.RootVersion || childWorkingRoot.Equals(childRoot) {
 				t.Fatalf("child working root = %s, want migrated current root distinct from %s", childWorkingRoot, childRoot)
 			}
 			workingRoots["child"] = cid.Undef

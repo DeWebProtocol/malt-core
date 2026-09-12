@@ -7,6 +7,8 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset"
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/semantic/layoutcompat"
 	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
 	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -38,6 +40,13 @@ type materializationWalker struct {
 // bucket entries needed to prove the supplied logical view at root. The
 // exported state remains untrusted until ValidateMaterialization accepts it.
 func (s *Map) ExportMaterialization(ctx context.Context, namespace string, root cid.Cid, view mapping.View) (*arcset.CanonicalArcSet, error) {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		modern, err := layoutcompat.NewPrefix(s.commitment.Scheme(), s.materializer, nil, input.BytesSHA256)
+		if err != nil {
+			return nil, err
+		}
+		return modern.ExportMaterialization(ctx, namespace, root, view)
+	}
 	if s == nil || s.materializer == nil || s.commitment == nil {
 		return nil, fmt.Errorf("radix map is nil")
 	}
@@ -69,6 +78,9 @@ func (s *Map) ExportMaterialization(ctx context.Context, namespace string, root 
 // against root and the complete logical view. It invokes only ProveAtRoot;
 // callers can therefore import client-computed roots without calling Commit.
 func ValidateMaterialization(ctx context.Context, scheme RootBoundVerifier, root cid.Cid, view mapping.View, witness *arcset.CanonicalArcSet) error {
+	if maltcid.VersionIDOf(root) == maltcid.RootVersion {
+		return layoutcompat.ValidateMaterialization(ctx, scheme, root, view, witness)
+	}
 	if scheme == nil {
 		return fmt.Errorf("root-bound commitment verifier is nil")
 	}

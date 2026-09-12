@@ -75,7 +75,7 @@ func newListWithMaterializer(scheme commitment.IndexCommitment, store *materialm
 	if store == nil {
 		store = materialmemory.New(true)
 	}
-	semantic, err := tree.NewList(scheme, store)
+	semantic, err := tree.NewListForVersion(scheme, store, maltcid.MALTVersionID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -267,7 +267,7 @@ func TestTreeListRejectsLegacyWidthMaterialization(t *testing.T) {
 			}
 			root := commitLegacyWidthNode(t, ctx, scheme, e, namespace, values)
 
-			restarted, err := tree.NewList(scheme, e)
+			restarted, err := tree.NewListForVersion(scheme, e, maltcid.MALTVersionID)
 			if err != nil {
 				t.Fatalf("NewList after restart failed: %v", err)
 			}
@@ -346,7 +346,7 @@ func TestTreeListPreservesMaterializerFailure(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			failing, err := tree.NewList(scheme, failingNodeStore{err: storeErr})
+			failing, err := tree.NewListForVersion(scheme, failingNodeStore{err: storeErr}, maltcid.MALTVersionID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -875,7 +875,7 @@ func TestMutationRejectsLegacyRootBeforePartialVersionUpgrade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	current, err := tree.NewList(scheme, store)
+	current, err := tree.NewListForVersion(scheme, store, maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}

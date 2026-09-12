@@ -33,6 +33,15 @@ module namespace migration does not alter the roots, commitments, proofs,
 schemas, or wire contracts from `v0.0.7-rc.5`. `/v1` profile suffixes do not
 declare MALT or its Go APIs stable at v1.
 
+## Current authentication API
+
+New construction uses self-describing `V=0` Roots: input rules derive coordinates,
+Prefix/Positional lays them out, and a multicommitment selects an exact VC
+profile. Start with [`sdk/authentication`](./sdk/authentication) and the
+[Root/input specification](./docs/spec/authentication-inputs.md). Map/List
+remain compatibility conveniences. System bindings belong only to Prefix.
+The Root version stays zero until an explicit production-ready declaration.
+
 ## Boundary
 
 MALT core owns:
