@@ -1,4 +1,7 @@
-package authentication
+// Package verifier provides the opt-in built-in verification profiles for the
+// authentication SDK. It imports both commitment backends; writers should use
+// sdk/authentication with an injected engine instead.
+package verifier
 
 import (
 	"fmt"
@@ -10,10 +13,10 @@ import (
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
-// NewVerifier installs exact verification-only profiles and the given input
+// New installs exact verification-only profiles and the given input
 // registry. Nil rules selects the built-in rules. No profiles means both
 // built-in VC profiles. It performs no network lookup or mutable resolution.
-func NewVerifier(rules *input.Registry, profiles ...maltcid.ProfileID) (*engine.Engine, error) {
+func New(rules *input.Registry, profiles ...maltcid.ProfileID) (*engine.Engine, error) {
 	if rules == nil {
 		rules = input.DefaultRegistry()
 	}

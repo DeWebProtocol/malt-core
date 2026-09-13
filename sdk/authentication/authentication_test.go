@@ -12,6 +12,7 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
+	authverifier "github.com/dewebprotocol/malt-core/sdk/authentication/verifier"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
@@ -68,14 +69,14 @@ func TestCandidateRoundTripCustomAAAndIndependentVerification(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifier, err := authentication.NewVerifier(rules, maltcid.IPA256)
+	verifier, err := authverifier.New(rules, maltcid.IPA256)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if ok, err := authentication.Verify(verifier, decoded.Request, decoded.Result); err != nil || !ok {
 		t.Fatalf("verify %v %v", ok, err)
 	}
-	other, err := authentication.NewVerifier(nil, maltcid.IPA256)
+	other, err := authverifier.New(nil, maltcid.IPA256)
 	if err != nil {
 		t.Fatal(err)
 	}

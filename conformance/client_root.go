@@ -10,9 +10,14 @@ import (
 	"github.com/dewebprotocol/malt-core/protocol"
 )
 
-const ClientRootV1 = "malt.client-root.conformance/v1"
+// These identify corpus revisions, independently of the Root format version.
+const (
+	ClientRootV1 = "malt.client-root.conformance/v1" // Frozen historical V3 outputs.
+	ClientRootV2 = "malt.client-root.conformance/v2" // V0 outputs, including V3 input migration.
+)
 
 //go:generate go run ../internal/conformancegen/cmd -corpus client-root -out client-root/v1/vectors.json
+//go:generate go run ../internal/conformancegen/cmd -corpus client-root-v2 -out client-root/v2/vectors.json
 
 // ClientRootCorpus freezes complete-view inputs and exact candidate outputs
 // without treating a candidate or receipt as a portable transition proof.
@@ -61,14 +66,22 @@ func (e *ClientRootExpected) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// LoadClientRoot retains the frozen v1 corpus for existing historical consumers.
 func LoadClientRoot() (ClientRootCorpus, error) {
-	data, err := ClientRootBytes()
+	return LoadClientRootVersion(ClientRootV1)
+}
+
+func LoadClientRootVersion(version string) (ClientRootCorpus, error) {
+	data, err := ClientRootBytesVersion(version)
 	if err != nil {
 		return ClientRootCorpus{}, err
 	}
 	var corpus ClientRootCorpus
 	if err := decodeStrict(data, &corpus); err != nil {
 		return ClientRootCorpus{}, fmt.Errorf("decode client-root conformance corpus: %w", err)
+	}
+	if corpus.SchemaVersion != version {
+		return ClientRootCorpus{}, fmt.Errorf("client-root corpus version %q does not match requested %q", corpus.SchemaVersion, version)
 	}
 	if err := corpus.Validate(); err != nil {
 		return ClientRootCorpus{}, err
@@ -77,7 +90,15 @@ func LoadClientRoot() (ClientRootCorpus, error) {
 }
 
 func ClientRootBytes() ([]byte, error) {
-	data, err := corpusFiles.ReadFile("client-root/v1/vectors.json")
+	return ClientRootBytesVersion(ClientRootV1)
+}
+
+func ClientRootBytesVersion(version string) ([]byte, error) {
+	directory, err := clientRootDirectory(version)
+	if err != nil {
+		return nil, err
+	}
+	data, err := corpusFiles.ReadFile(directory + "/vectors.json")
 	if err != nil {
 		return nil, fmt.Errorf("read embedded client-root conformance corpus: %w", err)
 	}
@@ -85,18 +106,37 @@ func ClientRootBytes() ([]byte, error) {
 }
 
 func ClientRootSchema(name string) ([]byte, error) {
+	return ClientRootSchemaVersion(ClientRootV1, name)
+}
+
+func ClientRootSchemaVersion(version, name string) ([]byte, error) {
 	if name != "corpus.schema.json" && name != "vector.schema.json" {
 		return nil, fmt.Errorf("unknown client-root conformance schema %q", name)
 	}
-	data, err := corpusFiles.ReadFile("client-root/v1/" + name)
+	directory, err := clientRootDirectory(version)
+	if err != nil {
+		return nil, err
+	}
+	data, err := corpusFiles.ReadFile(directory + "/" + name)
 	if err != nil {
 		return nil, fmt.Errorf("read client-root conformance schema %q: %w", name, err)
 	}
 	return slices.Clone(data), nil
 }
 
+func clientRootDirectory(version string) (string, error) {
+	switch version {
+	case ClientRootV1:
+		return "client-root/v1", nil
+	case ClientRootV2:
+		return "client-root/v2", nil
+	default:
+		return "", fmt.Errorf("unsupported client-root conformance schema version %q", version)
+	}
+}
+
 func (c ClientRootCorpus) Validate() error {
-	if c.SchemaVersion != ClientRootV1 {
+	if c.SchemaVersion != ClientRootV1 && c.SchemaVersion != ClientRootV2 {
 		return fmt.Errorf("unsupported client-root conformance schema version %q", c.SchemaVersion)
 	}
 	if len(c.Vectors) == 0 {

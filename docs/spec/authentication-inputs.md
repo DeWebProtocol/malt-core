@@ -182,3 +182,12 @@ Resolve/Read, Map-proof and client-root corpora retain their historical formats
 and provenance. New and historical measurements must identify their exact
 Core revision, profile and corpus. Browser release assets remain subject to
 `malt-ts`'s exact published-Core lock and release conformance gate.
+
+## SDK backend selection
+
+`sdk/authentication` consumes a caller-supplied `auth/engine.Engine` for
+preparation, execution, materialization, and verification. It imports no
+concrete commitment backend. Applications that want the built-in verification
+profiles may opt into `sdk/authentication/verifier.New`; that separate package
+imports KZG and IPA. Backend-specific writer builds keep their selected backend
+injected and must not import this convenience constructor.

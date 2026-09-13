@@ -1,6 +1,8 @@
 // Package authentication is the application-neutral V=0 SDK. Applications
 // select inputs, layouts and exact profiles; persistence and trust stay local
 // to the caller. Map/List APIs elsewhere are compatibility conveniences.
+// All operations use an injected engine; this package imports no concrete VC
+// backend. The optional sdk/authentication/verifier package supplies built-ins.
 package authentication
 
 import (

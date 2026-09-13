@@ -8,6 +8,7 @@ import (
 
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
+	authverifier "github.com/dewebprotocol/malt-core/sdk/authentication/verifier"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
@@ -22,7 +23,7 @@ func registerAuthenticationVerifier(backend string) {
 	default:
 		return
 	}
-	verifier, initErr := authentication.NewVerifier(nil, profiles...)
+	verifier, initErr := authverifier.New(nil, profiles...)
 	f := js.FuncOf(func(_ js.Value, args []js.Value) any {
 		result := protocol.VerificationResult{Profile: protocol.AuthenticationProfile}
 		if initErr != nil {
