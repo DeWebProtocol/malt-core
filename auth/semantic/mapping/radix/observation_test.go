@@ -1,5 +1,7 @@
 package radix
 
+import "github.com/dewebprotocol/malt-core/wire/maltcid"
+
 import (
 	"bytes"
 	"context"
@@ -25,7 +27,7 @@ func TestProveReportsMaterializationOpenAndSerialization(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	semanticMap, err := NewMap(scheme, materializermemory.New(true))
+	semanticMap, err := NewMapForVersion(scheme, materializermemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +72,7 @@ func TestProveUsesOneRootBoundOpeningPerVisitedNode(t *testing.T) {
 		t.Fatal(err)
 	}
 	scheme := &commitCountingRootScheme{IndexCommitment: base, rootProver: base}
-	semanticMap, err := NewMap(scheme, materializermemory.New(true))
+	semanticMap, err := NewMapForVersion(scheme, materializermemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}

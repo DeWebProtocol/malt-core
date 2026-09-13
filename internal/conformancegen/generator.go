@@ -21,6 +21,7 @@ import (
 	"github.com/dewebprotocol/malt-core/execution"
 	runtimegraph "github.com/dewebprotocol/malt-core/graph/runtime"
 	"github.com/dewebprotocol/malt-core/protocol"
+	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
@@ -365,7 +366,7 @@ func negativeVectors(name string, positives map[string]conformance.Vector, other
 }
 
 func newGraph(scope string, scheme commitment.IndexCommitment) (*runtimegraph.RuntimeGraph, error) {
-	graph, err := runtimegraph.NewGraph(scope, materialmemory.New(true), runtimegraph.WithNamespace(scope), runtimegraph.WithCommitmentScheme(scheme))
+	graph, err := runtimegraph.NewGraph(scope, materialmemory.New(true), runtimegraph.WithNamespace(scope), runtimegraph.WithCommitmentScheme(scheme), runtimegraph.WithMALTVersion(maltcid.MALTVersionID))
 	if err != nil {
 		return nil, fmt.Errorf("create graph %q: %w", scope, err)
 	}

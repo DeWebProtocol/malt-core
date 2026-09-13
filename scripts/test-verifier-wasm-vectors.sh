@@ -24,3 +24,6 @@ node "$repo_root/scripts/run-verifier-wasm-vectors.mjs" \
   "$repo_root/conformance/resolve-read/v2/vectors.json" \
   ipa \
   "$repo_root/conformance/map-proof/v1/vectors.json"
+node "$repo_root/scripts/run-authentication-wasm.mjs" verifier \
+  "$work_dir/verifier/malt-verifier.wasm" "$work_dir/verifier/wasm_exec.js" \
+  "$repo_root/conformance/authentication-v0.json" all

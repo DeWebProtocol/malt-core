@@ -22,6 +22,15 @@ when this checkout is part of the combined MALT workspace.
   outcomes; they are not portable transition, publication, freshness, or trust
   proofs and must not be documented as authenticated updates.
 
+## Root Version Policy
+
+Follow [docs/policy/root-versioning.md](docs/policy/root-versioning.md): the
+Root format must use `V=0` throughout pre-production; only an explicit
+maintainer production-ready/go-live declaration permits `V=1`. Do not
+automatically increment this field for experimental format changes or source
+releases. Historical `V=2/3` readers preserve their original meanings; do not
+relabel historical fixtures or change CIDv1's container version.
+
 ## Package Ownership
 
 - The module-root `malt` package owns the minimal in-process semantic facade.

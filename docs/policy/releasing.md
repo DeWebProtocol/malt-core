@@ -2,6 +2,14 @@
 
 MALT core uses source tags for experimental releases.
 
+The [MALT Root version policy](./root-versioning.md) keeps the refactored
+Root's `V=0` throughout pre-production, including experimental source/SDK
+releases. Set `V=1` only after the maintainer explicitly declares the system
+production ready and going live. This is independent of CIDv1 and package
+SemVer; a release workflow must not infer that declaration or bump `V`.
+The current executable `V=3` format is an older experiment awaiting the
+coordinated migration described by that policy.
+
 ## Validation
 
 Run from the repository root:

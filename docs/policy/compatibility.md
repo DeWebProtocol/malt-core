@@ -3,6 +3,19 @@
 MALT core is experimental and pre-v1. Exact tags should be pinned and unknown
 profiles rejected.
 
+## MALT Root version decision
+
+The maintainer's 2026-09-12 [Root version policy](./root-versioning.md) requires
+the self-describing Root refactor to use `V=0` throughout pre-production.
+Only an explicit maintainer declaration of production readiness and go-live
+permits `V=1`. Experimental incompatible changes must remain distinguishable
+without automatically increasing this field. This does not renumber CIDv1,
+operation profiles, package releases, storage schemas, or conformance corpora.
+
+The existing flat and `V=2/3` formats described below are current/historical
+implementation facts, not the future version-allocation rule. No executable
+migration or old-root reinterpretation is performed by this policy update.
+
 ## Compatibility surfaces
 
 | Surface | Status |

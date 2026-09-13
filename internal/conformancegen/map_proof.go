@@ -60,7 +60,7 @@ func generateMapProofBackend(backend maltcid.BackendKind) ([]conformance.MapProo
 		return nil, err
 	}
 	scope := "map-proof-conformance-v1-" + string(backend)
-	semantic, err := mapradix.NewMap(scheme, materialmemory.New(true))
+	semantic, err := mapradix.NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		return nil, fmt.Errorf("create %s Map semantic: %w", backend, err)
 	}

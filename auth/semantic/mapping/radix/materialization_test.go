@@ -1,5 +1,7 @@
 package radix_test
 
+import "github.com/dewebprotocol/malt-core/wire/maltcid"
+
 import (
 	"testing"
 
@@ -16,7 +18,7 @@ func TestRadixMaterializationRoundTripUsesOnlyRootBoundProving(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			scheme := factory(t)
 			store := materialmemory.New(true)
-			semantic, err := mappingradix.NewMap(scheme, store)
+			semantic, err := mappingradix.NewMapForVersion(scheme, store, maltcid.MALTVersionID)
 			if err != nil {
 				t.Fatal(err)
 			}

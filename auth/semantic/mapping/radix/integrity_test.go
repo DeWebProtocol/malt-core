@@ -1,5 +1,7 @@
 package radix_test
 
+import "github.com/dewebprotocol/malt-core/wire/maltcid"
+
 import (
 	"context"
 	"fmt"
@@ -26,7 +28,7 @@ func TestUpdateRejectsCorruptedNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewScheme failed: %v", err)
 	}
-	maps, err := mappingradix.NewMap(scheme, store)
+	maps, err := mappingradix.NewMapForVersion(scheme, store, maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatalf("NewMap failed: %v", err)
 	}

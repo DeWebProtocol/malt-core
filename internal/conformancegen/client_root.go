@@ -21,18 +21,35 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// GenerateClientRoot builds complete-view exact candidate vectors for both
-// commitment backends, plus stale, tampered, wrong-backend, and strict-JSON
-// rejection cases.
+// GenerateClientRoot reproduces the frozen v1 corpus with historical V3 output.
 func GenerateClientRoot() ([]byte, error) {
+	return generateClientRoot(conformance.ClientRootV1)
+}
+
+// GenerateClientRootV2 freezes V0 candidate output for both V0 and historical V3
+// input views. The corpus revision is independent of the Root format version.
+func GenerateClientRootV2() ([]byte, error) {
+	return generateClientRoot(conformance.ClientRootV2)
+}
+
+func generateClientRoot(version string) ([]byte, error) {
+	baseVersions := []uint8{maltcid.MALTVersionID}
+	targetVersion := maltcid.MALTVersionID
+	if version == conformance.ClientRootV2 {
+		baseVersions = []uint8{maltcid.RootVersion, maltcid.MALTVersionID}
+		targetVersion = maltcid.RootVersion
+	}
 	var vectors []conformance.ClientRootVector
 	for _, backend := range []maltcid.BackendKind{maltcid.BackendKindKZG, maltcid.BackendKindIPA} {
-		generated, err := generateClientRootBackend(backend)
-		if err != nil {
-			return nil, err
+		for _, baseVersion := range baseVersions {
+			generated, err := generateClientRootBackend(backend, baseVersion, targetVersion)
+			if err != nil {
+				return nil, err
+			}
+			vectors = append(vectors, generated...)
 		}
-		vectors = append(vectors, generated...)
 	}
+
 	slices.SortFunc(vectors, func(left, right conformance.ClientRootVector) int {
 		if left.ID < right.ID {
 			return -1
@@ -42,7 +59,7 @@ func GenerateClientRoot() ([]byte, error) {
 		}
 		return 0
 	})
-	corpus := conformance.ClientRootCorpus{SchemaVersion: conformance.ClientRootV1, Vectors: vectors}
+	corpus := conformance.ClientRootCorpus{SchemaVersion: version, Vectors: vectors}
 	if err := corpus.Validate(); err != nil {
 		return nil, fmt.Errorf("validate generated client-root corpus: %w", err)
 	}
@@ -53,13 +70,13 @@ func GenerateClientRoot() ([]byte, error) {
 	return append(data, '\n'), nil
 }
 
-func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.ClientRootVector, error) {
+func generateClientRootBackend(backend maltcid.BackendKind, baseVersion, targetVersion uint8) ([]conformance.ClientRootVector, error) {
 	ctx := context.Background()
 	scheme, err := clientRootScheme(backend)
 	if err != nil {
 		return nil, err
 	}
-	view, intent, err := clientRootInput(ctx, backend, scheme)
+	view, intent, err := clientRootInput(ctx, backend, scheme, baseVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +97,18 @@ func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.Clien
 		return nil, err
 	}
 	operationID := "client-root-" + string(backend) + "-replace"
-	runtime, err := clientwriter.NewRuntime(
+	prefix := "client-root." + string(backend) + "."
+	category := "replace"
+	newRuntime := clientwriter.NewHistoricalRuntime
+	if targetVersion == maltcid.RootVersion {
+		newRuntime = clientwriter.NewRuntime
+		prefix = fmt.Sprintf("client-root-v%d-to-v0.%s.", baseVersion, backend)
+		operationID = fmt.Sprintf("client-root-v%d-to-v0-%s-replace", baseVersion, backend)
+		if baseVersion == maltcid.MALTVersionID {
+			category = "migrate_v3"
+		}
+	}
+	runtime, err := newRuntime(
 		materialmemory.New(true),
 		map[maltcid.BackendKind]commitment.IndexCommitment{backend: scheme},
 	)
@@ -119,9 +147,8 @@ func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.Clien
 	if err != nil {
 		return nil, err
 	}
-	prefix := "client-root." + string(backend) + "."
 	vectors := []conformance.ClientRootVector{{
-		ID: prefix + "replace.accept", Backend: string(backend), Category: "replace", OperationID: operationID,
+		ID: prefix + "replace.accept", Backend: string(backend), Category: category, OperationID: operationID,
 		UpdateView: viewJSON, SemanticIntent: intentJSON,
 		Expected: conformance.ClientRootExpected{
 			Valid: true, Bundle: &wireBundle, Materialization: &wireMaterialization,
@@ -153,7 +180,7 @@ func generateClientRootBackend(backend maltcid.BackendKind) ([]conformance.Clien
 	if err != nil {
 		return nil, err
 	}
-	tamperSemantic, err := mapradix.NewMap(scheme, materialmemory.New(true))
+	tamperSemantic, err := mapradix.NewMapForVersion(scheme, materialmemory.New(true), baseVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -245,8 +272,8 @@ func clientRootScheme(backend maltcid.BackendKind) (commitment.IndexCommitment, 
 	}
 }
 
-func clientRootInput(ctx context.Context, backend maltcid.BackendKind, scheme commitment.IndexCommitment) (mutation.UpdateView, mutation.SemanticIntent, error) {
-	semantic, err := mapradix.NewMap(scheme, materialmemory.New(true))
+func clientRootInput(ctx context.Context, backend maltcid.BackendKind, scheme commitment.IndexCommitment, baseVersion uint8) (mutation.UpdateView, mutation.SemanticIntent, error) {
+	semantic, err := mapradix.NewMapForVersion(scheme, materialmemory.New(true), baseVersion)
 	if err != nil {
 		return mutation.UpdateView{}, mutation.SemanticIntent{}, err
 	}

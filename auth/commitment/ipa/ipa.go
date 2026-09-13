@@ -655,3 +655,6 @@ var _ commitment.IndexCommitment = (*Scheme)(nil)
 var _ commitment.IndexVerifier = (*Scheme)(nil)
 var _ commitment.IndexProver = (*Scheme)(nil)
 var _ commitment.IndexRootProver = (*Scheme)(nil)
+
+// ProfileID identifies the exact cryptographic parameter and encoding suite.
+func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.IPA256 }

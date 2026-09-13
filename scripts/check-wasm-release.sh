@@ -27,7 +27,8 @@ fi
 expected_go_version="go${go_directive}"
 expected_resolve_read_corpus_sha256="$(sha256sum "${repo_root}/conformance/resolve-read/v2/vectors.json" | awk '{print $1}')"
 expected_map_proof_corpus_sha256="$(sha256sum "${repo_root}/conformance/map-proof/v1/vectors.json" | awk '{print $1}')"
-expected_client_root_corpus_sha256="$(sha256sum "${repo_root}/conformance/client-root/v1/vectors.json" | awk '{print $1}')"
+expected_client_root_corpus_sha256="$(sha256sum "${repo_root}/conformance/client-root/v2/vectors.json" | awk '{print $1}')"
+expected_authentication_corpus_sha256="$(sha256sum "${repo_root}/conformance/authentication-v0.json" | awk '{print $1}')"
 
 mapfile -t entries < <(find "${release_dir}" -mindepth 1 -maxdepth 1 -printf '%f\n' | sort)
 if [[ "${#entries[@]}" -ne 4 || " ${entries[*]} " != *" SHA256SUMS "* ]]; then
@@ -68,6 +69,7 @@ release_fields="$(MANIFEST_PATH="${manifest_path}" RELEASE_DIR="${release_dir}" 
 EXPECTED_GO_VERSION="${expected_go_version}" \
 RESOLVE_READ_CORPUS_SHA256="${expected_resolve_read_corpus_sha256}" \
 MAP_PROOF_CORPUS_SHA256="${expected_map_proof_corpus_sha256}" \
+AUTHENTICATION_CORPUS_SHA256="${expected_authentication_corpus_sha256}" \
 CLIENT_ROOT_CORPUS_SHA256="${expected_client_root_corpus_sha256}" node -e '
 	const fs = require("node:fs")
 	const path = require("node:path")
@@ -80,8 +82,9 @@ CLIENT_ROOT_CORPUS_SHA256="${expected_client_root_corpus_sha256}" node -e '
 	const expectedCodegen = {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"}
 	const expectedCorpora = {
 		resolve_read: {schema: "malt.resolve-read.conformance/v2", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
+		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 		map_proof: {schema: "malt.map-proof.conformance/v1", sha256: process.env.MAP_PROOF_CORPUS_SHA256},
-		client_root: {schema: "malt.client-root.conformance/v1", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		client_root: {schema: "malt.client-root.conformance/v2", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
 	}
 	const toolchain = /^go version (go[0-9]+\.[0-9]+\.[0-9]+) ([a-z0-9]+)\/([a-z0-9]+)$/.exec(manifest.go_toolchain || "")
 	if (manifest.schema !== "malt.wasm-release/v1" ||
@@ -180,6 +183,7 @@ RELEASE_VERSION="${release_version}" SOURCE_COMMIT="${source_commit}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
 RESOLVE_READ_CORPUS_SHA256="${expected_resolve_read_corpus_sha256}" \
 MAP_PROOF_CORPUS_SHA256="${expected_map_proof_corpus_sha256}" \
+AUTHENTICATION_CORPUS_SHA256="${expected_authentication_corpus_sha256}" \
 CLIENT_ROOT_CORPUS_SHA256="${expected_client_root_corpus_sha256}" \
 VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	const fs = require("node:fs")
@@ -189,10 +193,12 @@ VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	const expectedFlags = ["-mod=readonly", "-buildvcs=false", "-trimpath"]
 	const verifierCorpora = {
 		resolve_read: {schema: "malt.resolve-read.conformance/v2", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
+		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 		map_proof: {schema: "malt.map-proof.conformance/v1", sha256: process.env.MAP_PROOF_CORPUS_SHA256}
 	}
 	const writerCorpora = {
-		client_root: {schema: "malt.client-root.conformance/v1", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
+		client_root: {schema: "malt.client-root.conformance/v2", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
 	}
 	const exactFiles = (directory, expected) => {
 		const entries = fs.readdirSync(directory, {withFileTypes: true})

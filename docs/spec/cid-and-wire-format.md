@@ -5,8 +5,12 @@ objects remain ordinary CAS CIDs.
 
 ## Status
 
-Experimental and implementation-bound. Constructors emit the current layout;
-the immediately preceding v2 layout remains accepted for read/proof compatibility.
+New default construction uses [self-describing V0 Roots](./authentication-inputs.md)
+with `0x30VLAA` and an identity-wrapped multicommitment. The reference below
+records **historical V2/V3** interpretation retained for compatibility; its
+`MALTVersionID=3` and codec constants are not current construction defaults.
+Historical bytes and frozen corpora remain unchanged. Follow the
+[Root version policy](../policy/root-versioning.md) for the production gate.
 
 ## MALT Root Codec Namespace
 
@@ -37,11 +41,14 @@ codec = 0x300000
       | backend_id
 ```
 
-The current `MALTVersionID` is `3`. It identifies this typed-root layout;
+The historical `MALTVersionID` is `3`. It identifies this typed-root layout;
 it is not the CID version, a source release, a Resolve/Read profile, or a
 conformance-corpus version. Adding a semantic kind or backend suite does not
-change it. It changes only when the interpretation of the root codec or
-commitment envelope changes incompatibly.
+change it. Earlier experimental revisions incremented it when codec or
+commitment-envelope interpretation changed incompatibly. Future allocation
+follows the Root version policy above and keeps pre-production `V=0` even
+across experimental refactors; compatible parsing still requires explicit
+profile and framing rules.
 
 ### Semantic Registry
 
@@ -68,7 +75,7 @@ from digest length.
 An incompatible parameter set or commitment encoding receives a new backend
 ID even when it belongs to the same broad cryptographic family.
 
-### Current Codecs
+### Historical V3 Codecs
 
 | Name | Value | Semantic kind | Backend |
 | --- | ---: | --- | --- |

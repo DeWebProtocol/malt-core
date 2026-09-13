@@ -431,3 +431,9 @@ var _ commitment.IndexVerifier = (*VerifierScheme)(nil)
 var _ commitment.IndexVerifier = (*Scheme)(nil)
 var _ commitment.IndexProver = (*Scheme)(nil)
 var _ commitment.IndexRootProver = (*Scheme)(nil)
+
+// ProfileID identifies the exact cryptographic parameter and encoding suite.
+func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
+
+// ProfileID binds the verification-only implementation to the same VC profile.
+func (s *VerifierScheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }

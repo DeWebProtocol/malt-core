@@ -1,5 +1,7 @@
 package radix
 
+import "github.com/dewebprotocol/malt-core/wire/maltcid"
+
 import (
 	"context"
 	"fmt"
@@ -24,11 +26,11 @@ func TestBatchUpdateCommitsFinalRootOnceAndMatchesSequentialUpdates(t *testing.T
 		IndexCommitment: baseScheme,
 		rootProver:      baseScheme,
 	}
-	batched, err := NewMap(counting, materialmemory.New(true))
+	batched, err := NewMapForVersion(counting, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sequential, err := NewMap(baseScheme, materialmemory.New(true))
+	sequential, err := NewMapForVersion(baseScheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,11 +96,11 @@ func TestBatchUpdateMatchesSequentialUpdatesWithinOneRootSlot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	batched, err := NewMap(scheme, materialmemory.New(true))
+	batched, err := NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sequential, err := NewMap(scheme, materialmemory.New(true))
+	sequential, err := NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
 	if err != nil {
 		t.Fatal(err)
 	}
