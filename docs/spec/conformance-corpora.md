@@ -76,3 +76,19 @@ current corpus digests. Historical client-root output remains an independent
 native replay test; it is not the current WASM writer's expected output.
 TypeScript, Rust, and other adapters should consume these same JSON
 files directly and must not regenerate implementation-specific replacements.
+
+### Backend isolation gate
+
+`scripts/check-writer-backends.sh` preflights Go and POSIX `grep`; it does not
+require ripgrep. Each `go list` must succeed before its output is inspected.
+A matching forbidden backend rejects the build, grep status 1 means no match,
+and every other grep failure rejects the check. The writer smoke invokes this
+gate before starting Node tests or building WASM.
+
+CI also runs `node --test scripts/check-writer-backends.test.mjs` with a
+controlled PATH that excludes `rg`. It checks clean and contaminated dependency
+lists for both backends and targets, missing tools, failed dependency queries
+with partial output, matching-command errors, and propagation to the full
+writer smoke. Successful exit alone is not evidence that the dependency gate
+ran; CI logs must contain both backend success messages and the regression
+suite result.
