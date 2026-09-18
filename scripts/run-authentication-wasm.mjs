@@ -25,7 +25,7 @@ assert.equal(corpus.schema, 'malt.conformance.authentication/0')
 if (kind === 'verifier') {
   for (const vector of corpus.vectors) {
     const result = JSON.parse(globalThis[name](JSON.stringify(vector.verification)))
-    assert.equal(result.profile, 'malt.authentication/0', vector.id)
+    assert.equal(result.profile, vector.verification.request.profile, vector.id)
     assert.equal(result.valid, vector.valid, `${vector.id}: ${result.error || ''}`)
   }
   assert.equal(JSON.parse(globalThis[name]('{}')).valid, false)
