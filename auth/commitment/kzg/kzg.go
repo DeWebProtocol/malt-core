@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 
+	blsfr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -122,9 +123,10 @@ func (s *Scheme) ProveAtRoot(root cid.Cid, values []commitment.Cell, index uint6
 }
 
 type opening struct {
-	scheme *Scheme
-	root   cid.Cid
-	values []commitment.Cell
+	scheme     *Scheme
+	root       cid.Cid
+	values     []commitment.Cell
+	polynomial []blsfr.Element
 }
 
 // PrepareOpening computes a commitment once and returns an opaque witness
@@ -134,7 +136,7 @@ func (s *Scheme) PrepareOpening(values []commitment.Cell) (commitment.IndexOpeni
 	if err != nil {
 		return nil, err
 	}
-	return &opening{scheme: s, root: root, values: commitment.CloneCells(values)}, nil
+	return s.PrepareOpeningAtRoot(root, values)
 }
 
 func (o *opening) Root() cid.Cid { return o.root }
@@ -143,7 +145,11 @@ func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 	if index >= uint64(len(o.values)) {
 		return nil, nil, fmt.Errorf("index %d out of range", index)
 	}
-	return o.scheme.proveValuesIndex(o.values, index)
+	proof, claimedValue, err := provePolynomialAtIndex(o.scheme.writerKey, o.scheme.domain, o.polynomial, index)
+	if err != nil {
+		return nil, nil, err
+	}
+	return commitment.NewCell(o.values[index]), serializeProof(proof, claimedValue, index), nil
 }
 
 func (s *Scheme) proveValuesIndex(values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
@@ -437,3 +443,29 @@ func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
 
 // ProfileID binds the verification-only implementation to the same VC profile.
 func (s *VerifierScheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
+
+func (s *Scheme) PrepareOpeningAtRoot(root cid.Cid, values []commitment.Cell) (commitment.IndexOpening, error) {
+	if _, err := maltcid.ExtractCommitment(root); err != nil {
+		return nil, err
+	}
+	if maltcid.BackendKindOf(root) != maltcid.BackendKindKZG {
+		return nil, fmt.Errorf("proof root does not use KZG")
+	}
+	if len(values) > MaxValues {
+		return nil, fmt.Errorf("too many values")
+	}
+	polynomial, err := polynomialFromValues(values)
+	if err != nil {
+		return nil, err
+	}
+	return &opening{scheme: s, root: root, values: commitment.CloneCells(values), polynomial: polynomial}, nil
+}
+func (o *opening) RetainedBytes() uint64 {
+	n := uint64(128 + len(o.polynomial)*32 + len(o.values)*24 + len(o.root.Bytes()))
+	for _, v := range o.values {
+		n += uint64(len(v))
+	}
+	return n
+}
+
+var _ commitment.IndexRootOpener = (*Scheme)(nil)

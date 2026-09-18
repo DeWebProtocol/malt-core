@@ -58,7 +58,8 @@ type IndexRootProver interface {
 }
 
 // IndexOpening is an opaque, prepared witness for one committed vector. Root
-// returns the commitment computed while the witness was prepared. Open
+// returns the computed commitment or the caller-supplied Root, depending on
+// the preparation method. A supplied Root is not validated by preparation. Open
 // generates an index proof without recomputing that commitment.
 type IndexOpening interface {
 	Root() cid.Cid
@@ -78,4 +79,20 @@ type IndexOpener interface {
 type IndexCommitment interface {
 	IndexVerifier
 	IndexProver
+}
+
+// IndexRootOpener prepares backend auxiliary material without recomputing a
+// commitment. Preparation does not authenticate the supplied vector: every
+// returned opening must verify against the caller-selected root before use.
+// Implementations detach caller buffers and permit concurrent Open calls.
+// Cache policy and lifetime belong to the caller, never to the primitive.
+type IndexRootOpener interface {
+	PrepareOpeningAtRoot(root cid.Cid, values []Cell) (IndexOpening, error)
+}
+
+// SizedOpening reports estimated retained witness bytes, excluding shared
+// immutable backend parameters. This is accounting, not serialized evidence.
+type SizedOpening interface {
+	IndexOpening
+	RetainedBytes() uint64
 }
