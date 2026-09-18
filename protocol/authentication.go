@@ -16,6 +16,10 @@ import (
 
 const AuthenticationProfile = "malt.authentication/0"
 
+// AuthenticationPathProfile authenticates early traversal absence without
+// changing Root encoding or the complete candidate profile.
+const AuthenticationPathProfile = "malt.authentication/1"
+
 // AuthenticationRequest uses explicit steps. Every visited Root chooses its
 // own AA; the protocol assigns no path separator or application normalization.
 type AuthenticationRequest struct {
@@ -29,7 +33,7 @@ type AuthenticationRequest struct {
 }
 
 func (q AuthenticationRequest) Validate() error {
-	if q.Profile != AuthenticationProfile {
+	if q.Profile != AuthenticationProfile && q.Profile != AuthenticationPathProfile {
 		return errors.New("unsupported authentication profile")
 	}
 	root, err := cid.Decode(q.Root)
@@ -71,11 +75,12 @@ func (q AuthenticationRequest) Validate() error {
 }
 
 type AuthenticationResult struct {
-	Profile   string              `json:"profile"`
-	Resolved  string              `json:"resolved"`
-	Traversal engine.Traversal    `json:"traversal"`
-	Binding   *engine.Result      `json:"binding,omitempty"`
-	Range     *engine.RangeResult `json:"range,omitempty"`
+	AbsentStep *uint64             `json:"absent_step,omitempty,string"`
+	Profile    string              `json:"profile"`
+	Resolved   string              `json:"resolved"`
+	Traversal  engine.Traversal    `json:"traversal"`
+	Binding    *engine.Result      `json:"binding,omitempty"`
+	Range      *engine.RangeResult `json:"range,omitempty"`
 }
 type AuthenticationVerification struct {
 	Request AuthenticationRequest `json:"request"`

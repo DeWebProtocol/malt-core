@@ -133,6 +133,17 @@ func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next Metadat
 // Truncate removes a suffix from a plain sequence. Measured truncation needs
 // an application-level payload decision and is intentionally not inferred.
 func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
+	return e.resize(ctx, root, count, nil, source, out)
+}
+
+// ResizeMeasured removes a suffix or changes the final chunk's measured size.
+// The application must explicitly supply the new size and update any changed
+// payload target separately; the engine never infers content bytes.
+func (e *Engine) ResizeMeasured(ctx context.Context, root cid.Cid, count, totalSize uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
+	return e.resize(ctx, root, count, &totalSize, source, out)
+}
+
+func (e *Engine) resize(ctx context.Context, root cid.Cid, count uint64, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	u, ref, err := e.edit(ctx, root, source, out)
 	if err != nil {
 		return cid.Undef, err
@@ -141,16 +152,22 @@ func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, sourc
 	if err != nil {
 		return cid.Undef, err
 	}
-	if old.ChunkSize != 0 {
+	if (old.ChunkSize != 0) != (totalSize != nil) {
 		return cid.Undef, errors.New("truncate requires a plain Positional sequence")
 	}
 	if count > old.Count {
 		return cid.Undef, errors.New("truncate cannot extend a sequence")
 	}
-	if count == old.Count {
+	if count == old.Count && (totalSize == nil || *totalSize == old.TotalSize) {
 		return root, nil
 	}
-	next := Metadata{Count: count}
+	next := Metadata{Count: count, ChunkSize: old.ChunkSize}
+	if totalSize != nil {
+		next.TotalSize = *totalSize
+	}
+	if err := next.validate(); err != nil {
+		return cid.Undef, err
+	}
 	next.Height, err = height(count, uint64(u.profile.Slots-1))
 	if err != nil {
 		return cid.Undef, err
@@ -202,7 +219,7 @@ func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next Metad
 			continue
 		}
 		start := uint64(slot-1) * span
-		if old.Height == 0 || next.Count-start >= span {
+		if old.Height == 0 {
 			continue
 		}
 		child, err := parseChild(cells[slot], ref)
@@ -216,6 +233,9 @@ func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next Metad
 		nextChild, _, err := childMetadata(next, start, u.profile.Slots)
 		if err != nil {
 			return maltcid.NodeRef{}, err
+		}
+		if oldChild == nextChild {
+			continue
 		}
 		child, err = u.truncateNode(b, child, oldChild, nextChild)
 		if err != nil {

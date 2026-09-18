@@ -380,6 +380,16 @@ type Traversal struct {
 // Resolve interprets each explicit step using the AA of the Root reached at
 // that step. No string separators or longest-path-prefix policy are involved.
 func (e *Engine) Resolve(ctx context.Context, root cid.Cid, steps []input.Value, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
+	target, proof, err := e.ResolvePath(ctx, root, steps, source)
+	if err == nil && !target.Defined() {
+		return cid.Undef, Traversal{}, fmt.Errorf("step %d: binding absent", len(proof.Results)-1)
+	}
+	return target, proof, err
+}
+
+// ResolvePath returns an undefined target and a terminal absence proof when a
+// selector is absent. Missing materialization and execution failures are errors.
+func (e *Engine) ResolvePath(ctx context.Context, root cid.Cid, steps []input.Value, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
 	current := root
 	out := Traversal{Results: []Result{}}
 	_, descriptor, err := maltcid.RootNode(root)
@@ -394,16 +404,26 @@ func (e *Engine) Resolve(ctx context.Context, root cid.Cid, steps []input.Value,
 		if err != nil {
 			return cid.Undef, Traversal{}, fmt.Errorf("step %d: %w", i, err)
 		}
-		if !result.Present {
-			return cid.Undef, Traversal{}, fmt.Errorf("step %d: binding absent", i)
-		}
 		out.Results = append(out.Results, result)
+		if !result.Present {
+			return cid.Undef, out, nil
+		}
 		current = result.Target
 	}
 	return current, out, nil
 }
+
 func (e *Engine) VerifyTraversal(root cid.Cid, steps []input.Value, target cid.Cid, proof Traversal) (bool, error) {
-	if len(steps) != len(proof.Results) {
+	if !target.Defined() {
+		return false, nil
+	}
+	return e.VerifyPath(root, steps, target, proof)
+}
+
+// VerifyPath binds every supplied step to the selected Root. An undefined
+// target is valid only for a proven absent selector at the terminal proof step.
+func (e *Engine) VerifyPath(root cid.Cid, steps []input.Value, target cid.Cid, proof Traversal) (bool, error) {
+	if len(proof.Results) > len(steps) {
 		return false, nil
 	}
 	_, descriptor, err := maltcid.RootNode(root)
@@ -414,18 +434,17 @@ func (e *Engine) VerifyTraversal(root cid.Cid, steps []input.Value, target cid.C
 		return false, err
 	}
 	current := root
-	for i, step := range steps {
-		result := proof.Results[i]
-		valid, err := e.Verify(current, step, result)
+	for i, result := range proof.Results {
+		valid, err := e.Verify(current, steps[i], result)
 		if err != nil || !valid {
 			return valid, err
 		}
 		if !result.Present {
-			return false, nil
+			return !target.Defined() && i == len(proof.Results)-1, nil
 		}
 		current = result.Target
 	}
-	return current.Equals(target), nil
+	return target.Defined() && len(steps) == len(proof.Results) && current.Equals(target), nil
 }
 
 // RootMetadata decodes structural metadata from the first proof node. Callers

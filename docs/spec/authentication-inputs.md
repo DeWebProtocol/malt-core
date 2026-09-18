@@ -191,3 +191,34 @@ concrete commitment backend. Applications that want the built-in verification
 profiles may opt into `sdk/authentication/verifier.New`; that separate package
 imports KZG and IPA. Backend-specific writer builds keep their selected backend
 injected and must not import this convenience constructor.
+
+## Rooted paths and retained writers
+
+`malt.authentication/1` adds authenticated early path termination. A missing
+traversal selector returns `absent_step` as a zero-based decimal string, an
+empty `resolved`, and exactly the successful prefix proofs followed by the
+missing binding proof. It carries neither a primitive binding nor a range
+result. Verification binds that prefix to the caller's Root and steps; it does
+not claim to have evaluated the suffix. I/O, recovery, unsupported-input and
+cancellation errors never become absence. `/0` retains its previous behavior.
+Both profiles use the same V=0 Roots and binding proofs; candidates remain `/0`.
+
+`ExecuteWithRoots` accepts a Root-scoped node lookup. A service can reconstruct
+one ArcSet before serving its proof and defer other Roots until traversal
+reaches them. Core defines no recovery records, durable store or cache policy.
+
+`authentication.NewWriter` imports and verifies a complete candidate once.
+`Writer.Update` returns an independent candidate writer, preserving its base for
+retries and branches. Prefix changes and Positional replacement, append,
+truncation and measured-size changes reuse unchanged authentication paths.
+Changing chunk geometry explicitly falls back to complete materialization.
+The exported candidate remains a complete input/node view: this is neither a
+partial update witness nor a stateless transition proof. Export validation can
+still inspect the complete materialization; path reuse does not imply constant
+update or transport cost. Applications update child ArcSets before rebinding
+parent entries, and retain candidate writers only under their own receipt and
+trust policies.
+
+Measured truncation uses `ResizeMeasured` with an explicit new count and total
+size. The application supplies any changed final payload CID separately; Core
+cannot infer re-chunked content or verify its bytes from relation state.

@@ -258,7 +258,10 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/0"
+          "enum": [
+            "malt.authentication/0",
+            "malt.authentication/1"
+          ]
         },
         "root": {
           "type": "string",
@@ -383,11 +386,13 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/0"
+          "enum": [
+            "malt.authentication/0",
+            "malt.authentication/1"
+          ]
         },
         "resolved": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "traversal": {
           "$ref": "#/$defs/traversal"
@@ -397,12 +402,56 @@
         },
         "range": {
           "$ref": "#/$defs/range"
+        },
+        "absent_step": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,2})$"
         }
       },
       "required": [
         "profile",
         "resolved",
         "traversal"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "absent_step"
+            ]
+          },
+          "then": {
+            "properties": {
+              "profile": {
+                "const": "malt.authentication/1"
+              },
+              "resolved": {
+                "const": ""
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "binding"
+                  ]
+                },
+                {
+                  "required": [
+                    "range"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "properties": {
+              "resolved": {
+                "minLength": 1
+              }
+            }
+          }
+        }
       ]
     },
     "state": {

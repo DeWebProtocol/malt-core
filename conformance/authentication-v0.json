@@ -148,6 +148,90 @@
       "valid": true
     },
     {
+      "id": "profile-1.path-absence",
+      "verification": {
+        "request": {
+          "profile": "malt.authentication/1",
+          "root": "bagayfqabaazacmelzjfj67jpy7rd43mtqwwubqz3fjh43jorax2fs7izs5qvrfk4muznoemqu4s6tczg2fnaxslr7xxa",
+          "steps": [
+            {
+              "kind": "label",
+              "data": "bWlzc2luZw=="
+            },
+            {
+              "kind": "label",
+              "data": "c3VmZml4"
+            }
+          ],
+          "operation": "resolve"
+        },
+        "result": {
+          "absent_step": "0",
+          "profile": "malt.authentication/1",
+          "resolved": "",
+          "traversal": {
+            "results": [
+              {
+                "present": false,
+                "target": null,
+                "proof": {
+                  "format": "malt.binding/0",
+                  "nodes": [
+                    {
+                      "proof": "lXipFlJEIpMvaA6QsXkuB/6ytTUDpXrEZAHrOF+r7dWyY4pZC9OthJHu2PfmlWgsb8Mc729ensxnwhzAj83hHtPwneFknTdNpJWZHHhSuFQAAAmW"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "profile-1.path-wrong-prefix",
+      "verification": {
+        "request": {
+          "profile": "malt.authentication/1",
+          "root": "bagayfqabaazacmelzjfj67jpy7rd43mtqwwubqz3fjh43jorax2fs7izs5qvrfk4muznoemqu4s6tczg2fnaxslr7xxa",
+          "steps": [
+            {
+              "kind": "label",
+              "data": "YS9i"
+            },
+            {
+              "kind": "label",
+              "data": "c3VmZml4"
+            }
+          ],
+          "operation": "resolve"
+        },
+        "result": {
+          "absent_step": "0",
+          "profile": "malt.authentication/1",
+          "resolved": "",
+          "traversal": {
+            "results": [
+              {
+                "present": false,
+                "target": null,
+                "proof": {
+                  "format": "malt.binding/0",
+                  "nodes": [
+                    {
+                      "proof": "lXipFlJEIpMvaA6QsXkuB/6ytTUDpXrEZAHrOF+r7dWyY4pZC9OthJHu2PfmlWgsb8Mc729ensxnwhzAj83hHtPwneFknTdNpJWZHHhSuFQAAAmW"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "valid": false
+    },
+    {
       "id": "profile-1.native-key",
       "verification": {
         "request": {
@@ -463,6 +547,90 @@
         }
       },
       "valid": true
+    },
+    {
+      "id": "profile-2.path-absence",
+      "verification": {
+        "request": {
+          "profile": "malt.authentication/1",
+          "root": "bagayfqabaaraeibul4igcdnhmrt7n524e224iyx6ieoqcxsggu5ithjvefhwzurhma",
+          "steps": [
+            {
+              "kind": "label",
+              "data": "bWlzc2luZw=="
+            },
+            {
+              "kind": "label",
+              "data": "c3VmZml4"
+            }
+          ],
+          "operation": "resolve"
+        },
+        "result": {
+          "absent_step": "0",
+          "profile": "malt.authentication/1",
+          "resolved": "",
+          "traversal": {
+            "results": [
+              {
+                "present": false,
+                "target": null,
+                "proof": {
+                  "format": "malt.binding/0",
+                  "nodes": [
+                    {
+                      "proof": "AAAACEMPyZg4pD0bUWHtZzz3BiJ85tB7iIbqXZ5sd2ooOfWNSTfJPrDMeAcsSdz63AC+GoTBAlVj+tmE1S6gjjG0Z19zOclA+G4OEwE7E7PoSMozwMaJgnVce2PBqUYrza0FrRUoejnK46ub7SVuRwFdwJNSRIA9NghjHDGQB6JED8DvFT22pJ2j66LIwwpbcwevNXe+APgxqoEH5R2+lCvdQ48UGzV//fuvaIVVI+Ec9YwYzPFyskxoi8C8f2T5VdirSBSSxxKBod8BbDL5XQzpgTOceT5wPFTbJ8LTmcCYr9trUBaxok4yVHsJWMXrfZhpnw1RBOjaWGJpDi6/HQ1t4TVSs27xcUxDuLcoeh2KTHT0wc2eMKeN52WcwDgfklo4X1sHJg90pD6Tb76HwNvkViRXZ+p3Apeuo1GEHidD6p2BPTq3I9jbwTQoDq9M0KSY1z32KXemqmIy2p+ABk/qMINxQvxq4fA4s9XPQI1nBAg2YsH2BXWRQNq8mgvzMqQAHwbO15aGbVUCcLS1Di26oHHfv5/nCaauB1kIvfkvGW5JJBDK8E7D6KKBv6+zUDbvkfBBVCLEngbGIhQOEIaAOaEpz5wpo58/zmBOScgCJ2ruMEZyyq+TV4EStEwiiVULR2PcgVOC7Vd48zzAFzVLChzbeWpYI9eM38z5zMO/dJmr79V3jXYAhzOmeVfpkb1qGEyXtekCWfn5ir6q+JE/KgQAAACZ"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "profile-2.path-wrong-prefix",
+      "verification": {
+        "request": {
+          "profile": "malt.authentication/1",
+          "root": "bagayfqabaaraeibul4igcdnhmrt7n524e224iyx6ieoqcxsggu5ithjvefhwzurhma",
+          "steps": [
+            {
+              "kind": "label",
+              "data": "YS9i"
+            },
+            {
+              "kind": "label",
+              "data": "c3VmZml4"
+            }
+          ],
+          "operation": "resolve"
+        },
+        "result": {
+          "absent_step": "0",
+          "profile": "malt.authentication/1",
+          "resolved": "",
+          "traversal": {
+            "results": [
+              {
+                "present": false,
+                "target": null,
+                "proof": {
+                  "format": "malt.binding/0",
+                  "nodes": [
+                    {
+                      "proof": "AAAACEMPyZg4pD0bUWHtZzz3BiJ85tB7iIbqXZ5sd2ooOfWNSTfJPrDMeAcsSdz63AC+GoTBAlVj+tmE1S6gjjG0Z19zOclA+G4OEwE7E7PoSMozwMaJgnVce2PBqUYrza0FrRUoejnK46ub7SVuRwFdwJNSRIA9NghjHDGQB6JED8DvFT22pJ2j66LIwwpbcwevNXe+APgxqoEH5R2+lCvdQ48UGzV//fuvaIVVI+Ec9YwYzPFyskxoi8C8f2T5VdirSBSSxxKBod8BbDL5XQzpgTOceT5wPFTbJ8LTmcCYr9trUBaxok4yVHsJWMXrfZhpnw1RBOjaWGJpDi6/HQ1t4TVSs27xcUxDuLcoeh2KTHT0wc2eMKeN52WcwDgfklo4X1sHJg90pD6Tb76HwNvkViRXZ+p3Apeuo1GEHidD6p2BPTq3I9jbwTQoDq9M0KSY1z32KXemqmIy2p+ABk/qMINxQvxq4fA4s9XPQI1nBAg2YsH2BXWRQNq8mgvzMqQAHwbO15aGbVUCcLS1Di26oHHfv5/nCaauB1kIvfkvGW5JJBDK8E7D6KKBv6+zUDbvkfBBVCLEngbGIhQOEIaAOaEpz5wpo58/zmBOScgCJ2ruMEZyyq+TV4EStEwiiVULR2PcgVOC7Vd48zzAFzVLChzbeWpYI9eM38z5zMO/dJmr79V3jXYAhzOmeVfpkb1qGEyXtekCWfn5ir6q+JE/KgQAAACZ"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "valid": false
     },
     {
       "id": "profile-2.native-key",
