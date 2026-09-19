@@ -181,8 +181,8 @@ authorized for another reader.
 `sdk/writer.NewRuntime` emits V0 Roots, including when the supplied complete
 view uses historical V3 Roots. `NewHistoricalRuntime` is only for exact V3
 replay. Current native/WASM equality is frozen in `conformance/client-root/v3`;
-the independent v1 corpus retains historical outputs unchanged. The `/v2`
-corpus revision and existing `/v1` wire profiles are separate from Root `V=0`.
+the v1/v2 corpus files retain their historical bytes. Corpus `/v3`, bundle and
+receipt `/v2`, and writer-result `/v3` are separate from Root `V=0`.
 
 Browser clients may invoke the same computation through
 `cmd/malt-writer-wasm`. Its `maltComputeClientRootV1` entry point strictly
