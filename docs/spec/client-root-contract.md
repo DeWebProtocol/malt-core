@@ -7,8 +7,11 @@ state-transition proof.
 
 ## Status
 
-This contract is included in v0.0.7-rc.1 as an experimental pre-v1 surface.
-The `/v1` suffixes below version serialized profiles; they do not declare
+This contract is an experimental pre-v1 surface. Transaction IDs replace
+operation IDs without an alias or fallback: Go uses `TransactionID`, JSON uses
+`transaction_id`, and browser APIs use `transactionID`. Bundles and receipts
+use `/v2`; writer computation results use `/v3`. Older profiles are rejected.
+Serialized profile suffixes version their contracts; they do not declare
 MALT or its Go source APIs stable at v1. Client-root bundles and receipts
 retain the explicit non-claims defined below.
 
@@ -18,10 +21,10 @@ retain the explicit non-claims defined below.
 | --- | --- | --- |
 | complete old-state closure | `malt.update-view/v1` | `update-view.schema.json` |
 | output-free requested change | `malt.semantic-intent/v1` | `semantic-intent.schema.json` |
-| exact locally computed submission | `malt.client-root-bundle/v1` | `client-root-bundle.schema.json` |
+| exact locally computed submission | `malt.client-root-bundle/v2` | `client-root-bundle.schema.json` |
 | map proof-serving witness | `malt.client-root-materialization/v1` | `client-root-materialization.schema.json` |
-| browser-local computation result | `malt.writer-compute-result/v2` | `writer-compute-result-v2.schema.json` |
-| durable exact-bundle acknowledgement | `malt.materialization-receipt/v1` | `materialization-receipt.schema.json` |
+| browser-local computation result | `malt.writer-compute-result/v3` | `writer-compute-result-v3.schema.json` |
+| durable exact-bundle acknowledgement | `malt.materialization-receipt/v2` | `materialization-receipt.schema.json` |
 
 Canonical in-process values live in `mutation`. Their JSON projections and
 checked-in schemas live in `protocol`. The application-neutral computation
@@ -147,7 +150,7 @@ count, and each change's coordinate bytes, before target, after target, output
 ID, and output kind. A digest caller must still bind the intent to its update
 view; the intent digest alone does not authenticate before-images.
 
-`ClientRootBundle.Digest` writes: profile, operation ID, the 32-byte view and
+`ClientRootBundle.Digest` writes: profile, transaction ID, the 32-byte view and
 intent digests as length-prefixed byte strings, candidate CID, canonical output
 count and output pairs, then canonical payload-CID count and values. On the
 wire, all three digests are exactly 64 lowercase hexadecimal characters.
@@ -161,7 +164,7 @@ view and returns:
 - the designated candidate root;
 - the exact set of literal payload CIDs introduced by the intent;
 - deterministic SHA-256 digests of the canonical view and intent; and
-- an operation ID and one canonical `ClientRootBundle` binding all of those
+- a transaction ID and one canonical `ClientRootBundle` binding all of those
   values.
 
 The bundle contains exactly one output for every transition. Each output's
@@ -177,15 +180,15 @@ authorized for another reader.
 
 `sdk/writer.NewRuntime` emits V0 Roots, including when the supplied complete
 view uses historical V3 Roots. `NewHistoricalRuntime` is only for exact V3
-replay. Current native/WASM equality is frozen in `conformance/client-root/v2`;
-the independent v1 corpus retains historical outputs unchanged. The `/v2`
-corpus revision and existing `/v1` wire profiles are separate from Root `V=0`.
+replay. Current native/WASM equality is frozen in `conformance/client-root/v3`;
+the v1/v2 corpus files retain their historical bytes. Corpus `/v3`, bundle and
+receipt `/v2`, and writer-result `/v3` are separate from Root `V=0`.
 
 Browser clients may invoke the same computation through
 `cmd/malt-writer-wasm`. Its `maltComputeClientRootV1` entry point strictly
 decodes bounded UTF-8 JSON `Uint8Array` values for an `UpdateView` and
 `SemanticIntent`, runs `sdk/writer`, and returns a strictly validated
-`malt.writer-compute-result/v2` carrying the canonical bundle, root-bound map
+`malt.writer-compute-result/v3` carrying the canonical bundle, root-bound map
 materialization, complete next view, and diagnostic local timings. The
 materialization contains backend-owned radix cache coordinates for every map
 transition output. The first result after `Session.BootstrapMap` additionally
@@ -265,12 +268,12 @@ writes.
 
 A valid receipt binds:
 
-- the operation ID;
+- the transaction ID;
 - base and candidate roots;
 - the canonical bundle digest; and
 - the service-declared durable boundary.
 
-Receipt validation requires the exact operation ID, base root, candidate root,
+Receipt validation requires the exact transaction ID, base root, candidate root,
 canonical bundle digest, and a non-empty durable-boundary identifier. It does
 not independently inspect the service's storage.
 
@@ -296,7 +299,7 @@ A browser writer may create the canonical empty-map base through
 `sdk/writer.Session.BootstrapMap` (or `maltWriterBootstrapSessionV1`). The
 commitment is computed in the selected client backend. The returned update view
 is retained in the same stateful session, and its first prepared
-`malt.writer-compute-result/v2` carries `materialization.base`.
+`malt.writer-compute-result/v3` carries `materialization.base`.
 
 Core accepts that optional witness only when the bundle view contains exactly
 one object named `root`, its kind is map, its logical vector is empty, and its

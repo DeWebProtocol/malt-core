@@ -77,6 +77,15 @@ func GenerateAuthentication() ([]byte, error) {
 				return nil, err
 			}
 		}
+		path := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: []input.Value{input.LabelValue([]byte("missing")), input.LabelValue([]byte("suffix"))}}
+		if err := add("path-absence", path); err != nil {
+			return nil, err
+		}
+		badPath := corpus.Vectors[len(corpus.Vectors)-1]
+		badPath.ID = fmt.Sprintf("profile-%d.path-wrong-prefix", profile)
+		badPath.Verification.Request.Steps = []input.Value{input.LabelValue([]byte("a/b")), input.LabelValue([]byte("suffix"))}
+		badPath.Valid = false
+		corpus.Vectors = append(corpus.Vectors, badPath)
 		native := state
 		native.Descriptor.InputRule = 0
 		native.Entries = append([]engine.Entry(nil), state.Entries...)

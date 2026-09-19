@@ -60,7 +60,7 @@ git -C "${repo_root}" archive --format=tar "${source_commit}" | tar -x -C "${bui
 
 resolve_read_corpus_sha256="$(sha256sum "${build_source}/conformance/resolve-read/v2/vectors.json" | awk '{print $1}')"
 map_proof_corpus_sha256="$(sha256sum "${build_source}/conformance/map-proof/v1/vectors.json" | awk '{print $1}')"
-client_root_corpus_sha256="$(sha256sum "${build_source}/conformance/client-root/v2/vectors.json" | awk '{print $1}')"
+client_root_corpus_sha256="$(sha256sum "${build_source}/conformance/client-root/v3/vectors.json" | awk '{print $1}')"
 authentication_corpus_sha256="$(sha256sum "${build_source}/conformance/authentication-v0.json" | awk '{print $1}')"
 
 go_directive="$(awk '$1 == "go" { print $2; exit }' "${build_source}/go.mod")"
@@ -174,7 +174,7 @@ PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 		target: "js/wasm",
 		conformance_corpora: {
 			authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-			client_root: {schema: "malt.client-root.conformance/v2", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+			client_root: {schema: "malt.client-root.conformance/v3", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
 		},
 		parameters,
 		build_flags: ["-mod=readonly", "-buildvcs=false", "-trimpath"],
@@ -265,7 +265,7 @@ MANIFEST_PATH="${temporary}/WASM-RELEASE.json" node -e '
 			resolve_read: {schema: "malt.resolve-read.conformance/v2", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
 			authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 			map_proof: {schema: "malt.map-proof.conformance/v1", sha256: process.env.MAP_PROOF_CORPUS_SHA256},
-			client_root: {schema: "malt.client-root.conformance/v2", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+			client_root: {schema: "malt.client-root.conformance/v3", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
 		},
 		codegen_environment: {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"},
 		components: {verifier: component("VERIFIER"), writer: component("WRITER")}

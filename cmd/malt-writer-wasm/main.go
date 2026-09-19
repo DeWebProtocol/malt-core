@@ -12,7 +12,7 @@ import (
 	"github.com/dewebprotocol/malt-core/protocol"
 )
 
-const maxOperationIDBytes = 128
+const maxTransactionIDBytes = 128
 
 func main() {
 	backend, initErr := startupBackend()
@@ -45,13 +45,13 @@ func registerStatelessCompute(writer *computer, initErr error) {
 			return promise.Call("reject", fmt.Sprintf("initialize MALT writer: %v", initErr))
 		}
 		if len(args) != 3 {
-			return promise.Call("reject", "maltComputeClientRootV1 expects operation ID, update-view JSON, and semantic-intent JSON Uint8Arrays")
+			return promise.Call("reject", "maltComputeClientRootV1 expects transaction ID, update-view JSON, and semantic-intent JSON Uint8Arrays")
 		}
-		operationIDBytes, err := copyBoundedBytes(args[0], "operation ID", maxOperationIDBytes)
+		transactionIDBytes, err := copyBoundedBytes(args[0], "transaction ID", maxTransactionIDBytes)
 		if err != nil {
 			return promise.Call("reject", err.Error())
 		}
-		operationID := string(operationIDBytes)
+		transactionID := string(transactionIDBytes)
 		updateViewJSON, err := copyBoundedBytes(args[1], "update-view JSON", protocol.MaxClientRootJSONBytes)
 		if err != nil {
 			return promise.Call("reject", err.Error())
@@ -61,7 +61,7 @@ func registerStatelessCompute(writer *computer, initErr error) {
 			return promise.Call("reject", err.Error())
 		}
 		return promiseString(func() (string, error) {
-			result, err := writer.compute(context.Background(), operationID, updateViewJSON, semanticIntentJSON)
+			result, err := writer.compute(context.Background(), transactionID, updateViewJSON, semanticIntentJSON)
 			return string(result), err
 		})
 	})
@@ -130,7 +130,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", fmt.Sprintf("initialize MALT writer session: %v", initErr))
 		}
 		if len(args) != 2 {
-			return promise.Call("reject", "maltWriterPrepareSessionV1 expects operation ID and semantic-intent JSON Uint8Arrays")
+			return promise.Call("reject", "maltWriterPrepareSessionV1 expects transaction ID and semantic-intent JSON Uint8Arrays")
 		}
 		select {
 		case prepareGate <- struct{}{}:
@@ -138,7 +138,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", "a client writer session prepare is already in flight")
 		}
 		releasePrepare := func() { <-prepareGate }
-		operationIDBytes, err := copyBoundedBytes(args[0], "operation ID", maxOperationIDBytes)
+		transactionIDBytes, err := copyBoundedBytes(args[0], "transaction ID", maxTransactionIDBytes)
 		if err != nil {
 			releasePrepare()
 			return promise.Call("reject", err.Error())
@@ -148,9 +148,9 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			releasePrepare()
 			return promise.Call("reject", err.Error())
 		}
-		operationID := string(operationIDBytes)
+		transactionID := string(transactionIDBytes)
 		return promiseStringFinally(func() (string, error) {
-			return writer.prepare(context.Background(), operationID, intentJSON)
+			return writer.prepare(context.Background(), transactionID, intentJSON)
 		}, releasePrepare)
 	})
 	js.Global().Set("maltWriterPrepareSessionV1", prepareFunction)
@@ -161,15 +161,15 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", fmt.Sprintf("initialize MALT writer session: %v", initErr))
 		}
 		if len(args) != 1 {
-			return promise.Call("reject", "maltWriterGetPreparedResultV1 expects an operation ID Uint8Array")
+			return promise.Call("reject", "maltWriterGetPreparedResultV1 expects an transaction ID Uint8Array")
 		}
-		operationIDBytes, err := copyBoundedBytes(args[0], "operation ID", maxOperationIDBytes)
+		transactionIDBytes, err := copyBoundedBytes(args[0], "transaction ID", maxTransactionIDBytes)
 		if err != nil {
 			return promise.Call("reject", err.Error())
 		}
-		operationID := string(operationIDBytes)
+		transactionID := string(transactionIDBytes)
 		return promiseString(func() (string, error) {
-			result, err := writer.getPreparedResult(operationID)
+			result, err := writer.getPreparedResult(transactionID)
 			return string(result), err
 		})
 	})
@@ -181,9 +181,9 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", fmt.Sprintf("initialize MALT writer session: %v", initErr))
 		}
 		if len(args) != 2 {
-			return promise.Call("reject", "maltWriterAcceptSessionReceiptV1 expects operation ID and materialization-receipt JSON Uint8Arrays")
+			return promise.Call("reject", "maltWriterAcceptSessionReceiptV1 expects transaction ID and materialization-receipt JSON Uint8Arrays")
 		}
-		operationIDBytes, err := copyBoundedBytes(args[0], "operation ID", maxOperationIDBytes)
+		transactionIDBytes, err := copyBoundedBytes(args[0], "transaction ID", maxTransactionIDBytes)
 		if err != nil {
 			return promise.Call("reject", err.Error())
 		}
@@ -191,9 +191,9 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 		if err != nil {
 			return promise.Call("reject", err.Error())
 		}
-		operationID := string(operationIDBytes)
+		transactionID := string(transactionIDBytes)
 		return promiseString(func() (string, error) {
-			return writer.acceptReceipt(operationID, receiptJSON)
+			return writer.acceptReceipt(transactionID, receiptJSON)
 		})
 	})
 	js.Global().Set("maltWriterAcceptSessionReceiptV1", acceptFunction)
@@ -204,18 +204,18 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", fmt.Sprintf("initialize MALT writer session: %v", initErr))
 		}
 		if len(args) != 1 {
-			return promise.Call("reject", "maltWriterDiscardSessionCandidateV1 expects an operation ID Uint8Array")
+			return promise.Call("reject", "maltWriterDiscardSessionCandidateV1 expects an transaction ID Uint8Array")
 		}
-		operationIDBytes, err := copyBoundedBytes(args[0], "operation ID", maxOperationIDBytes)
+		transactionIDBytes, err := copyBoundedBytes(args[0], "transaction ID", maxTransactionIDBytes)
 		if err != nil {
 			return promise.Call("reject", err.Error())
 		}
-		operationID := string(operationIDBytes)
+		transactionID := string(transactionIDBytes)
 		return promiseString(func() (string, error) {
-			if err := writer.discard(operationID); err != nil {
+			if err := writer.discard(transactionID); err != nil {
 				return "", err
 			}
-			return operationID, nil
+			return transactionID, nil
 		})
 	})
 	js.Global().Set("maltWriterDiscardSessionCandidateV1", discardFunction)

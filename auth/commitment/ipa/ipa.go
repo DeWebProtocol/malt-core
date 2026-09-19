@@ -190,6 +190,8 @@ type opening struct {
 	scheme *Scheme
 	root   cid.Cid
 	values []commitment.Cell
+	vector []fr.Element
+	point  banderwagon.Element
 }
 
 // PrepareOpening computes a commitment once and returns an opaque witness
@@ -202,7 +204,7 @@ func (s *Scheme) PrepareOpening(values []commitment.Cell) (commitment.IndexOpeni
 	if err != nil {
 		return nil, err
 	}
-	return &opening{scheme: s, root: root, values: commitment.CloneCells(values)}, nil
+	return s.PrepareOpeningAtRoot(root, values)
 }
 
 func (o *opening) Root() cid.Cid { return o.root }
@@ -211,7 +213,17 @@ func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 	if index >= uint64(len(o.values)) {
 		return nil, nil, fmt.Errorf("index %d out of range", index)
 	}
-	return o.scheme.proveValuesIndex(o.root, o.values, index)
+	// The prover may use scratch space; keep the cached witness immutable.
+	vector := append([]fr.Element(nil), o.vector...)
+	proof, err := ipa.CreateIPAProof(common.NewTranscript(singleTranscriptLabel), o.scheme.ipaConfig, o.point, vector, func() fr.Element { var p fr.Element; p.SetUint64(index); return p }())
+	if err != nil {
+		return nil, nil, err
+	}
+	encoded, err := o.scheme.serializeProof(&proof, int(index))
+	if err != nil {
+		return nil, nil, err
+	}
+	return commitment.NewCell(o.values[index]), encoded, nil
 }
 
 // BatchProve proves multiple stable indices with one batch proof payload.
@@ -658,3 +670,33 @@ var _ commitment.IndexRootProver = (*Scheme)(nil)
 
 // ProfileID identifies the exact cryptographic parameter and encoding suite.
 func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.IPA256 }
+
+func (s *Scheme) PrepareOpeningAtRoot(root cid.Cid, values []commitment.Cell) (commitment.IndexOpening, error) {
+	if err := s.requireCommitter(); err != nil {
+		return nil, err
+	}
+	if maltcid.BackendKindOf(root) != maltcid.BackendKindIPA {
+		return nil, fmt.Errorf("proof root does not use IPA")
+	}
+	if len(values) > MaxValues {
+		return nil, fmt.Errorf("too many values")
+	}
+	encoded, err := maltcid.ExtractCommitment(root)
+	if err != nil {
+		return nil, err
+	}
+	var point banderwagon.Element
+	if err := point.SetBytes(encoded); err != nil {
+		return nil, err
+	}
+	return &opening{scheme: s, root: root, values: commitment.CloneCells(values), vector: valuesToVector(values), point: point}, nil
+}
+func (o *opening) RetainedBytes() uint64 {
+	n := uint64(256 + len(o.vector)*32 + len(o.values)*24 + len(o.root.Bytes()))
+	for _, v := range o.values {
+		n += uint64(len(v))
+	}
+	return n
+}
+
+var _ commitment.IndexRootOpener = (*Scheme)(nil)

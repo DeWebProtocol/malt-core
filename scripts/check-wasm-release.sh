@@ -27,7 +27,7 @@ fi
 expected_go_version="go${go_directive}"
 expected_resolve_read_corpus_sha256="$(sha256sum "${repo_root}/conformance/resolve-read/v2/vectors.json" | awk '{print $1}')"
 expected_map_proof_corpus_sha256="$(sha256sum "${repo_root}/conformance/map-proof/v1/vectors.json" | awk '{print $1}')"
-expected_client_root_corpus_sha256="$(sha256sum "${repo_root}/conformance/client-root/v2/vectors.json" | awk '{print $1}')"
+expected_client_root_corpus_sha256="$(sha256sum "${repo_root}/conformance/client-root/v3/vectors.json" | awk '{print $1}')"
 expected_authentication_corpus_sha256="$(sha256sum "${repo_root}/conformance/authentication-v0.json" | awk '{print $1}')"
 
 mapfile -t entries < <(find "${release_dir}" -mindepth 1 -maxdepth 1 -printf '%f\n' | sort)
@@ -84,7 +84,7 @@ CLIENT_ROOT_CORPUS_SHA256="${expected_client_root_corpus_sha256}" node -e '
 		resolve_read: {schema: "malt.resolve-read.conformance/v2", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
 		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 		map_proof: {schema: "malt.map-proof.conformance/v1", sha256: process.env.MAP_PROOF_CORPUS_SHA256},
-		client_root: {schema: "malt.client-root.conformance/v2", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		client_root: {schema: "malt.client-root.conformance/v3", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
 	}
 	const toolchain = /^go version (go[0-9]+\.[0-9]+\.[0-9]+) ([a-z0-9]+)\/([a-z0-9]+)$/.exec(manifest.go_toolchain || "")
 	if (manifest.schema !== "malt.wasm-release/v1" ||
@@ -198,7 +198,7 @@ VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	}
 	const writerCorpora = {
 		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-		client_root: {schema: "malt.client-root.conformance/v2", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		client_root: {schema: "malt.client-root.conformance/v3", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
 	}
 	const exactFiles = (directory, expected) => {
 		const entries = fs.readdirSync(directory, {withFileTypes: true})

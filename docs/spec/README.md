@@ -14,8 +14,8 @@ The current transport-neutral proof-bearing contracts are
 `malt.resolve/v0alpha1`, `malt.read/v0alpha1`, and
 `malt.map-proof/v0alpha1`. The experimental client-root
 contracts are `malt.update-view/v1`, `malt.semantic-intent/v1`,
-`malt.client-root-bundle/v1`, `malt.client-root-materialization/v1`,
-`malt.writer-compute-result/v2`, and `malt.materialization-receipt/v1`. The
+`malt.client-root-bundle/v2`, `malt.client-root-materialization/v1`,
+`malt.writer-compute-result/v3`, and `malt.materialization-receipt/v2`. The
 client-root contracts are included in v0.0.7-rc.1. The v0.0.4
 `malt.artifact/v0alpha2` profile
 remains frozen for compatibility. See [MIP-1012](../mips/mip-1012-segment-path-resolution.md) and
@@ -69,8 +69,7 @@ Every filename returned by `protocol.SchemaNames()` is indexed here:
 - [`semantic-intent.schema.json`](../../protocol/schemas/semantic-intent.schema.json)
 - [`update-view.schema.json`](../../protocol/schemas/update-view.schema.json)
 - [`verification-result.schema.json`](../../protocol/schemas/verification-result.schema.json)
-- [`writer-compute-result-v2.schema.json`](../../protocol/schemas/writer-compute-result-v2.schema.json)
-- [`writer-compute-result.schema.json`](../../protocol/schemas/writer-compute-result.schema.json)
+- [`writer-compute-result-v3.schema.json`](../../protocol/schemas/writer-compute-result-v3.schema.json)
 <!-- schema-catalog:protocol:end -->
 
 ## Notes

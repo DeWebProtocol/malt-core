@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://deweb.world/schemas/malt/client-root-bundle/v1/client-root-bundle.schema.json",
-  "title": "MALT Client Root Bundle v1",
+  "$id": "https://deweb.world/schemas/malt/client-root-bundle/v2/client-root-bundle.schema.json",
+  "title": "MALT Client Root Bundle v2",
   "type": "object",
   "additionalProperties": false,
-  "required": ["profile", "operation_id", "view", "intent", "outputs", "candidate", "payload_cids", "view_digest", "intent_digest"],
+  "required": ["profile", "transaction_id", "view", "intent", "outputs", "candidate", "payload_cids", "view_digest", "intent_digest"],
   "properties": {
-    "profile": {"const": "malt.client-root-bundle/v1"},
-    "operation_id": {"$ref": "#/$defs/id"},
+    "profile": {"const": "malt.client-root-bundle/v2"},
+    "transaction_id": {"$ref": "#/$defs/id"},
     "view": {"$ref": "https://deweb.world/schemas/malt/update-view/v1/update-view.schema.json"},
     "intent": {"$ref": "https://deweb.world/schemas/malt/semantic-intent/v1/semantic-intent.schema.json"},
     "outputs": {

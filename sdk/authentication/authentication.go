@@ -11,29 +11,72 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/protocol"
 	cid "github.com/ipfs/go-cid"
 )
 
+// RootLookup supplies nodes for one outer Root. Recovery, storage and cache
+// policy remain with the caller. It is invoked only for Roots actually queried.
+type RootLookup func(context.Context, cid.Cid) (materializer.NodeLookup, error)
+
 func Execute(ctx context.Context, e *engine.Engine, q protocol.AuthenticationRequest, source materializer.NodeLookup) (protocol.AuthenticationResult, error) {
+	return ExecuteWithRoots(ctx, e, q, func(context.Context, cid.Cid) (materializer.NodeLookup, error) { return source, nil })
+}
+
+// ExecuteWithRoots executes the same protocol against a Root-scoped source.
+// This permits lazy recovery of individual ArcSets without expanding the
+// application graph or assigning persistence responsibilities to the engine.
+func ExecuteWithRoots(ctx context.Context, e *engine.Engine, q protocol.AuthenticationRequest, lookup RootLookup) (protocol.AuthenticationResult, error) {
 	if err := q.Validate(); err != nil {
 		return protocol.AuthenticationResult{}, err
 	}
+	if lookup == nil {
+		return protocol.AuthenticationResult{}, errors.New("Root lookup is nil")
+	}
 	root, _ := cid.Decode(q.Root)
-	resolved, traversal, err := e.Resolve(ctx, root, q.Steps, source)
+	current, _, err := e.Resolve(ctx, root, nil, nil)
 	if err != nil {
 		return protocol.AuthenticationResult{}, err
 	}
-	result := protocol.AuthenticationResult{Profile: protocol.AuthenticationProfile, Resolved: resolved.String(), Traversal: traversal}
+	result := protocol.AuthenticationResult{Profile: q.Profile, Traversal: engine.Traversal{Results: []engine.Result{}}}
+	for i, step := range q.Steps {
+		source, err := lookup(ctx, current)
+		if err != nil {
+			return protocol.AuthenticationResult{}, err
+		}
+		target, proof, err := e.ResolvePath(ctx, current, []input.Value{step}, source)
+		if err != nil {
+			return protocol.AuthenticationResult{}, err
+		}
+		result.Traversal.Results = append(result.Traversal.Results, proof.Results...)
+		if !target.Defined() {
+			if q.Profile != protocol.AuthenticationPathProfile {
+				return protocol.AuthenticationResult{}, errors.New("traversal binding absent")
+			}
+			index := uint64(i)
+			result.AbsentStep = &index
+			return result, nil
+		}
+		current = target
+	}
+	result.Resolved = current.String()
+	if q.Operation == "resolve" {
+		return result, nil
+	}
+	source, err := lookup(ctx, current)
+	if err != nil {
+		return protocol.AuthenticationResult{}, err
+	}
 	switch q.Operation {
 	case "binding":
-		r, err := e.Prove(ctx, resolved, *q.Input, source)
+		r, err := e.Prove(ctx, current, *q.Input, source)
 		if err != nil {
 			return protocol.AuthenticationResult{}, err
 		}
 		result.Binding = &r
 	case "range":
-		r, err := e.ProveRange(ctx, resolved, *q.Start, q.End, source)
+		r, err := e.ProveRange(ctx, current, *q.Start, q.End, source)
 		if err != nil {
 			return protocol.AuthenticationResult{}, err
 		}
@@ -48,10 +91,17 @@ func Verify(e *engine.Engine, q protocol.AuthenticationRequest, result protocol.
 	if err := q.Validate(); err != nil {
 		return false, err
 	}
-	if result.Profile != protocol.AuthenticationProfile {
+	if result.Profile != q.Profile {
 		return false, errors.New("unsupported result profile")
 	}
 	root, _ := cid.Decode(q.Root)
+	if result.AbsentStep != nil {
+		if q.Profile != protocol.AuthenticationPathProfile || result.Resolved != "" || result.Binding != nil || result.Range != nil ||
+			*result.AbsentStep >= uint64(len(q.Steps)) || uint64(len(result.Traversal.Results)) != *result.AbsentStep+1 {
+			return false, nil
+		}
+		return e.VerifyPath(root, q.Steps, cid.Undef, result.Traversal)
+	}
 	resolved, err := cid.Decode(result.Resolved)
 	if err != nil {
 		return false, err

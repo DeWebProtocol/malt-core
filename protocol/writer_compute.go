@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	WriterComputeResultProfileV1 = "malt.writer-compute-result/v1"
-	WriterComputeResultProfile   = "malt.writer-compute-result/v2"
+	WriterComputeResultProfile = "malt.writer-compute-result/v3"
 )
 
 // WriterComputeMetrics reports browser-local writer phases. These values are
@@ -36,26 +35,13 @@ type WriterComputeResult struct {
 	Metrics         WriterComputeMetrics      `json:"metrics"`
 }
 
-type writerComputeResultV1 struct {
-	Profile  string               `json:"profile"`
-	Bundle   ClientRootBundle     `json:"bundle"`
-	NextView UpdateView           `json:"next_view"`
-	Metrics  WriterComputeMetrics `json:"metrics"`
-}
-
-// MarshalJSON preserves the selected wire profile. In particular, a decoded
-// v1 value must not acquire the v2-only materialization member when relayed.
+// MarshalJSON emits only the current transaction contract.
 func (r WriterComputeResult) MarshalJSON() ([]byte, error) {
 	if err := r.Validate(); err != nil {
 		return nil, err
 	}
-	if r.Profile == WriterComputeResultProfileV1 {
-		return json.Marshal(writerComputeResultV1{
-			Profile: r.Profile, Bundle: r.Bundle, NextView: r.NextView, Metrics: r.Metrics,
-		})
-	}
-	type writerComputeResultV2 WriterComputeResult
-	return json.Marshal(writerComputeResultV2(r))
+	type wireResult WriterComputeResult
+	return json.Marshal(wireResult(r))
 }
 
 // NewWriterComputeResult projects canonical core values into the browser wire
@@ -89,19 +75,15 @@ func NewWriterComputeResult(bundle mutation.ClientRootBundle, materialization mu
 // Validate checks the complete nested wire values and requires the retained
 // next view to start at the exact bundle candidate.
 func (r WriterComputeResult) Validate() error {
-	if r.Profile != WriterComputeResultProfile && r.Profile != WriterComputeResultProfileV1 {
+	if r.Profile != WriterComputeResultProfile {
 		return fmt.Errorf("unsupported writer compute result profile %q", r.Profile)
 	}
 	bundle, err := r.Bundle.Core()
 	if err != nil {
 		return fmt.Errorf("writer compute result bundle: %w", err)
 	}
-	if r.Profile == WriterComputeResultProfile {
-		if _, err := r.Materialization.Core(bundle); err != nil {
-			return fmt.Errorf("writer compute result materialization: %w", err)
-		}
-	} else if r.Materialization.Profile != "" || r.Materialization.Base != nil || len(r.Materialization.Maps) != 0 {
-		return fmt.Errorf("writer compute result v1 must not carry materialization")
+	if _, err := r.Materialization.Core(bundle); err != nil {
+		return fmt.Errorf("writer compute result materialization: %w", err)
 	}
 	nextView, err := r.NextView.Core()
 	if err != nil {

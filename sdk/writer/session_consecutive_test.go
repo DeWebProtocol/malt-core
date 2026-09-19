@@ -120,7 +120,7 @@ func acceptTestWriterResult(t *testing.T, session *Session, result ComputeResult
 	}
 	receipt := mutation.MaterializationReceipt{
 		Profile:         mutation.MaterializationReceiptProfile,
-		OperationID:     result.Bundle.OperationID,
+		TransactionID:   result.Bundle.TransactionID,
 		BaseRoot:        result.Bundle.View.BaseRoot,
 		Candidate:       result.Bundle.Candidate,
 		BundleDigest:    digest,

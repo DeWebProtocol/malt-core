@@ -19,7 +19,7 @@ const [{ createMaltWriterWorker }, wasm, fixtureJSON] = await Promise.all([
 ]);
 const module = await WebAssembly.compile(wasm);
 const corpus = JSON.parse(fixtureJSON);
-assert.equal(corpus.schema_version, "malt.client-root.conformance/v2");
+assert.equal(corpus.schema_version, "malt.client-root.conformance/v3");
 assert.ok(Array.isArray(corpus.vectors), "client-root corpus has no vectors array");
 const fixture = corpus.vectors.find(
   (candidate) => candidate.backend === backend && candidate.expected?.valid === true,
@@ -72,13 +72,13 @@ try {
   assert.equal(loadedRoot, fixture.update_view.base_root);
   const candidate = await writer.prepare(
     backend,
-    encoder.encode(fixture.operation_id),
+    encoder.encode(fixture.transaction_id),
     encoder.encode(JSON.stringify(fixture.semantic_intent)),
   );
   assert.equal(candidate, fixture.expected.bundle.candidate);
   const preparedJSON = await writer.getPreparedResult(
     backend,
-    encoder.encode(fixture.operation_id),
+    encoder.encode(fixture.transaction_id),
   );
   const prepared = JSON.parse(preparedJSON);
   assert.deepStrictEqual(prepared.bundle, fixture.expected.bundle);
@@ -95,7 +95,7 @@ try {
   await assert.rejects(
     writer.prepare(
       backend,
-      encoder.encode(`${fixture.operation_id}-after-close`),
+      encoder.encode(`${fixture.transaction_id}-after-close`),
       encoder.encode(JSON.stringify(fixture.semantic_intent)),
     ),
     /has no update view/,

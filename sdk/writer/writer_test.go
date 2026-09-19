@@ -596,7 +596,7 @@ func TestSessionAdvancesOnlyAfterExactDurableReceipt(t *testing.T) {
 		t.Fatal(err)
 	}
 	wrong := mutation.MaterializationReceipt{
-		Profile: mutation.MaterializationReceiptProfile, OperationID: prepared.Bundle.OperationID,
+		Profile: mutation.MaterializationReceiptProfile, TransactionID: prepared.Bundle.TransactionID,
 		BaseRoot: prepared.Bundle.View.BaseRoot, Candidate: view.BaseRoot,
 		BundleDigest: digest, DurableBoundary: "embedded-transaction-commit-v1",
 	}
@@ -655,7 +655,7 @@ func TestSessionRejectsMutationOfPreparedNextView(t *testing.T) {
 		t.Fatal(err)
 	}
 	receipt := mutation.MaterializationReceipt{
-		Profile: mutation.MaterializationReceiptProfile, OperationID: prepared.Bundle.OperationID,
+		Profile: mutation.MaterializationReceiptProfile, TransactionID: prepared.Bundle.TransactionID,
 		BaseRoot: prepared.Bundle.View.BaseRoot, Candidate: prepared.Bundle.Candidate,
 		BundleDigest: bundleDigest, DurableBoundary: "embedded-transaction-commit-v1",
 	}
@@ -701,7 +701,7 @@ func TestSessionRejectsPreparedResultAfterSameRootViewReload(t *testing.T) {
 		t.Fatal(err)
 	}
 	receipt := mutation.MaterializationReceipt{
-		Profile: mutation.MaterializationReceiptProfile, OperationID: prepared.Bundle.OperationID,
+		Profile: mutation.MaterializationReceiptProfile, TransactionID: prepared.Bundle.TransactionID,
 		BaseRoot: prepared.Bundle.View.BaseRoot, Candidate: prepared.Bundle.Candidate,
 		BundleDigest: bundleDigest, DurableBoundary: "embedded-transaction-commit-v1",
 	}

@@ -13,11 +13,11 @@ import (
 // These identify corpus revisions, independently of the Root format version.
 const (
 	ClientRootV1 = "malt.client-root.conformance/v1" // Frozen historical V3 outputs.
-	ClientRootV2 = "malt.client-root.conformance/v2" // V0 outputs, including V3 input migration.
+	ClientRootV2 = "malt.client-root.conformance/v2" // Archived operation_id wire format.
+	ClientRootV3 = "malt.client-root.conformance/v3" // Transaction IDs, V0 output and V3 input migration.
 )
 
-//go:generate go run ../internal/conformancegen/cmd -corpus client-root -out client-root/v1/vectors.json
-//go:generate go run ../internal/conformancegen/cmd -corpus client-root-v2 -out client-root/v2/vectors.json
+//go:generate go run ../internal/conformancegen/cmd -corpus client-root-v3 -out client-root/v3/vectors.json
 
 // ClientRootCorpus freezes complete-view inputs and exact candidate outputs
 // without treating a candidate or receipt as a portable transition proof.
@@ -30,7 +30,7 @@ type ClientRootVector struct {
 	ID             string             `json:"id"`
 	Backend        string             `json:"backend"`
 	Category       string             `json:"category"`
-	OperationID    string             `json:"operation_id"`
+	TransactionID  string             `json:"transaction_id"`
 	UpdateView     json.RawMessage    `json:"update_view"`
 	SemanticIntent json.RawMessage    `json:"semantic_intent"`
 	Expected       ClientRootExpected `json:"expected"`
@@ -66,12 +66,15 @@ func (e *ClientRootExpected) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// LoadClientRoot retains the frozen v1 corpus for existing historical consumers.
+// LoadClientRoot loads the current transaction-ID corpus.
 func LoadClientRoot() (ClientRootCorpus, error) {
-	return LoadClientRootVersion(ClientRootV1)
+	return LoadClientRootVersion(ClientRootV3)
 }
 
 func LoadClientRootVersion(version string) (ClientRootCorpus, error) {
+	if version != ClientRootV3 {
+		return ClientRootCorpus{}, fmt.Errorf("archived client-root corpus is not a current transaction contract: %q", version)
+	}
 	data, err := ClientRootBytesVersion(version)
 	if err != nil {
 		return ClientRootCorpus{}, err
@@ -90,7 +93,7 @@ func LoadClientRootVersion(version string) (ClientRootCorpus, error) {
 }
 
 func ClientRootBytes() ([]byte, error) {
-	return ClientRootBytesVersion(ClientRootV1)
+	return ClientRootBytesVersion(ClientRootV3)
 }
 
 func ClientRootBytesVersion(version string) ([]byte, error) {
@@ -106,7 +109,7 @@ func ClientRootBytesVersion(version string) ([]byte, error) {
 }
 
 func ClientRootSchema(name string) ([]byte, error) {
-	return ClientRootSchemaVersion(ClientRootV1, name)
+	return ClientRootSchemaVersion(ClientRootV3, name)
 }
 
 func ClientRootSchemaVersion(version, name string) ([]byte, error) {
@@ -130,13 +133,15 @@ func clientRootDirectory(version string) (string, error) {
 		return "client-root/v1", nil
 	case ClientRootV2:
 		return "client-root/v2", nil
+	case ClientRootV3:
+		return "client-root/v3", nil
 	default:
 		return "", fmt.Errorf("unsupported client-root conformance schema version %q", version)
 	}
 }
 
 func (c ClientRootCorpus) Validate() error {
-	if c.SchemaVersion != ClientRootV1 && c.SchemaVersion != ClientRootV2 {
+	if c.SchemaVersion != ClientRootV3 {
 		return fmt.Errorf("unsupported client-root conformance schema version %q", c.SchemaVersion)
 	}
 	if len(c.Vectors) == 0 {
@@ -165,8 +170,8 @@ func (v ClientRootVector) Validate() error {
 	if v.Category == "" {
 		return fmt.Errorf("vector %q has empty category", v.ID)
 	}
-	if v.OperationID == "" || strings.TrimSpace(v.OperationID) != v.OperationID {
-		return fmt.Errorf("vector %q has invalid operation_id", v.ID)
+	if v.TransactionID == "" || strings.TrimSpace(v.TransactionID) != v.TransactionID {
+		return fmt.Errorf("vector %q has invalid transaction_id", v.ID)
 	}
 	for name, raw := range map[string]json.RawMessage{"update_view": v.UpdateView, "semantic_intent": v.SemanticIntent} {
 		trimmed := bytes.TrimSpace(raw)

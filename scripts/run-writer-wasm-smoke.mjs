@@ -22,11 +22,11 @@ if (!globalThis.crypto) {
 }
 const corpus = JSON.parse(await readFile(fixturePath, "utf8"));
 if (
-  corpus.schema_version !== "malt.client-root.conformance/v2" ||
+  corpus.schema_version !== "malt.client-root.conformance/v3" ||
   !Array.isArray(corpus.vectors) ||
   corpus.vectors.length === 0
 ) {
-  throw new Error(`${fixturePath} is not a non-empty client-root v2 conformance corpus (V0 outputs)`);
+  throw new Error(`${fixturePath} is not a non-empty client-root v3 conformance corpus (V0 outputs)`);
 }
 
 await import(pathToFileURL(wasmExecPath).href);
@@ -182,7 +182,7 @@ for (const fixture of invalidFixtures) {
   let rejected = false;
   try {
     await globalThis.maltComputeClientRootV1(
-      encoder.encode(fixture.operation_id),
+      encoder.encode(fixture.transaction_id),
       encoder.encode(JSON.stringify(fixture.update_view)),
       encoder.encode(JSON.stringify(fixture.semantic_intent)),
     );
@@ -194,11 +194,11 @@ for (const fixture of invalidFixtures) {
   }
 }
 for (const fixture of validFixtures) {
-  const operationID = encoder.encode(fixture.operation_id);
-  Object.defineProperty(operationID, "byteLength", { value: -1 });
+  const transactionID = encoder.encode(fixture.transaction_id);
+  Object.defineProperty(transactionID, "byteLength", { value: -1 });
   const updateView = encoder.encode(JSON.stringify(fixture.update_view));
   const semanticIntent = encoder.encode(JSON.stringify(fixture.semantic_intent));
-  for (const input of [operationID, updateView, semanticIntent]) {
+  for (const input of [transactionID, updateView, semanticIntent]) {
     Object.defineProperty(input, "subarray", {
       value() {
         throw new Error("caller-controlled subarray must not be invoked");
@@ -206,16 +206,16 @@ for (const fixture of validFixtures) {
     });
   }
   const resultJSON = await globalThis.maltComputeClientRootV1(
-    operationID,
+    transactionID,
     updateView,
     semanticIntent,
   );
   const result = JSON.parse(resultJSON);
-  if (result.profile !== "malt.writer-compute-result/v2") {
+  if (result.profile !== "malt.writer-compute-result/v3") {
     throw new Error(`unexpected writer result profile ${JSON.stringify(result.profile)}`);
   }
-  if (result.bundle.operation_id !== fixture.operation_id) {
-    throw new Error(`unexpected operation ID for ${fixture.backend}`);
+  if (result.bundle.transaction_id !== fixture.transaction_id) {
+    throw new Error(`unexpected transaction ID for ${fixture.backend}`);
   }
   assert.deepStrictEqual(
     result.bundle,
@@ -260,10 +260,10 @@ for (const fixture of validFixtures) {
       `${fixture.backend} session loaded ${loadedRoot}, expected ${fixture.update_view.base_root}`,
     );
   }
-  const sessionOperationID = encoder.encode(fixture.operation_id);
+  const sessionTransactionID = encoder.encode(fixture.transaction_id);
   const sessionIntent = encoder.encode(JSON.stringify(fixture.semantic_intent));
   const candidate = await globalThis.maltWriterPrepareSessionV1(
-    sessionOperationID,
+    sessionTransactionID,
     sessionIntent,
   );
   if (candidate !== fixture.expected.bundle.candidate) {
@@ -272,10 +272,10 @@ for (const fixture of validFixtures) {
     );
   }
   const preparedJSON = await globalThis.maltWriterGetPreparedResultV1(
-    sessionOperationID,
+    sessionTransactionID,
   );
   assert.equal(
-    await globalThis.maltWriterGetPreparedResultV1(sessionOperationID),
+    await globalThis.maltWriterGetPreparedResultV1(sessionTransactionID),
     preparedJSON,
     `${fixture.backend} repeated prepared-result lookup changed bytes`,
   );
@@ -297,14 +297,14 @@ for (const fixture of validFixtures) {
   );
 
   const discarded = await globalThis.maltWriterDiscardSessionCandidateV1(
-    sessionOperationID,
+    sessionTransactionID,
   );
-  if (discarded !== fixture.operation_id) {
+  if (discarded !== fixture.transaction_id) {
     throw new Error(`${fixture.backend} session discarded the wrong operation`);
   }
   let rejectedDiscardedResult = false;
   try {
-    await globalThis.maltWriterGetPreparedResultV1(sessionOperationID);
+    await globalThis.maltWriterGetPreparedResultV1(sessionTransactionID);
   } catch {
     rejectedDiscardedResult = true;
   }
@@ -312,7 +312,7 @@ for (const fixture of validFixtures) {
     throw new Error(`${fixture.backend} session returned a discarded prepared result`);
   }
   const candidateAfterDiscard = await globalThis.maltWriterPrepareSessionV1(
-    sessionOperationID,
+    sessionTransactionID,
     sessionIntent,
   );
   assert.equal(
@@ -321,7 +321,7 @@ for (const fixture of validFixtures) {
     `${fixture.backend} re-prepared a different candidate after discard`,
   );
   const preparedAfterDiscardJSON = await globalThis.maltWriterGetPreparedResultV1(
-    sessionOperationID,
+    sessionTransactionID,
   );
   const preparedAfterDiscard = JSON.parse(preparedAfterDiscardJSON);
   assert.deepStrictEqual(
@@ -350,7 +350,7 @@ for (const fixture of validFixtures) {
     );
   }
   const acceptedRoot = await globalThis.maltWriterAcceptSessionReceiptV1(
-    sessionOperationID,
+    sessionTransactionID,
     expectedReceiptJSON,
   );
   if (acceptedRoot !== fixture.expected.bundle.candidate) {
@@ -362,7 +362,7 @@ for (const fixture of validFixtures) {
   let rejectedStaleIntent = false;
   try {
     await globalThis.maltWriterPrepareSessionV1(
-      encoder.encode(`${fixture.operation_id}-stale`),
+      encoder.encode(`${fixture.transaction_id}-stale`),
       sessionIntent,
     );
   } catch {
@@ -375,7 +375,7 @@ for (const fixture of validFixtures) {
   let rejectedClosedPrepare = false;
   try {
     await globalThis.maltWriterPrepareSessionV1(
-      encoder.encode(`${fixture.operation_id}-closed`),
+      encoder.encode(`${fixture.transaction_id}-closed`),
       sessionIntent,
     );
   } catch {

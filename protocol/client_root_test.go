@@ -26,6 +26,14 @@ func TestClientRootWireRoundTripsCoreValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, invalid := range [][]byte{
+		bytes.ReplaceAll(raw, []byte(`"transaction_id"`), []byte(`"operation_id"`)),
+		bytes.ReplaceAll(raw, []byte("malt.client-root-bundle/v2"), []byte("malt.client-root-bundle/v1")),
+	} {
+		if _, err := protocol.DecodeClientRootBundle(invalid); err == nil {
+			t.Fatal("accepted old bundle identity or profile")
+		}
+	}
 	decoded, err := protocol.DecodeClientRootBundle(raw)
 	if err != nil {
 		t.Fatalf("DecodeClientRootBundle: %v", err)
@@ -79,6 +87,14 @@ func TestClientRootWireRoundTripsCoreValues(t *testing.T) {
 	receiptRaw, err := json.Marshal(wireReceipt)
 	if err != nil {
 		t.Fatal(err)
+	}
+	for _, invalid := range [][]byte{
+		bytes.ReplaceAll(receiptRaw, []byte(`"transaction_id"`), []byte(`"operation_id"`)),
+		bytes.ReplaceAll(receiptRaw, []byte("malt.materialization-receipt/v2"), []byte("malt.materialization-receipt/v1")),
+	} {
+		if _, err := protocol.DecodeMaterializationReceipt(invalid, bundle); err == nil {
+			t.Fatal("accepted old receipt identity or profile")
+		}
 	}
 	decodedReceipt, err := protocol.DecodeMaterializationReceipt(receiptRaw, bundle)
 	if err != nil {
@@ -379,63 +395,17 @@ func TestWriterComputeResultRoundTripsAndBindsNextView(t *testing.T) {
 	}
 }
 
-func TestWriterComputeResultV2RequiresMaterializationAndV1StillDecodes(t *testing.T) {
-	bundle, _ := protocolClientRootFixture(t)
-	nextView, err := mutation.NormalizeUpdateView(bundle.View)
-	if err != nil {
-		t.Fatal(err)
-	}
-	nextView.BaseRoot = bundle.Candidate
-	for index := range nextView.Objects {
-		if nextView.Objects[index].Root.Equals(bundle.View.BaseRoot) {
-			nextView.Objects[index].Root = bundle.Candidate
+func TestWriterComputeResultRejectsOldProfilesAndMissingMaterialization(t *testing.T) {
+	for _, profile := range []string{"malt.writer-compute-result/v1", "malt.writer-compute-result/v2", protocol.WriterComputeResultProfile} {
+		raw, _ := json.Marshal(map[string]any{"profile": profile})
+		if _, err := protocol.DecodeWriterComputeResult(raw); err == nil {
+			t.Fatalf("accepted incomplete/old writer result %s", profile)
 		}
-	}
-	wireBundle, err := protocol.NewClientRootBundle(bundle)
-	if err != nil {
-		t.Fatal(err)
-	}
-	wireView, err := protocol.NewUpdateView(nextView)
-	if err != nil {
-		t.Fatal(err)
-	}
-	legacyRaw, err := json.Marshal(map[string]any{
-		"profile": protocol.WriterComputeResultProfileV1,
-		"bundle":  wireBundle, "next_view": wireView, "metrics": protocol.WriterComputeMetrics{},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	legacy, err := protocol.DecodeWriterComputeResult(legacyRaw)
-	if err != nil || legacy.Profile != protocol.WriterComputeResultProfileV1 {
-		t.Fatalf("decode v1 result = %+v, %v", legacy, err)
-	}
-	roundTripRaw, err := json.Marshal(legacy)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var roundTripObject map[string]json.RawMessage
-	if err := json.Unmarshal(roundTripRaw, &roundTripObject); err != nil {
-		t.Fatal(err)
-	}
-	if _, exists := roundTripObject["materialization"]; exists {
-		t.Fatal("v1 writer result acquired a v2 materialization member")
-	}
-	if roundTrip, err := protocol.DecodeWriterComputeResult(roundTripRaw); err != nil || roundTrip.Profile != protocol.WriterComputeResultProfileV1 {
-		t.Fatalf("round-trip v1 result = %+v, %v", roundTrip, err)
-	}
-	if _, err := protocol.DecodeWriterComputeResult([]byte(`{"profile":"malt.writer-compute-result/v2"}`)); err == nil {
-		t.Fatal("v2 result without materialization was accepted")
-	}
-	legacyWithBase := legacy
-	legacyWithBase.Materialization.Base = &protocol.MapStateMaterializationWire{Root: bundle.View.BaseRoot.String(), Entries: []protocol.MaterializationEntryWire{}}
-	if err := legacyWithBase.Validate(); err == nil {
-		t.Fatal("v1 writer result accepted a bootstrap base materialization")
 	}
 }
 
 func TestWriterComputeResultRejectsExplicitNullBootstrapBase(t *testing.T) {
-	raw := []byte(`{"profile":"malt.writer-compute-result/v2","materialization":{"profile":"malt.client-root-materialization/v1","base":null,"maps":[]},"bundle":{},"next_view":{},"metrics":{}}`)
+	raw := []byte(`{"profile":"malt.writer-compute-result/v3","materialization":{"profile":"malt.client-root-materialization/v1","base":null,"maps":[]},"bundle":{},"next_view":{},"metrics":{}}`)
 	if _, err := protocol.DecodeWriterComputeResult(raw); err == nil || !strings.Contains(err.Error(), "materialization.base must not be null") {
 		t.Fatalf("explicit null base error = %v", err)
 	}
@@ -444,7 +414,7 @@ func TestWriterComputeResultRejectsExplicitNullBootstrapBase(t *testing.T) {
 func TestWriterComputeResultRejectsOversizedMaterializationBeforeDecode(t *testing.T) {
 	const item = `{"transition_id":"x","root":"x","entries":[]},`
 	maps := strings.TrimSuffix(strings.Repeat(item, protocol.MaxClientRootTransitions+1), ",")
-	raw := []byte(`{"profile":"malt.writer-compute-result/v2","materialization":{"profile":"malt.client-root-materialization/v1","maps":[` + maps + `]},"bundle":{},"next_view":{},"metrics":{}}`)
+	raw := []byte(`{"profile":"malt.writer-compute-result/v3","materialization":{"profile":"malt.client-root-materialization/v1","maps":[` + maps + `]},"bundle":{},"next_view":{},"metrics":{}}`)
 	if _, err := protocol.DecodeWriterComputeResult(raw); err == nil || !strings.Contains(err.Error(), "materialization.maps exceeds 65536 items") {
 		t.Fatalf("oversized materialization maps error = %v", err)
 	}
@@ -457,8 +427,7 @@ func TestClientRootSchemasAreEmbedded(t *testing.T) {
 		"client-root-bundle.schema.json":          false,
 		"client-root-materialization.schema.json": false,
 		"materialization-receipt.schema.json":     false,
-		"writer-compute-result.schema.json":       false,
-		"writer-compute-result-v2.schema.json":    false,
+		"writer-compute-result-v3.schema.json":    false,
 	}
 	for _, name := range protocol.SchemaNames() {
 		if _, ok := want[name]; ok {
@@ -553,7 +522,7 @@ func protocolClientRootFixture(t *testing.T) (mutation.ClientRootBundle, mutatio
 		t.Fatal(err)
 	}
 	bundle, err := mutation.NewClientRootBundle(mutation.ClientRootBundle{
-		Profile: mutation.ClientRootBundleProfile, OperationID: "operation-1", View: view, Intent: intent,
+		Profile: mutation.ClientRootBundleProfile, TransactionID: "operation-1", View: view, Intent: intent,
 		Outputs: []mutation.TransitionOutput{
 			{TransitionID: "top-output", Root: parentNewRoot},
 			{TransitionID: "child-output", Root: childNewRoot},
@@ -569,7 +538,7 @@ func protocolClientRootFixture(t *testing.T) (mutation.ClientRootBundle, mutatio
 		t.Fatal(err)
 	}
 	receipt := mutation.MaterializationReceipt{
-		Profile: mutation.MaterializationReceiptProfile, OperationID: bundle.OperationID,
+		Profile: mutation.MaterializationReceiptProfile, TransactionID: bundle.TransactionID,
 		BaseRoot: bundle.View.BaseRoot, Candidate: bundle.Candidate, BundleDigest: bundleDigest,
 		DurableBoundary: "embedded-transaction-commit-v1",
 	}

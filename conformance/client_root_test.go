@@ -45,7 +45,7 @@ func TestClientRootCorpus(t *testing.T) {
 				}
 				expectedVersion := maltcid.MALTVersionID
 				expectedBaseVersion := maltcid.MALTVersionID
-				if corpus.SchemaVersion == conformance.ClientRootV2 {
+				if corpus.SchemaVersion == conformance.ClientRootV3 {
 					expectedVersion = 0
 					if vector.Category != "migrate_v3" {
 						expectedBaseVersion = 0
@@ -80,8 +80,7 @@ func TestClientRootCorpusIsGenerated(t *testing.T) {
 		version  string
 		generate func() ([]byte, error)
 	}{
-		{conformance.ClientRootV1, conformancegen.GenerateClientRoot},
-		{conformance.ClientRootV2, conformancegen.GenerateClientRootV2},
+		{conformance.ClientRootV3, conformancegen.GenerateClientRootV3},
 	} {
 		t.Run(test.version, func(t *testing.T) {
 			want, err := conformance.ClientRootBytesVersion(test.version)
@@ -100,7 +99,7 @@ func TestClientRootCorpusIsGenerated(t *testing.T) {
 }
 
 func TestClientRootSchemasAreJSON(t *testing.T) {
-	for _, version := range []string{conformance.ClientRootV1, conformance.ClientRootV2} {
+	for _, version := range []string{conformance.ClientRootV3} {
 		for _, name := range []string{"corpus.schema.json", "vector.schema.json"} {
 			data, err := conformance.ClientRootSchemaVersion(version, name)
 			if err != nil {
@@ -114,7 +113,7 @@ func TestClientRootSchemasAreJSON(t *testing.T) {
 }
 
 func TestClientRootCorpusDigestIsImmutable(t *testing.T) {
-	data, err := conformance.ClientRootBytes()
+	data, err := conformance.ClientRootBytesVersion(conformance.ClientRootV1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +134,7 @@ func TestClientRootCoverageMatrix(t *testing.T) {
 			covered[coverageKey{vector.Backend, vector.Category, vector.Expected.Valid}] = true
 		}
 		for _, backend := range []string{conformance.BackendKZG, conformance.BackendIPA} {
-			if corpus.SchemaVersion == conformance.ClientRootV2 && !covered[coverageKey{backend, "migrate_v3", true}] {
+			if corpus.SchemaVersion == conformance.ClientRootV3 && !covered[coverageKey{backend, "migrate_v3", true}] {
 				t.Errorf("missing V3 to V0 migration coverage for %s", backend)
 			}
 			for _, required := range []coverageKey{
@@ -184,7 +183,7 @@ func TestClientRootViewTamperReachesRootRecomputation(t *testing.T) {
 					t.Fatal(err)
 				}
 				newRuntime := clientwriter.NewHistoricalRuntime
-				if corpus.SchemaVersion == conformance.ClientRootV2 {
+				if corpus.SchemaVersion == conformance.ClientRootV3 {
 					newRuntime = clientwriter.NewRuntime
 				}
 				runtime, err := newRuntime(
@@ -235,7 +234,7 @@ func computeClientRootVector(ctx context.Context, vector conformance.ClientRootV
 		return protocol.ClientRootBundle{}, protocol.ClientRootMaterialization{}, protocol.UpdateView{}, false
 	}
 	newRuntime := clientwriter.NewHistoricalRuntime
-	if version == conformance.ClientRootV2 {
+	if version == conformance.ClientRootV3 {
 		newRuntime = clientwriter.NewRuntime
 	}
 	runtime, err := newRuntime(
@@ -249,7 +248,7 @@ func computeClientRootVector(ctx context.Context, vector conformance.ClientRootV
 	if err != nil {
 		return protocol.ClientRootBundle{}, protocol.ClientRootMaterialization{}, protocol.UpdateView{}, false
 	}
-	result, err := runtime.ComputeBundle(ctx, vector.OperationID, verified, intent)
+	result, err := runtime.ComputeBundle(ctx, vector.TransactionID, verified, intent)
 	if err != nil {
 		return protocol.ClientRootBundle{}, protocol.ClientRootMaterialization{}, protocol.UpdateView{}, false
 	}
@@ -281,7 +280,7 @@ func clientRootTestScheme(backend maltcid.BackendKind) (commitment.IndexCommitme
 
 func testClientRootVersions(t *testing.T, check func(*testing.T, conformance.ClientRootCorpus)) {
 	t.Helper()
-	for _, version := range []string{conformance.ClientRootV1, conformance.ClientRootV2} {
+	for _, version := range []string{conformance.ClientRootV3} {
 		t.Run(version, func(t *testing.T) {
 			corpus, err := conformance.LoadClientRootVersion(version)
 			if err != nil {

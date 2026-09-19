@@ -78,7 +78,7 @@ func (s *Session) WorkingRoots() map[string]cid.Cid {
 }
 
 // Prepare computes a candidate against the session's current accepted base.
-func (s *Session) Prepare(ctx context.Context, operationID string, intent mutation.SemanticIntent) (ComputeResult, error) {
+func (s *Session) Prepare(ctx context.Context, transactionID string, intent mutation.SemanticIntent) (ComputeResult, error) {
 	if s == nil {
 		return ComputeResult{}, fmt.Errorf("client writer session is nil")
 	}
@@ -90,7 +90,7 @@ func (s *Session) Prepare(ctx context.Context, operationID string, intent mutati
 	if !intent.BaseRoot.Equals(s.current.View.BaseRoot) {
 		return ComputeResult{}, fmt.Errorf("intent base %s is stale; current base is %s", intent.BaseRoot, s.current.View.BaseRoot)
 	}
-	return s.runtime.ComputeBundle(ctx, operationID, s.current, intent)
+	return s.runtime.ComputeBundle(ctx, transactionID, s.current, intent)
 }
 
 // AcceptReceipt verifies a service's exact durable acknowledgement and only

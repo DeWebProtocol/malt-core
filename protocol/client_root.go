@@ -161,20 +161,20 @@ type TransitionOutput struct {
 // ClientRootBundle binds the complete view and intent to exact local outputs.
 // Digests are canonical lowercase, fixed-width SHA-256 hex strings.
 type ClientRootBundle struct {
-	Profile      string             `json:"profile"`
-	OperationID  string             `json:"operation_id"`
-	View         UpdateView         `json:"view"`
-	Intent       SemanticIntent     `json:"intent"`
-	Outputs      []TransitionOutput `json:"outputs"`
-	Candidate    string             `json:"candidate"`
-	PayloadCIDs  []string           `json:"payload_cids"`
-	ViewDigest   string             `json:"view_digest"`
-	IntentDigest string             `json:"intent_digest"`
+	Profile       string             `json:"profile"`
+	TransactionID string             `json:"transaction_id"`
+	View          UpdateView         `json:"view"`
+	Intent        SemanticIntent     `json:"intent"`
+	Outputs       []TransitionOutput `json:"outputs"`
+	Candidate     string             `json:"candidate"`
+	PayloadCIDs   []string           `json:"payload_cids"`
+	ViewDigest    string             `json:"view_digest"`
+	IntentDigest  string             `json:"intent_digest"`
 }
 
 type MaterializationReceipt struct {
 	Profile         string `json:"profile"`
-	OperationID     string `json:"operation_id"`
+	TransactionID   string `json:"transaction_id"`
 	BaseRoot        string `json:"base_root"`
 	Candidate       string `json:"candidate"`
 	BundleDigest    string `json:"bundle_digest"`
@@ -453,15 +453,15 @@ func NewClientRootBundle(value mutation.ClientRootBundle) (ClientRootBundle, err
 		payloads[index] = payload.String()
 	}
 	return ClientRootBundle{
-		Profile:      canonical.Profile,
-		OperationID:  canonical.OperationID,
-		View:         view,
-		Intent:       intent,
-		Outputs:      outputs,
-		Candidate:    canonical.Candidate.String(),
-		PayloadCIDs:  payloads,
-		ViewDigest:   hex.EncodeToString(canonical.ViewDigest[:]),
-		IntentDigest: hex.EncodeToString(canonical.IntentDigest[:]),
+		Profile:       canonical.Profile,
+		TransactionID: canonical.TransactionID,
+		View:          view,
+		Intent:        intent,
+		Outputs:       outputs,
+		Candidate:     canonical.Candidate.String(),
+		PayloadCIDs:   payloads,
+		ViewDigest:    hex.EncodeToString(canonical.ViewDigest[:]),
+		IntentDigest:  hex.EncodeToString(canonical.IntentDigest[:]),
 	}, nil
 }
 
@@ -509,15 +509,15 @@ func (b ClientRootBundle) Core() (mutation.ClientRootBundle, error) {
 		return mutation.ClientRootBundle{}, err
 	}
 	return mutation.NewClientRootBundle(mutation.ClientRootBundle{
-		Profile:      b.Profile,
-		OperationID:  b.OperationID,
-		View:         view,
-		Intent:       intent,
-		Outputs:      outputs,
-		Candidate:    candidate,
-		PayloadCIDs:  payloads,
-		ViewDigest:   viewDigest,
-		IntentDigest: intentDigest,
+		Profile:       b.Profile,
+		TransactionID: b.TransactionID,
+		View:          view,
+		Intent:        intent,
+		Outputs:       outputs,
+		Candidate:     candidate,
+		PayloadCIDs:   payloads,
+		ViewDigest:    viewDigest,
+		IntentDigest:  intentDigest,
 	})
 }
 
@@ -534,7 +534,7 @@ func NewMaterializationReceipt(value mutation.MaterializationReceipt, bundle mut
 	}
 	return MaterializationReceipt{
 		Profile:         value.Profile,
-		OperationID:     value.OperationID,
+		TransactionID:   value.TransactionID,
 		BaseRoot:        value.BaseRoot.String(),
 		Candidate:       value.Candidate.String(),
 		BundleDigest:    hex.EncodeToString(value.BundleDigest[:]),
@@ -558,7 +558,7 @@ func (r MaterializationReceipt) Core(bundle mutation.ClientRootBundle) (mutation
 	}
 	value := mutation.MaterializationReceipt{
 		Profile:         r.Profile,
-		OperationID:     r.OperationID,
+		TransactionID:   r.TransactionID,
 		BaseRoot:        baseRoot,
 		Candidate:       candidate,
 		BundleDigest:    digest,

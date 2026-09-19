@@ -25,15 +25,15 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				t.Fatal(err)
 			}
 
-			prepareAndAccept := func(operationID, key string) {
+			prepareAndAccept := func(transactionID, key string) {
 				t.Helper()
-				after := arcset.NewCASTarget(payloadCID(t, operationID+"-payload"))
+				after := arcset.NewCASTarget(payloadCID(t, transactionID+"-payload"))
 				intent := mutation.SemanticIntent{
 					Profile:     mutation.SemanticIntentProfile,
 					BaseRoot:    session.view.BaseRoot,
-					TopOutputID: operationID + "-output",
+					TopOutputID: transactionID + "-output",
 					Transitions: []mutation.IntentTransition{{
-						ID: operationID + "-output", ObjectID: "root", OldRoot: session.view.BaseRoot,
+						ID: transactionID + "-output", ObjectID: "root", OldRoot: session.view.BaseRoot,
 						Kind: arcset.KindMap, Backend: backend,
 						Changes: []mutation.IntentChange{{Coordinate: mustMapCoordinate(t, key), After: &after}},
 					}},
@@ -46,10 +46,10 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := session.prepare(t.Context(), operationID, intentJSON); err != nil {
-					t.Fatalf("prepare %s: %v", operationID, err)
+				if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
+					t.Fatalf("prepare %s: %v", transactionID, err)
 				}
-				raw, err := session.getPreparedResult(operationID)
+				raw, err := session.getPreparedResult(transactionID)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -67,7 +67,7 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				}
 				receipt, err := protocol.NewMaterializationReceipt(mutation.MaterializationReceipt{
 					Profile:         mutation.MaterializationReceiptProfile,
-					OperationID:     operationID,
+					TransactionID:   transactionID,
 					BaseRoot:        bundle.View.BaseRoot,
 					Candidate:       bundle.Candidate,
 					BundleDigest:    digest,
@@ -82,7 +82,7 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				}
 				validated, err := validateMaterializationReceipt(raw, receiptJSON)
 				if err != nil {
-					t.Fatalf("validate receipt %s: %v", operationID, err)
+					t.Fatalf("validate receipt %s: %v", transactionID, err)
 				}
 				if validated != bundle.Candidate.String() {
 					t.Fatalf("validated root = %s, want %s", validated, bundle.Candidate)
@@ -96,9 +96,9 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				if _, err := validateMaterializationReceipt(raw, badReceiptJSON); err == nil {
 					t.Fatal("stateless validation accepted a mismatched receipt")
 				}
-				accepted, err := session.acceptReceipt(operationID, receiptJSON)
+				accepted, err := session.acceptReceipt(transactionID, receiptJSON)
 				if err != nil {
-					t.Fatalf("accept %s: %v", operationID, err)
+					t.Fatalf("accept %s: %v", transactionID, err)
 				}
 				if accepted != bundle.Candidate.String() {
 					t.Fatalf("accepted root = %s, want %s", accepted, bundle.Candidate)

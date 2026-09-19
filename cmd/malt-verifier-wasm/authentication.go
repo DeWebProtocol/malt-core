@@ -39,6 +39,7 @@ func registerAuthenticationVerifier(backend string) {
 			result.Error = err.Error()
 			return encodeProtocolResponse(result)
 		}
+		result.Profile = wire.Request.Profile
 		result.Valid, err = authentication.Verify(verifier, wire.Request, wire.Result)
 		if err != nil {
 			result.Error = err.Error()
