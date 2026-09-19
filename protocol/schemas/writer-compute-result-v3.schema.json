@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://deweb.world/schemas/malt/writer-compute-result/v2/writer-compute-result.schema.json",
-  "title": "MALT Browser Writer Compute Result v2",
+  "$id": "https://deweb.world/schemas/malt/writer-compute-result/v3/writer-compute-result.schema.json",
+  "title": "MALT Browser Writer Compute Result v3",
   "type": "object",
   "additionalProperties": false,
   "required": ["profile", "bundle", "materialization", "next_view", "metrics"],
   "properties": {
-    "profile": {"const": "malt.writer-compute-result/v2"},
-    "bundle": {"$ref": "https://deweb.world/schemas/malt/client-root-bundle/v1/client-root-bundle.schema.json"},
+    "profile": {"const": "malt.writer-compute-result/v3"},
+    "bundle": {"$ref": "https://deweb.world/schemas/malt/client-root-bundle/v2/client-root-bundle.schema.json"},
     "materialization": {"$ref": "https://deweb.world/schemas/malt/client-root-materialization/v1/client-root-materialization.schema.json"},
     "next_view": {"$ref": "https://deweb.world/schemas/malt/update-view/v1/update-view.schema.json"},
     "metrics": {"$ref": "#/$defs/metrics"}

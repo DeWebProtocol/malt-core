@@ -19,8 +19,8 @@ import (
 const (
 	UpdateViewProfile              = "malt.update-view/v1"
 	SemanticIntentProfile          = "malt.semantic-intent/v1"
-	ClientRootBundleProfile        = "malt.client-root-bundle/v1"
-	MaterializationReceiptProfile  = "malt.materialization-receipt/v1"
+	ClientRootBundleProfile        = "malt.client-root-bundle/v2"
+	MaterializationReceiptProfile  = "malt.materialization-receipt/v2"
 	StatefulCompleteVectorsProfile = "stateful-complete-vectors-v1"
 )
 
@@ -114,22 +114,22 @@ type TransitionOutput struct {
 // designated candidate. A Gateway may accept this candidate or reject it; it
 // must not substitute a different root.
 type ClientRootBundle struct {
-	Profile      string
-	OperationID  string
-	View         UpdateView
-	Intent       SemanticIntent
-	Outputs      []TransitionOutput
-	Candidate    cid.Cid
-	PayloadCIDs  []cid.Cid
-	ViewDigest   [32]byte
-	IntentDigest [32]byte
+	Profile       string
+	TransactionID string
+	View          UpdateView
+	Intent        SemanticIntent
+	Outputs       []TransitionOutput
+	Candidate     cid.Cid
+	PayloadCIDs   []cid.Cid
+	ViewDigest    [32]byte
+	IntentDigest  [32]byte
 }
 
 // MaterializationReceipt is a durable acknowledgement of one exact bundle.
 // Publication and client trust acceptance remain separate policies.
 type MaterializationReceipt struct {
 	Profile         string
-	OperationID     string
+	TransactionID   string
 	BaseRoot        cid.Cid
 	Candidate       cid.Cid
 	BundleDigest    [32]byte
@@ -601,8 +601,8 @@ func validateFixedListDescriptor(descriptor CommitDescriptor, kind arcset.Kind, 
 
 // NewClientRootBundle validates and canonicalizes one exact-root submission.
 func NewClientRootBundle(bundle ClientRootBundle) (ClientRootBundle, error) {
-	if bundle.Profile != ClientRootBundleProfile || !validClientRootID(bundle.OperationID) {
-		return ClientRootBundle{}, fmt.Errorf("%w: invalid profile or operation id", ErrInvalidClientRootBundle)
+	if bundle.Profile != ClientRootBundleProfile || !validClientRootID(bundle.TransactionID) {
+		return ClientRootBundle{}, fmt.Errorf("%w: invalid profile or transaction ID", ErrInvalidClientRootBundle)
 	}
 	view, err := NormalizeUpdateView(bundle.View)
 	if err != nil {
@@ -712,7 +712,7 @@ func (r MaterializationReceipt) Validate(bundle ClientRootBundle) error {
 	if err != nil {
 		return err
 	}
-	if r.Profile != MaterializationReceiptProfile || r.OperationID != canonical.OperationID || strings.TrimSpace(r.DurableBoundary) == "" {
+	if r.Profile != MaterializationReceiptProfile || r.TransactionID != canonical.TransactionID || strings.TrimSpace(r.DurableBoundary) == "" {
 		return fmt.Errorf("invalid materialization receipt metadata")
 	}
 	if !r.BaseRoot.Equals(canonical.View.BaseRoot) || !r.Candidate.Equals(canonical.Candidate) {
@@ -796,7 +796,7 @@ func (b ClientRootBundle) Digest() ([32]byte, error) {
 	}
 	var encoded bytes.Buffer
 	writeDigestString(&encoded, canonical.Profile)
-	writeDigestString(&encoded, canonical.OperationID)
+	writeDigestString(&encoded, canonical.TransactionID)
 	writeDigestBytes(&encoded, canonical.ViewDigest[:])
 	writeDigestBytes(&encoded, canonical.IntentDigest[:])
 	writeDigestCID(&encoded, canonical.Candidate)

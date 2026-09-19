@@ -92,8 +92,8 @@ func TestComputerComputesCanonicalClientRootBundle(t *testing.T) {
 	if maltcid.BackendKindOf(bundle.Candidate) != maltcid.BackendKindKZG {
 		t.Fatalf("candidate backend = %q, want KZG", maltcid.BackendKindOf(bundle.Candidate))
 	}
-	if bundle.OperationID != "browser-operation-1" || len(bundle.Outputs) != 1 || len(bundle.PayloadCIDs) != 1 {
-		t.Fatalf("unexpected bundle summary: operation=%q outputs=%d payloads=%d", bundle.OperationID, len(bundle.Outputs), len(bundle.PayloadCIDs))
+	if bundle.TransactionID != "browser-operation-1" || len(bundle.Outputs) != 1 || len(bundle.PayloadCIDs) != 1 {
+		t.Fatalf("unexpected bundle summary: operation=%q outputs=%d payloads=%d", bundle.TransactionID, len(bundle.Outputs), len(bundle.PayloadCIDs))
 	}
 	next, err := response.NextView.Core()
 	if err != nil {
@@ -176,11 +176,11 @@ func TestSessionComputerBootstrapCarriesBaseMaterialization(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			const operationID = "bootstrap-first-write"
-			if _, err := session.prepare(t.Context(), operationID, intentJSON); err != nil {
+			const transactionID = "bootstrap-first-write"
+			if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
 				t.Fatalf("prepare: %v", err)
 			}
-			resultJSON, err := session.getPreparedResult(operationID)
+			resultJSON, err := session.getPreparedResult(transactionID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -238,15 +238,15 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 		t.Fatalf("loaded root = %s, want %s", loadedRoot, view.BaseRoot)
 	}
 
-	const operationID = "session-operation-1"
-	preparedRoot, err := session.prepare(t.Context(), operationID, intentJSON)
+	const transactionID = "session-operation-1"
+	preparedRoot, err := session.prepare(t.Context(), transactionID, intentJSON)
 	if err != nil {
 		t.Fatalf("prepare failed: %v", err)
 	}
-	if _, err := session.prepare(t.Context(), operationID, intentJSON); err == nil {
+	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err == nil {
 		t.Fatal("session accepted a duplicate prepared operation")
 	}
-	raw, err := session.getPreparedResult(operationID)
+	raw, err := session.getPreparedResult(transactionID)
 	if err != nil {
 		t.Fatalf("getPreparedResult failed: %v", err)
 	}
@@ -266,7 +266,7 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 		t.Fatalf("bundle Digest failed: %v", err)
 	}
 	receipt, err := protocol.NewMaterializationReceipt(mutation.MaterializationReceipt{
-		Profile: mutation.MaterializationReceiptProfile, OperationID: operationID,
+		Profile: mutation.MaterializationReceiptProfile, TransactionID: transactionID,
 		BaseRoot: bundle.View.BaseRoot, Candidate: bundle.Candidate,
 		BundleDigest: bundleDigest, DurableBoundary: "unit-memory-v1",
 	}, bundle)
@@ -276,13 +276,13 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	badReceipt := receipt
 	badReceipt.Candidate = view.BaseRoot.String()
 	badReceiptJSON, _ := json.Marshal(badReceipt)
-	if _, err := session.acceptReceipt(operationID, badReceiptJSON); err == nil {
+	if _, err := session.acceptReceipt(transactionID, badReceiptJSON); err == nil {
 		t.Fatal("session accepted a mismatched receipt")
 	}
 	if got := session.session.BaseRoot(); !got.Equals(view.BaseRoot) {
 		t.Fatalf("base advanced after bad receipt: %s", got)
 	}
-	stillPrepared, err := session.getPreparedResult(operationID)
+	stillPrepared, err := session.getPreparedResult(transactionID)
 	if err != nil {
 		t.Fatalf("getPreparedResult after rejected receipt failed: %v", err)
 	}
@@ -290,7 +290,7 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 		t.Fatal("rejected receipt changed the prepared result")
 	}
 	stillPrepared[0] ^= 0xff
-	unmodified, err := session.getPreparedResult(operationID)
+	unmodified, err := session.getPreparedResult(transactionID)
 	if err != nil {
 		t.Fatalf("getPreparedResult after caller mutation failed: %v", err)
 	}
@@ -299,7 +299,7 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	}
 
 	receiptJSON, _ := json.Marshal(receipt)
-	acceptedRoot, err := session.acceptReceipt(operationID, receiptJSON)
+	acceptedRoot, err := session.acceptReceipt(transactionID, receiptJSON)
 	if err != nil {
 		t.Fatalf("acceptReceipt failed: %v", err)
 	}
@@ -309,7 +309,7 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	if got := session.session.BaseRoot(); !got.Equals(bundle.Candidate) {
 		t.Fatalf("retained base = %s, want %s", got, bundle.Candidate)
 	}
-	if _, err := session.getPreparedResult(operationID); err == nil {
+	if _, err := session.getPreparedResult(transactionID); err == nil {
 		t.Fatal("accepted operation remained available as a prepared result")
 	}
 	fresh, err := newSessionComputer(computer)
@@ -477,7 +477,7 @@ func wasmObjectRootByID(t *testing.T, view mutation.UpdateView, objectID string)
 	return cid.Undef
 }
 
-func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, operationID string, intent mutation.SemanticIntent) cid.Cid {
+func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, transactionID string, intent mutation.SemanticIntent) cid.Cid {
 	t.Helper()
 	wireIntent, err := protocol.NewSemanticIntent(session.view, intent)
 	if err != nil {
@@ -487,10 +487,10 @@ func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, opera
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := session.prepare(t.Context(), operationID, intentJSON); err != nil {
-		t.Fatalf("prepare %s: %v", operationID, err)
+	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
+		t.Fatalf("prepare %s: %v", transactionID, err)
 	}
-	resultJSON, err := session.getPreparedResult(operationID)
+	resultJSON, err := session.getPreparedResult(transactionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -507,7 +507,7 @@ func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, opera
 		t.Fatal(err)
 	}
 	receipt, err := protocol.NewMaterializationReceipt(mutation.MaterializationReceipt{
-		Profile: mutation.MaterializationReceiptProfile, OperationID: operationID,
+		Profile: mutation.MaterializationReceiptProfile, TransactionID: transactionID,
 		BaseRoot: bundle.View.BaseRoot, Candidate: bundle.Candidate,
 		BundleDigest: digest, DurableBoundary: "unit-memory-v1",
 	}, bundle)
@@ -518,9 +518,9 @@ func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, opera
 	if err != nil {
 		t.Fatal(err)
 	}
-	accepted, err := session.acceptReceipt(operationID, receiptJSON)
+	accepted, err := session.acceptReceipt(transactionID, receiptJSON)
 	if err != nil {
-		t.Fatalf("accept %s: %v", operationID, err)
+		t.Fatalf("accept %s: %v", transactionID, err)
 	}
 	if accepted != bundle.Candidate.String() {
 		t.Fatalf("accepted root = %s, want %s", accepted, bundle.Candidate)
@@ -598,8 +598,8 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	if _, err := session.load(t.Context(), viewJSON); err != nil {
 		t.Fatal(err)
 	}
-	const operationID = "close-operation"
-	if _, err := session.prepare(t.Context(), operationID, intentJSON); err != nil {
+	const transactionID = "close-operation"
+	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
 		t.Fatal(err)
 	}
 	firstStore := session.store
@@ -613,7 +613,7 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	if session.store != firstStore || session.session != firstSession {
 		t.Fatal("failed load replaced the current session")
 	}
-	if _, err := session.getPreparedResult(operationID); err != nil {
+	if _, err := session.getPreparedResult(transactionID); err != nil {
 		t.Fatalf("failed load discarded the prepared result: %v", err)
 	}
 
@@ -626,10 +626,10 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	if session.store == firstStore {
 		t.Fatal("successful replacement reused the old store")
 	}
-	if _, err := session.getPreparedResult(operationID); err == nil {
+	if _, err := session.getPreparedResult(transactionID); err == nil {
 		t.Fatal("successful replacement retained an old prepared result")
 	}
-	if _, err := session.prepare(t.Context(), operationID, intentJSON); err != nil {
+	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
 		t.Fatalf("prepare after successful replacement failed: %v", err)
 	}
 	secondStore := session.store
@@ -641,16 +641,16 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	if session.session != nil || session.store != nil || session.view.BaseRoot.Defined() || session.prepared != nil || session.preparedResponseBytes != 0 {
 		t.Fatal("close did not clear all retained session state")
 	}
-	if _, err := session.getPreparedResult(operationID); err == nil {
+	if _, err := session.getPreparedResult(transactionID); err == nil {
 		t.Fatal("closed session returned a prepared result")
 	}
-	if _, err := session.prepare(t.Context(), operationID, intentJSON); err == nil {
+	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err == nil {
 		t.Fatal("closed session prepared without reload")
 	}
-	if _, err := session.acceptReceipt(operationID, []byte(`{}`)); err == nil {
+	if _, err := session.acceptReceipt(transactionID, []byte(`{}`)); err == nil {
 		t.Fatal("closed session accepted a receipt")
 	}
-	if err := session.discard(operationID); err == nil {
+	if err := session.discard(transactionID); err == nil {
 		t.Fatal("closed session discarded a candidate")
 	}
 

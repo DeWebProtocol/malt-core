@@ -217,7 +217,7 @@ func (r *Runtime) VerifyUpdateView(ctx context.Context, view mutation.UpdateView
 // ComputeBundle applies a normalized intent bottom-up and returns the exact
 // candidate plus every intermediate output. Literal CAS post-images are
 // collected into PayloadCIDs for service-side existence checks.
-func (r *Runtime) ComputeBundle(ctx context.Context, operationID string, verified VerifiedUpdateView, intent mutation.SemanticIntent) (ComputeResult, error) {
+func (r *Runtime) ComputeBundle(ctx context.Context, transactionID string, verified VerifiedUpdateView, intent mutation.SemanticIntent) (ComputeResult, error) {
 	totalStart := time.Now()
 	if r == nil {
 		return ComputeResult{}, fmt.Errorf("client writer runtime is nil")
@@ -356,15 +356,15 @@ func (r *Runtime) ComputeBundle(ctx context.Context, operationID string, verifie
 	metrics.ExpectedRootEncodingNS = writerDurationNS(time.Since(phaseStart))
 	phaseStart = time.Now()
 	bundle, err := mutation.NewClientRootBundle(mutation.ClientRootBundle{
-		Profile:      mutation.ClientRootBundleProfile,
-		OperationID:  operationID,
-		View:         view,
-		Intent:       normalized,
-		Outputs:      outputs,
-		Candidate:    candidate,
-		PayloadCIDs:  payloads,
-		ViewDigest:   viewDigest,
-		IntentDigest: intentDigest,
+		Profile:       mutation.ClientRootBundleProfile,
+		TransactionID: transactionID,
+		View:          view,
+		Intent:        normalized,
+		Outputs:       outputs,
+		Candidate:     candidate,
+		PayloadCIDs:   payloads,
+		ViewDigest:    viewDigest,
+		IntentDigest:  intentDigest,
 	})
 	if err != nil {
 		return ComputeResult{}, err

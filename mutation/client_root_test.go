@@ -26,15 +26,15 @@ func TestClientRootBundleCanonicalizesAndBindsExactTopOutput(t *testing.T) {
 	}
 
 	bundle, err := NewClientRootBundle(ClientRootBundle{
-		Profile:      ClientRootBundleProfile,
-		OperationID:  "operation-1",
-		View:         view,
-		Intent:       intent,
-		Outputs:      []TransitionOutput{topOutput, childOutput},
-		Candidate:    topOutput.Root,
-		PayloadCIDs:  []cid.Cid{payload},
-		ViewDigest:   viewDigest,
-		IntentDigest: intentDigest,
+		Profile:       ClientRootBundleProfile,
+		TransactionID: "operation-1",
+		View:          view,
+		Intent:        intent,
+		Outputs:       []TransitionOutput{topOutput, childOutput},
+		Candidate:     topOutput.Root,
+		PayloadCIDs:   []cid.Cid{payload},
+		ViewDigest:    viewDigest,
+		IntentDigest:  intentDigest,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestClientRootBundleCanonicalizesAndBindsExactTopOutput(t *testing.T) {
 	}
 	receipt := MaterializationReceipt{
 		Profile:         MaterializationReceiptProfile,
-		OperationID:     bundle.OperationID,
+		TransactionID:   bundle.TransactionID,
 		BaseRoot:        bundle.View.BaseRoot,
 		Candidate:       bundle.Candidate,
 		BundleDigest:    digest,
@@ -281,7 +281,7 @@ func TestClientRootBundleRejectsDigestAndCandidateSubstitution(t *testing.T) {
 		t.Fatal(err)
 	}
 	base := ClientRootBundle{
-		Profile: ClientRootBundleProfile, OperationID: "operation-2", View: view, Intent: intent,
+		Profile: ClientRootBundleProfile, TransactionID: "operation-2", View: view, Intent: intent,
 		Outputs: []TransitionOutput{childOutput, topOutput}, Candidate: topOutput.Root,
 		PayloadCIDs: []cid.Cid{payload}, ViewDigest: viewDigest, IntentDigest: intentDigest,
 	}
@@ -314,7 +314,7 @@ func TestClientRootBundleRejectsOutputKindBackendAndPayloadSetSubstitution(t *te
 		t.Fatal(err)
 	}
 	base := ClientRootBundle{
-		Profile: ClientRootBundleProfile, OperationID: "operation-hostile", View: view, Intent: intent,
+		Profile: ClientRootBundleProfile, TransactionID: "operation-hostile", View: view, Intent: intent,
 		Outputs: []TransitionOutput{childOutput, topOutput}, Candidate: topOutput.Root,
 		PayloadCIDs: []cid.Cid{payload}, ViewDigest: viewDigest, IntentDigest: intentDigest,
 	}

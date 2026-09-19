@@ -27,11 +27,11 @@ migration or old-root reinterpretation is performed by this policy update.
 | `malt.update-view/v1` | Experimental in v0.0.7-rc.1; complete semantic closure |
 | `stateful-complete-vectors-v1` | Experimental state profile required by the current update-view contract |
 | `malt.semantic-intent/v1` | Experimental in v0.0.7-rc.1; output-free update intent |
-| `malt.client-root-bundle/v1` | Experimental in v0.0.7-rc.1; exact-root submission, not a transition proof |
+| `malt.client-root-bundle/v2` | Experimental in v0.0.7-rc.1; exact-root submission, not a transition proof |
 | `malt.client-root-materialization/v1` | Experimental in v0.0.7-rc.1; root-bound Map proof-serving witness, not a transition proof |
-| `malt.writer-compute-result/v1` | Legacy browser-local bundle and next-view result; decode compatibility only |
-| `malt.writer-compute-result/v2` | Experimental in v0.0.7-rc.1; browser-local bundle, Map materialization, and next-view result |
-| `malt.materialization-receipt/v1` | Experimental in v0.0.7-rc.1; exact-bundle durability acknowledgement |
+| `malt.writer-compute-result/v1` | Retired; rejected by the current transaction contract |
+| `malt.writer-compute-result/v3` | Experimental in v0.0.7-rc.1; browser-local bundle, Map materialization, and next-view result |
+| `malt.materialization-receipt/v2` | Experimental in v0.0.7-rc.1; exact-bundle durability acknowledgement |
 | ProofList JSON and proof semantics | Experimental, verifier-facing |
 | Typed MALT root CIDs/codecs | Experimental, verifier-facing |
 | `SegmentPath` projection | `/`-joined UTF-8 segments; experimental |

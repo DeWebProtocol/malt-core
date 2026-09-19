@@ -21,21 +21,16 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// GenerateClientRoot reproduces the frozen v1 corpus with historical V3 output.
-func GenerateClientRoot() ([]byte, error) {
-	return generateClientRoot(conformance.ClientRootV1)
-}
-
-// GenerateClientRootV2 freezes V0 candidate output for both V0 and historical V3
-// input views. The corpus revision is independent of the Root format version.
-func GenerateClientRootV2() ([]byte, error) {
-	return generateClientRoot(conformance.ClientRootV2)
+// GenerateClientRootV3 freezes the transaction-ID contract with V0 candidate
+// output and both V0 and historical V3 input views.
+func GenerateClientRootV3() ([]byte, error) {
+	return generateClientRoot(conformance.ClientRootV3)
 }
 
 func generateClientRoot(version string) ([]byte, error) {
 	baseVersions := []uint8{maltcid.MALTVersionID}
 	targetVersion := maltcid.MALTVersionID
-	if version == conformance.ClientRootV2 {
+	if version == conformance.ClientRootV3 {
 		baseVersions = []uint8{maltcid.RootVersion, maltcid.MALTVersionID}
 		targetVersion = maltcid.RootVersion
 	}
@@ -96,14 +91,14 @@ func generateClientRootBackend(backend maltcid.BackendKind, baseVersion, targetV
 	if err != nil {
 		return nil, err
 	}
-	operationID := "client-root-" + string(backend) + "-replace"
+	transactionID := "client-root-" + string(backend) + "-replace"
 	prefix := "client-root." + string(backend) + "."
 	category := "replace"
 	newRuntime := clientwriter.NewHistoricalRuntime
 	if targetVersion == maltcid.RootVersion {
 		newRuntime = clientwriter.NewRuntime
 		prefix = fmt.Sprintf("client-root-v%d-to-v0.%s.", baseVersion, backend)
-		operationID = fmt.Sprintf("client-root-v%d-to-v0-%s-replace", baseVersion, backend)
+		transactionID = fmt.Sprintf("client-root-v%d-to-v0-%s-replace", baseVersion, backend)
 		if baseVersion == maltcid.MALTVersionID {
 			category = "migrate_v3"
 		}
@@ -119,7 +114,7 @@ func generateClientRootBackend(backend maltcid.BackendKind, baseVersion, targetV
 	if err != nil {
 		return nil, err
 	}
-	result, err := runtime.ComputeBundle(ctx, operationID, verified, intent)
+	result, err := runtime.ComputeBundle(ctx, transactionID, verified, intent)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +135,7 @@ func generateClientRootBackend(backend maltcid.BackendKind, baseVersion, targetV
 		return nil, err
 	}
 	wireReceipt, err := protocol.NewMaterializationReceipt(mutation.MaterializationReceipt{
-		Profile: mutation.MaterializationReceiptProfile, OperationID: operationID,
+		Profile: mutation.MaterializationReceiptProfile, TransactionID: transactionID,
 		BaseRoot: result.Bundle.View.BaseRoot, Candidate: result.Bundle.Candidate,
 		BundleDigest: bundleDigest, DurableBoundary: "conformance-memory-v1",
 	}, result.Bundle)
@@ -148,7 +143,7 @@ func generateClientRootBackend(backend maltcid.BackendKind, baseVersion, targetV
 		return nil, err
 	}
 	vectors := []conformance.ClientRootVector{{
-		ID: prefix + "replace.accept", Backend: string(backend), Category: category, OperationID: operationID,
+		ID: prefix + "replace.accept", Backend: string(backend), Category: category, TransactionID: transactionID,
 		UpdateView: viewJSON, SemanticIntent: intentJSON,
 		Expected: conformance.ClientRootExpected{
 			Valid: true, Bundle: &wireBundle, Materialization: &wireMaterialization,
@@ -158,7 +153,7 @@ func generateClientRootBackend(backend maltcid.BackendKind, baseVersion, targetV
 	appendInvalid := func(id, category string, inputView, inputIntent json.RawMessage) {
 		vectors = append(vectors, conformance.ClientRootVector{
 			ID: id, Backend: string(backend), Category: category,
-			OperationID: id, UpdateView: inputView, SemanticIntent: inputIntent,
+			TransactionID: id, UpdateView: inputView, SemanticIntent: inputIntent,
 			Expected: conformance.ClientRootExpected{Valid: false},
 		})
 	}

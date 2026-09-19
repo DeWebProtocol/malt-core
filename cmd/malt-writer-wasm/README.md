@@ -67,14 +67,14 @@ The controller retains the backend argument in every method so typed-root
 routing remains explicit:
 
 ```text
-compute(backend, operationIDUTF8, updateViewJSONUTF8, semanticIntentJSONUTF8)
+compute(backend, transactionIDUTF8, updateViewJSONUTF8, semanticIntentJSONUTF8)
 bootstrap(backend)
 load(backend, updateViewJSONUTF8)
-prepare(backend, operationIDUTF8, semanticIntentJSONUTF8)
-getPreparedResult(backend, operationIDUTF8)
+prepare(backend, transactionIDUTF8, semanticIntentJSONUTF8)
+getPreparedResult(backend, transactionIDUTF8)
 validateReceipt(backend, writerResultJSONUTF8, materializationReceiptJSONUTF8)
-acceptReceipt(backend, operationIDUTF8, materializationReceiptJSONUTF8)
-discard(backend, operationIDUTF8)
+acceptReceipt(backend, transactionIDUTF8, materializationReceiptJSONUTF8)
+discard(backend, transactionIDUTF8)
 closeSession(backend)
 terminate()
 ```
@@ -87,8 +87,8 @@ and the protocol 64 MiB document limit.
 
 `bootstrap` creates and retains the canonical empty-map base. `load` verifies a
 complete update view once. `prepare` retains an exact candidate while
-`getPreparedResult` returns `malt.writer-compute-result/v2`. Only an exact
-`malt.materialization-receipt/v1` advances the session through `acceptReceipt`.
+`getPreparedResult` returns `malt.writer-compute-result/v3`. Only an exact
+`malt.materialization-receipt/v2` advances the session through `acceptReceipt`.
 
 At most 64 candidates and 64 MiB of encoded prepared responses are retained.
 Accepting one candidate invalidates its speculative peers. `discard` and

@@ -85,22 +85,6 @@ func DecodeWriterComputeResult(data []byte) (WriterComputeResult, error) {
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return WriterComputeResult{}, fmt.Errorf("decode writer compute result profile: %w", err)
 	}
-	if envelope.Profile == WriterComputeResultProfileV1 {
-		var legacy writerComputeResultV1
-		if err := decodeClientRootJSON(data, &legacy); err != nil {
-			return WriterComputeResult{}, fmt.Errorf("decode writer compute result: %w", err)
-		}
-		value := WriterComputeResult{
-			Profile:  legacy.Profile,
-			Bundle:   legacy.Bundle,
-			NextView: legacy.NextView,
-			Metrics:  legacy.Metrics,
-		}
-		if err := value.Validate(); err != nil {
-			return WriterComputeResult{}, err
-		}
-		return value, nil
-	}
 	var value WriterComputeResult
 	if err := decodeClientRootJSON(data, &value); err != nil {
 		return WriterComputeResult{}, fmt.Errorf("decode writer compute result: %w", err)

@@ -34,7 +34,7 @@ const (
 
 //go:generate go run ../internal/conformancegen/cmd -out resolve-read/v2/vectors.json
 
-//go:embed resolve-read/v1/*.json resolve-read/v2/*.json map-proof/v1/*.json client-root/v1/*.json client-root/v2/*.json
+//go:embed resolve-read/v1/*.json resolve-read/v2/*.json map-proof/v1/*.json client-root/v1/*.json client-root/v2/*.json client-root/v3/*.json
 var corpusFiles embed.FS
 
 // Corpus is the stable, ordered envelope shared by every verifier adapter.
