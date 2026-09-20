@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core/auth/arcset"
 	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
 	"github.com/dewebprotocol/malt-core/auth/proof/evidence"
@@ -52,7 +51,7 @@ func setupArcSet(t *testing.T, e *materialmemory.Store, semantic mapping.Semanti
 		t.Fatalf("Commit failed: %v", err)
 	}
 	ctx := context.Background()
-	if err := e.Update(ctx, testNamespace, root, cid.Undef, arcset.NewSetFrom(arcsMap)); err != nil {
+	if err := e.Update(ctx, testNamespace, root, cid.Undef, checkedArcSet(arcsMap)); err != nil {
 		t.Fatalf("ArcSet materializer.Update failed: %v", err)
 	}
 	return root

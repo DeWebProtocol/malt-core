@@ -58,9 +58,8 @@ func (s *Session) BaseRoot() cid.Cid {
 }
 
 // WorkingRoots returns a detached object-to-root projection of the semantic
-// materialization currently used for the next incremental update. During a
-// legacy view migration these roots may differ from the roots declared by the
-// accepted view, so stateful callers must retain both sets.
+// materialization currently used for the next incremental update. These roots
+// exactly match the objects in the accepted view.
 func (s *Session) WorkingRoots() map[string]cid.Cid {
 	if s == nil {
 		return nil
@@ -138,7 +137,7 @@ func (s *Session) AcceptReceipt(receipt mutation.MaterializationReceipt, prepare
 	if len(prepared.seal.workingRoots) != len(next.Objects) {
 		return fmt.Errorf("prepared working-root seal does not match next view")
 	}
-	nextWorkingRoots, err := workingRootsForView(next, prepared.seal.workingRoots, s.runtime.targetVersion)
+	nextWorkingRoots, err := workingRootsForView(next, prepared.seal.workingRoots)
 	if err != nil {
 		return fmt.Errorf("prepared working-root seal: %w", err)
 	}

@@ -15,14 +15,12 @@ type Options struct {
 	Backends       map[maltcid.BackendKind]commitment.IndexCommitment
 	DefaultBackend maltcid.BackendKind
 	Namespace      string
-	MALTVersion    uint8
 	InputRules     *input.Registry
 }
 
 func defaultOptions() *Options {
 	return &Options{
-		Backends:    make(map[maltcid.BackendKind]commitment.IndexCommitment),
-		MALTVersion: maltcid.RootVersion,
+		Backends: make(map[maltcid.BackendKind]commitment.IndexCommitment),
 	}
 }
 
@@ -53,15 +51,6 @@ func WithCommitmentBackend(kind maltcid.BackendKind, scheme commitment.IndexComm
 func WithDefaultCommitmentBackend(kind maltcid.BackendKind) Option {
 	return func(o *Options) {
 		o.DefaultBackend = kind
-	}
-}
-
-// WithMALTVersion selects the typed-root version emitted by map/list commits.
-// It exists for exact replay of supported legacy complete views; new graphs
-// should use the default current version.
-func WithMALTVersion(version uint8) Option {
-	return func(o *Options) {
-		o.MALTVersion = version
 	}
 }
 

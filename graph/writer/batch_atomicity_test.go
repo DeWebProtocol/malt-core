@@ -2,7 +2,6 @@ package writer
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset"
@@ -13,91 +12,6 @@ import (
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
-
-// TestBatchUpdateArcs_AllowsPayloadDeletion verifies that the generic graph
-// writer treats @payload as an ordinary reserved coordinate. Layouts such as
-// UnixFS are responsible for requiring that binding.
-func TestBatchUpdateArcs_AllowsPayloadDeletion(t *testing.T) {
-	ctx := context.Background()
-	namespace := "test"
-
-	// Setup
-	store := materialmemory.New(true)
-	scheme, err := kzg.NewScheme()
-	if err != nil {
-		t.Fatalf("NewScheme failed: %v", err)
-	}
-	maps, err := radix.NewMap(scheme, store)
-	if err != nil {
-		t.Fatalf("NewMap failed: %v", err)
-	}
-	writer := NewWriter(maps, store)
-
-	// Test Case 1: Successful batch update
-	valueA := makeCID(t, "value-a")
-	payload := makeCID(t, "payload")
-
-	initialArcs, err := arcset.NewArcSet(map[string]cid.Cid{
-		"@payload": payload,
-		"a":        valueA,
-	})
-	if err != nil {
-		t.Fatalf("NewArcSet failed: %v", err)
-	}
-
-	root, err := writer.CreateStructure(ctx, namespace, initialArcs)
-	if err != nil {
-		t.Fatalf("CreateStructure failed: %v", err)
-	}
-
-	// Successful batch update
-	newValueA := makeCID(t, "new-value-a")
-	updates := map[string]cid.Cid{
-		"a": newValueA,
-	}
-
-	result, err := writer.BatchUpdateArcs(ctx, namespace, root, updates)
-	if err != nil {
-		t.Fatalf("Valid BatchUpdateArcs failed: %v", err)
-	}
-	t.Logf("Batch update succeeded, new root: %v", result.NewRoot)
-
-	// Generic maps may delete @payload while updating another coordinate.
-	initialArcs2, err := arcset.NewArcSet(map[string]cid.Cid{
-		"@payload": payload,
-		"x":        valueA,
-	})
-	if err != nil {
-		t.Fatalf("NewArcSet failed: %v", err)
-	}
-	root2, err := writer.CreateStructure(ctx, namespace+"_fail", initialArcs2)
-	if err != nil {
-		t.Fatalf("CreateStructure failed: %v", err)
-	}
-
-	newX := makeCID(t, "new-x")
-	updatesWithoutPayload := map[string]cid.Cid{
-		"x":        newX,
-		"@payload": cid.Undef,
-	}
-
-	result2, err := writer.BatchUpdateArcs(ctx, namespace+"_fail", root2, updatesWithoutPayload)
-	if err != nil {
-		t.Fatalf("BatchUpdateArcs deleting @payload failed: %v", err)
-	}
-
-	gotX, err := writer.GetArc(ctx, namespace+"_fail", result2.NewRoot, "x")
-	if err != nil {
-		t.Fatalf("GetArc(x) after batch: %v", err)
-	}
-	if !gotX.Equals(newX) {
-		t.Errorf("x after batch = %v, want %v", gotX, newX)
-	}
-
-	if _, err := writer.GetArc(ctx, namespace+"_fail", result2.NewRoot, "@payload"); !errors.Is(err, ErrArcNotFound) {
-		t.Fatalf("GetArc(@payload) error = %v, want ErrArcNotFound", err)
-	}
-}
 
 // TestSemanticBatchUpdate_MidBatchFailure tests the deferred persistence path in
 // semantic.BatchUpdate: if the second update in a batch fails, the first update's

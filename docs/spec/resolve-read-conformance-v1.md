@@ -1,5 +1,10 @@
 # Resolve/Read Conformance Corpus V1
 
+> Historical reference: this corpus is retired from the active tree. Its
+> original bytes remain in Git history. Current verification uses the
+> [V0 corpus v3](./resolve-read-conformance-v3.md).
+
+
 The v1 corpus is the language-neutral executable contract for local
 verification of `malt.resolve/v0alpha1` and `malt.read/v0alpha1` values. The
 canonical files live under `conformance/resolve-read/v1/` in this repository:

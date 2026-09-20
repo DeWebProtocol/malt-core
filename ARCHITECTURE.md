@@ -160,8 +160,7 @@ remote-data absence.
 
 Resolve and Read generate their operation-specific evidence during execution.
 Map membership and non-membership use the dedicated Map-proof operation; there
-is no generic `prove` union. `malt.artifact/v0alpha2` remains frozen
-compatibility data.
+is no generic `prove` union. The historical artifact compatibility API is retired.
 
 ### Apply
 
@@ -173,8 +172,8 @@ policy.
 
 `RuntimeGraph.Writer()` exposes only `MutationWriter`. Bootstrap creation is a
 separate `StructureCreator` because a new structure has no authenticated base
-root. Legacy `UpdateArc`, `BatchUpdateArcs`, and inspection helpers are exposed
-only through the explicitly named `ReferenceWriter()` capability.
+root. Caller-owned materializer capabilities provide lookup and snapshots.
+The historical root-consuming reference helpers are removed.
 
 ### Client-root computation
 

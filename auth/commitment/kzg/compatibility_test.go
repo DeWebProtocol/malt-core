@@ -44,7 +44,7 @@ func TestKZGPreprocessedWriterMatchesGoKZG(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareOpening: %v", err)
 	}
-	commitmentBytes, err := maltcid.ExtractCommitment(prepared.Root())
+	commitmentBytes, err := prepared.Root().CommitmentBytes(maltcid.KZG4096)
 	if err != nil {
 		t.Fatalf("ExtractCommitment: %v", err)
 	}

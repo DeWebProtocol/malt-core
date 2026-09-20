@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	malt "github.com/dewebprotocol/malt-core"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core"
 	"github.com/dewebprotocol/malt-core/auth/arcset"
 	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment"

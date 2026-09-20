@@ -35,59 +35,44 @@ Semantic-facing list and map contracts live under `auth/semantic/list` and
 `auth/verifier`; it selects verification-only backends from typed MALT roots
 without consulting runtime state.
 
-## Map Binding-CID Slot Model
+## Primitive values and semantic Roots
 
-The storage-free map commitment primitive commits canonical binding CID slots.
-Each committed slot is derived from:
+`commitment.Value` is an immutable primitive commitment carrying an exact VC
+profile and commitment bytes. It has no semantic layout, input rule, or CID
+codec. Constructors reject unsupported profiles and incorrect widths.
+`CommitmentBytes(profile)` checks the selected profile before returning bytes.
 
-- the fixed domain prefix `malt:map:binding:v1:`
-- canonical path key bytes
-- target CID bytes
+`auth/engine` constructs a semantic Root only after selecting a descriptor.
+Current [self-describing V0 Roots](./authentication-inputs.md) bind the layout,
+input rule, and profile-qualified commitment. Existing-root operations select
+the profile from that Root. A process default applies only to new construction.
+Each step in a cross-root traversal performs its own profile selection.
 
-This binds map labels and values together. A verifier must not accept a bare
-value proof as a map binding proof unless the committed cell also encodes the
-expected key.
+Prefix leaves bind a derived key to target CID bytes. Positional leaves bind
+a stable index to a target, with authenticated structural metadata in slot
+zero. The Map/List convenience interfaces project to these current layouts;
+the former flat binding-CID commitment wrappers are removed. See
+[commitment and proof encoding](./commitment-proof-encoding.md).
 
-This model is distinct from the runtime map layout.
-`auth/semantic/mapping/radix` uses digest-keyed radix traversal and bucket
-materialization, but composes that runtime traversal from the same single-step
-slot proof primitive.
+## Root-bound proof generation
 
-## Typed Roots
+The built-in KZG and IPA backends implement `commitment.IndexRootOpener`.
+`PrepareOpeningAtRoot` prepares an immutable witness for a caller-selected
+primitive value without computing its commitment. Preparation does not
+validate untrusted cells. The engine opens the selected coordinate, checks the
+returned root and cell, then calls `VerifyIndex` exactly once before returning
+the proof. A corrupt vector fails verification. Backends without the prepared
+capability use `IndexProver` and compare the computed primitive value.
 
-Commitment outputs are carried in typed MALT root CIDs. See
-[CID and wire format](./cid-and-wire-format.md) for the `0x30VSBB` codec
-layout and commitment backend registry. A backend ID denotes a complete suite
-and determines commitment-size validation; implementations must not infer a
-backend from byte length. The exact cell transforms, index domains, primitive
-proof bytes, and semantic proof envelopes exercised by portable verification
-are fixed in [Commitment and proof encoding](./commitment-proof-encoding.md).
-
-For existing roots, both proof generation and verification select the backend
-from the typed root. A process-level default applies only when creating a new
-root without a base root. A resolver that crosses multiple structure roots
-repeats backend selection for each step rather than pinning the first root's
-backend for the complete traversal.
-
-## Root-Bound Proof Generation
-
-The built-in KZG and IPA backends implement the optional
-`commitment.IndexRootProver` capability. It opens a caller-supplied materialized
-vector against an already selected typed root without first calling `Commit`.
-Each generated proof is verified against that root before it is returned, so a
-vector inconsistent with the selected root fails closed.
-
-Semantic map and list proving prefer this capability and retain the older
-commit-and-compare path only for compatible external backends that do not
-implement it. Root-bound proving does not itself define a materialization
-upload, persistence, authorization, publication, or receipt protocol. It is
-the primitive needed by an untrusted proof service that receives commitment
-roots from a client instead of creating them.
+Public `IndexRootProver` methods still verify their own outputs. The engine
+uses the prepared capability to avoid repeating that verification. Cache
+ownership, lifetime, serialization, persistence, authorization, publication,
+and trusted-root selection remain caller responsibilities.
 
 ## Related Proposals
 
 - [MIP-1005](../mips/mip-1005-kzg-map-label-domain.md) records the accepted
-  binding-CID slot decision.
+  historical binding-CID slot decision.
 - [MIP-1010](../mips/mip-1010-data-authentication-core-boundary.md) records the
   historical package-boundary decision that keeps commitment primitives inside
   the data-authentication core.

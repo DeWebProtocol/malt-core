@@ -33,7 +33,7 @@ type Result struct {
 }
 
 func openVector(s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
-	root, err := ref.PrimitiveCID()
+	root, err := commitment.NewValue(ref.Profile, ref.Commitment)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -42,21 +42,25 @@ func openVector(s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell,
 	}
 	var value commitment.Cell
 	var proof []byte
-	if prover, ok := s.(commitment.IndexRootProver); ok {
-		value, proof, err = prover.ProveAtRoot(root, cells, index)
-	} else if prover, ok := s.(commitment.IndexProver); ok {
-		var computed cid.Cid
-		computed, value, proof, err = prover.Prove(cells, index)
+	if opener, ok := s.(commitment.IndexRootOpener); ok {
+		var prepared commitment.IndexOpening
+		prepared, err = opener.PrepareOpeningAtRoot(root, cells)
 		if err == nil {
-			var equal bool
-			equal, err = maltcid.EqualCommitment(root, computed)
-			if err == nil && !equal {
-				err = materializer.ErrIncomplete
+			if prepared == nil || !prepared.Root().Equals(root) {
+				return nil, nil, errors.New("opening does not bind the selected commitment")
 			}
+			value, proof, err = prepared.Open(index)
+		}
+	} else if prover, ok := s.(commitment.IndexProver); ok {
+		var computed commitment.Value
+		computed, value, proof, err = prover.Prove(cells, index)
+		if err == nil && !root.Equals(computed) {
+			err = materializer.ErrIncomplete
 		}
 	} else {
 		return nil, nil, errors.New("VC profile cannot generate openings")
 	}
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -73,7 +77,7 @@ func openVector(s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell,
 	return commitment.NewCell(value), bytes.Clone(proof), nil
 }
 func verifyOpening(s ProfileVerifier, ref maltcid.NodeRef, index uint64, cell, proof []byte) (bool, error) {
-	root, err := ref.PrimitiveCID()
+	root, err := commitment.NewValue(ref.Profile, ref.Commitment)
 	if err != nil {
 		return false, err
 	}

@@ -64,9 +64,9 @@ and the new conformance corpus. A changed parameter set or cryptographic
 encoding requires a new immutable profile ID even within the same algorithm.
 IPA direct/compact/fast precomputation choices do not change profile identity.
 
-`MALTVersionID=3` and the `CodecMaltMap*`/`CodecMaltList*` constants describe
-frozen historical encodings. Use `RootVersion`, `NewRoot`, and `ParseRoot` for
-current construction. A codec alone cannot identify a V0 Root's VC profile.
+Use `RootVersion`, `NewRoot`, and `ParseRoot` for current construction.
+Historical version constants and constructors are removed. A codec alone
+cannot identify a V0 Root's VC profile.
 
 ## AA registry and typed inputs
 
@@ -172,16 +172,18 @@ unbounded `Snapshot` is intended for callers that already bound their state.
 
 ## Compatibility and evidence
 
-New default builders emit V0. Explicit V2/V3 compatibility constructors and
-readers preserve historical bytes. Old writer views can be reconstructed into
-V0 candidates; dependent parent bindings must be recomputed. Replacing a prefix
-alone is not a migration. Payload CIDs remain reusable.
+Current builders and readers use V0. V2/V3 Roots are rejected, and the client
+writer does not migrate historical update views. Recreate old experimental
+state and dependent parents with the current implementation. Replacing a Root
+prefix alone is not a migration; payload CIDs remain reusable.
 
-`conformance/authentication-v0.json` is a separate corpus. The frozen
-Resolve/Read, Map-proof and client-root corpora retain their historical formats
-and provenance. New and historical measurements must identify their exact
-Core revision, profile and corpus. Browser release assets remain subject to
-`malt-ts`'s exact published-Core lock and release conformance gate.
+`conformance/authentication-v0.json` retains its exact existing bytes. Current
+V0 Resolve/Read, Map-proof, and client-root behavior has independent corpus
+versions; see [conformance corpora](./conformance-corpora.md). Historical
+corpora remain in Git history under their original identifiers. Measurements
+must identify their exact Core revision, profile, and corpus. Browser release
+assets remain subject to `malt-ts`'s exact published-Core lock and conformance
+gate.
 
 ## SDK backend selection
 

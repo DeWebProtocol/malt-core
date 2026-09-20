@@ -34,8 +34,8 @@ func (e *MaterializationWriteFailedError) Unwrap() error {
 }
 
 // RetryMaterializationWrite retries the exact ArcSet transition captured by
-// this error. Prefer Writer.RetryMaterializationWrite when a writer is
-// available so legacy freshness guards serialize the retry.
+// this error. The caller must serialize retries with other writes to the same
+// materializer; current-state checks do not make the transition atomic.
 func (e *MaterializationWriteFailedError) RetryMaterializationWrite(ctx context.Context, table Materializer) error {
 	return e.retryMaterializationWrite(ctx, table)
 }
@@ -71,7 +71,7 @@ func (e *MaterializationWriteFailedError) retryMaterializationWrite(ctx context.
 			return err
 		}
 		if !matchesBase && !matchesAfter {
-			return fmt.Errorf("%w: stale materialization retry for namespace %q oldRoot=%s newRoot=%s", ErrStaleRoot, e.Namespace, e.OldRoot, e.NewRoot)
+			return fmt.Errorf("%w: stale materialization retry for namespace %q oldRoot=%s newRoot=%s", ErrStaleMaterialization, e.Namespace, e.OldRoot, e.NewRoot)
 		}
 	}
 	if err := table.Update(ctx, e.Namespace, e.NewRoot, e.OldRoot, e.MaterializationDelta); err != nil {
@@ -133,3 +133,10 @@ func arcSetsEqual(a, b arcset.ArcSet) (bool, error) {
 	}
 	return true, nil
 }
+
+func supportsConcurrentBranches(table Materializer) bool {
+	branching, ok := table.(BranchingMaterializer)
+	return ok && branching.SupportsConcurrentBranches()
+}
+
+var ErrStaleMaterialization = errors.New("stale materialization retry")

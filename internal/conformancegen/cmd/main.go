@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	corpus := flag.String("corpus", "resolve-read", "corpus to generate: resolve-read, map-proof, client-root-v3, or authentication")
+	corpus := flag.String("corpus", "resolve-read", "corpus to generate: resolve-read, map-proof, client-root-v4, or authentication")
 	out := flag.String("out", "", "output path for the generated corpus")
 	flag.Parse()
 	if *out == "" {
@@ -27,8 +27,8 @@ func main() {
 		data, err = conformancegen.Generate()
 	case "map-proof":
 		data, err = conformancegen.GenerateMapProof()
-	case "client-root-v3":
-		data, err = conformancegen.GenerateClientRootV3()
+	case "client-root-v4":
+		data, err = conformancegen.GenerateClientRootV4()
 	default:
 		fmt.Fprintf(os.Stderr, "unsupported conformance corpus %q\n", *corpus)
 		os.Exit(2)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset"
 	"github.com/dewebprotocol/malt-core/graph/resolver"
-	"github.com/dewebprotocol/malt-core/graph/writer"
 	"github.com/dewebprotocol/malt-core/mutation"
 	cid "github.com/ipfs/go-cid"
 )
@@ -32,26 +31,4 @@ type MutationWriter interface {
 // operation is an update from an already authenticated base root.
 type StructureCreator interface {
 	CreateStructure(ctx context.Context, namespace string, arcs arcset.ArcSet) (cid.Cid, error)
-}
-
-// ReferenceWriter exposes legacy root-consuming and inspection helpers used by
-// reference executors and conformance tests. New integrations should depend on
-// MutationWriter and, when required, the separate StructureCreator capability.
-type ReferenceWriter interface {
-	StructureCreator
-	UpdateArc(ctx context.Context, namespace string, root cid.Cid, path string, newTarget cid.Cid) (*writer.UpdateResult, error)
-	BatchUpdateArcs(ctx context.Context, namespace string, root cid.Cid, updates map[string]cid.Cid) (*writer.BatchUpdateResult, error)
-	GetArc(ctx context.Context, namespace string, root cid.Cid, path string) (cid.Cid, error)
-	GetSnapshot(ctx context.Context, namespace string, root cid.Cid) (arcset.ArcSet, error)
-}
-
-// CompatWriter is retained as a source-compatible alias for ReferenceWriter.
-// Deprecated: use ReferenceWriter or a narrower capability.
-type CompatWriter = ReferenceWriter
-
-// Writer is the complete reference-runtime write surface.
-// Deprecated: depend on MutationWriter, StructureCreator, or ReferenceWriter.
-type Writer interface {
-	MutationWriter
-	ReferenceWriter
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
 	ipa "github.com/dewebprotocol/malt-core/internal/third_party/goipa/ipa"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
-	cid "github.com/ipfs/go-cid"
 )
 
 const (
@@ -136,18 +135,18 @@ func (s *Scheme) MaxValues() int {
 }
 
 // Commit commits a stable indexed cell vector.
-func (s *Scheme) Commit(values []commitment.Cell) (cid.Cid, error) {
+func (s *Scheme) Commit(values []commitment.Cell) (commitment.Value, error) {
 	return s.commitValues(values)
 }
 
 // Prove proves the value at a stable index.
-func (s *Scheme) Prove(values []commitment.Cell, index uint64) (cid.Cid, commitment.Cell, []byte, error) {
+func (s *Scheme) Prove(values []commitment.Cell, index uint64) (commitment.Value, commitment.Cell, []byte, error) {
 	comm, err := s.commitValues(values)
 	if err != nil {
-		return cid.Undef, nil, nil, err
+		return commitment.Undef, nil, nil, err
 	}
 	if index >= uint64(len(values)) {
-		return cid.Undef, nil, nil, fmt.Errorf("index %d out of range", index)
+		return commitment.Undef, nil, nil, fmt.Errorf("index %d out of range", index)
 	}
 	value, proof, err := s.proveValuesIndex(comm, values, index)
 	return comm, value, proof, err
@@ -156,14 +155,14 @@ func (s *Scheme) Prove(values []commitment.Cell, index uint64) (cid.Cid, commitm
 // ProveAtRoot opens values against a caller-supplied root without recomputing
 // the IPA commitment. The generated proof is verified before it is returned so
 // inconsistent client materialization fails closed.
-func (s *Scheme) ProveAtRoot(root cid.Cid, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func (s *Scheme) ProveAtRoot(root commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	if err := s.requireCommitter(); err != nil {
 		return nil, nil, err
 	}
-	if _, err := maltcid.ExtractCommitment(root); err != nil {
+	if _, err := root.CommitmentBytes(maltcid.IPA256); err != nil {
 		return nil, nil, fmt.Errorf("invalid proof root: %w", err)
 	}
-	if maltcid.BackendKindOf(root) != maltcid.BackendKindIPA {
+	if root.ProfileID() != maltcid.IPA256 {
 		return nil, nil, fmt.Errorf("proof root does not use the IPA backend")
 	}
 	if len(values) > MaxValues {
@@ -188,7 +187,7 @@ func (s *Scheme) ProveAtRoot(root cid.Cid, values []commitment.Cell, index uint6
 
 type opening struct {
 	scheme *Scheme
-	root   cid.Cid
+	root   commitment.Value
 	values []commitment.Cell
 	vector []fr.Element
 	point  banderwagon.Element
@@ -207,7 +206,7 @@ func (s *Scheme) PrepareOpening(values []commitment.Cell) (commitment.IndexOpeni
 	return s.PrepareOpeningAtRoot(root, values)
 }
 
-func (o *opening) Root() cid.Cid { return o.root }
+func (o *opening) Root() commitment.Value { return o.root }
 
 func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 	if index >= uint64(len(o.values)) {
@@ -227,23 +226,23 @@ func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 }
 
 // BatchProve proves multiple stable indices with one batch proof payload.
-func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (cid.Cid, []commitment.Cell, []byte, error) {
+func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (commitment.Value, []commitment.Cell, []byte, error) {
 	if err := validateBatchOpening(values, indices); err != nil {
-		return cid.Undef, nil, nil, err
+		return commitment.Undef, nil, nil, err
 	}
 	comm, err := s.commitValues(values)
 	if err != nil {
-		return cid.Undef, nil, nil, err
+		return commitment.Undef, nil, nil, err
 	}
 
-	commBytes, err := maltcid.ExtractCommitment(comm)
+	commBytes, err := comm.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
-		return cid.Undef, nil, nil, fmt.Errorf("failed to extract commitment: %w", err)
+		return commitment.Undef, nil, nil, fmt.Errorf("failed to extract commitment: %w", err)
 	}
 
 	var c banderwagon.Element
 	if err := c.SetBytes(commBytes); err != nil {
-		return cid.Undef, nil, nil, fmt.Errorf("failed to reconstruct commitment: %w", err)
+		return commitment.Undef, nil, nil, fmt.Errorf("failed to reconstruct commitment: %w", err)
 	}
 
 	vector := valuesToVector(values)
@@ -263,33 +262,33 @@ func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (cid.Cid
 	transcript := common.NewTranscript(batchTranscriptLabel)
 	proof, err := multiproof.CreateMultiProof(transcript, s.ipaConfig, cs, fs, zs)
 	if err != nil {
-		return cid.Undef, nil, nil, fmt.Errorf("failed to create IPA batch proof: %w", err)
+		return commitment.Undef, nil, nil, fmt.Errorf("failed to create IPA batch proof: %w", err)
 	}
 
 	proofBytes, err := serializeMultiProof(proof)
 	if err != nil {
-		return cid.Undef, nil, nil, fmt.Errorf("failed to serialize IPA batch proof: %w", err)
+		return commitment.Undef, nil, nil, fmt.Errorf("failed to serialize IPA batch proof: %w", err)
 	}
 	return comm, proved, proofBytes, nil
 }
 
 // BatchProveAtRoot opens values against a caller-supplied root without
 // recomputing the IPA commitment.
-func (s *Scheme) BatchProveAtRoot(root cid.Cid, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
+func (s *Scheme) BatchProveAtRoot(root commitment.Value, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
 	if err := s.requireCommitter(); err != nil {
 		return nil, nil, err
 	}
-	if _, err := maltcid.ExtractCommitment(root); err != nil {
+	if _, err := root.CommitmentBytes(maltcid.IPA256); err != nil {
 		return nil, nil, fmt.Errorf("invalid proof root: %w", err)
 	}
-	if maltcid.BackendKindOf(root) != maltcid.BackendKindIPA {
+	if root.ProfileID() != maltcid.IPA256 {
 		return nil, nil, fmt.Errorf("proof root does not use the IPA backend")
 	}
 	if err := validateBatchOpening(values, indices); err != nil {
 		return nil, nil, err
 	}
 
-	commBytes, err := maltcid.ExtractCommitment(root)
+	commBytes, err := root.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to extract commitment: %w", err)
 	}
@@ -331,9 +330,9 @@ func (s *Scheme) BatchProveAtRoot(root cid.Cid, values []commitment.Cell, indice
 	return proved, proof, nil
 }
 
-func (s *Scheme) proveValuesIndex(comm cid.Cid, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func (s *Scheme) proveValuesIndex(comm commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	vector := valuesToVector(values)
-	commBytes, err := maltcid.ExtractCommitment(comm)
+	commBytes, err := comm.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to extract commitment: %w", err)
 	}
@@ -366,11 +365,11 @@ func (s *Scheme) proveValuesIndex(comm cid.Cid, values []commitment.Cell, index 
 }
 
 // VerifyIndex verifies a proof for a stable index without requiring cache state.
-func (s *Scheme) VerifyIndex(comm cid.Cid, index uint64, value commitment.Cell, proof []byte) (bool, error) {
+func (s *Scheme) VerifyIndex(comm commitment.Value, index uint64, value commitment.Cell, proof []byte) (bool, error) {
 	if index >= MaxValues {
 		return false, fmt.Errorf("index %d exceeds max %d", index, MaxValues-1)
 	}
-	commBytes, err := maltcid.ExtractCommitment(comm)
+	commBytes, err := comm.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		return false, fmt.Errorf("failed to extract commitment: %w", err)
 	}
@@ -402,12 +401,12 @@ func (s *Scheme) VerifyIndex(comm cid.Cid, index uint64, value commitment.Cell, 
 }
 
 // BatchVerify verifies a batch proof for an ordered index list.
-func (s *Scheme) BatchVerify(comm cid.Cid, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
+func (s *Scheme) BatchVerify(comm commitment.Value, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
 	if err := validateBatchVerification(indices, values); err != nil {
 		return false, err
 	}
 
-	commBytes, err := maltcid.ExtractCommitment(comm)
+	commBytes, err := comm.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		return false, fmt.Errorf("failed to extract commitment: %w", err)
 	}
@@ -480,8 +479,8 @@ func validateBatchVerification(indices []uint64, values []commitment.Cell) error
 }
 
 // VerifyProof verifies a proof carrying its own index metadata.
-func (s *Scheme) VerifyProof(comm cid.Cid, value commitment.Cell, proof []byte) (bool, error) {
-	commBytes, err := maltcid.ExtractCommitment(comm)
+func (s *Scheme) VerifyProof(comm commitment.Value, value commitment.Cell, proof []byte) (bool, error) {
+	commBytes, err := comm.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		return false, fmt.Errorf("failed to extract commitment: %w", err)
 	}
@@ -513,15 +512,15 @@ func (s *Scheme) VerifyProof(comm cid.Cid, value commitment.Cell, proof []byte) 
 }
 
 // Replace performs an index-stable replacement.
-func (s *Scheme) Replace(values []commitment.Cell, index uint64, oldValue, newValue commitment.Cell) (cid.Cid, error) {
+func (s *Scheme) Replace(values []commitment.Cell, index uint64, oldValue, newValue commitment.Cell) (commitment.Value, error) {
 	if err := s.requireCommitter(); err != nil {
-		return cid.Undef, err
+		return commitment.Undef, err
 	}
 	if index >= uint64(len(values)) {
-		return cid.Cid{}, fmt.Errorf("index %d out of range", index)
+		return commitment.Undef, fmt.Errorf("index %d out of range", index)
 	}
 	if !values[index].Equal(oldValue) {
-		return cid.Cid{}, fmt.Errorf("old value mismatch at index %d", index)
+		return commitment.Undef, fmt.Errorf("old value mismatch at index %d", index)
 	}
 
 	nextValues := commitment.CloneCells(values)
@@ -621,22 +620,22 @@ func cellToFieldElement(cell commitment.Cell) fr.Element {
 	return result
 }
 
-func (s *Scheme) commitValues(values []commitment.Cell) (cid.Cid, error) {
+func (s *Scheme) commitValues(values []commitment.Cell) (commitment.Value, error) {
 	if err := s.requireCommitter(); err != nil {
-		return cid.Undef, err
+		return commitment.Undef, err
 	}
 	if len(values) > MaxValues {
-		return cid.Cid{}, fmt.Errorf("too many values: %d > %d", len(values), MaxValues)
+		return commitment.Undef, fmt.Errorf("too many values: %d > %d", len(values), MaxValues)
 	}
 
 	vector := valuesToVector(values)
 
 	comm, err := s.ipaConfig.CommitWithError(vector)
 	if err != nil {
-		return cid.Undef, fmt.Errorf("commit IPA vector: %w", err)
+		return commitment.Undef, fmt.Errorf("commit IPA vector: %w", err)
 	}
 	commBytes := comm.Bytes()
-	return maltcid.NewIPACid(commBytes[:])
+	return commitment.NewValue(maltcid.IPA256, commBytes[:])
 }
 
 func (s *Scheme) requireCommitter() error {
@@ -671,17 +670,17 @@ var _ commitment.IndexRootProver = (*Scheme)(nil)
 // ProfileID identifies the exact cryptographic parameter and encoding suite.
 func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.IPA256 }
 
-func (s *Scheme) PrepareOpeningAtRoot(root cid.Cid, values []commitment.Cell) (commitment.IndexOpening, error) {
+func (s *Scheme) PrepareOpeningAtRoot(root commitment.Value, values []commitment.Cell) (commitment.IndexOpening, error) {
 	if err := s.requireCommitter(); err != nil {
 		return nil, err
 	}
-	if maltcid.BackendKindOf(root) != maltcid.BackendKindIPA {
+	if root.ProfileID() != maltcid.IPA256 {
 		return nil, fmt.Errorf("proof root does not use IPA")
 	}
 	if len(values) > MaxValues {
 		return nil, fmt.Errorf("too many values")
 	}
-	encoded, err := maltcid.ExtractCommitment(root)
+	encoded, err := root.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		return nil, err
 	}

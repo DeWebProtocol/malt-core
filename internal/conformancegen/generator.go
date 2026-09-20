@@ -21,7 +21,6 @@ import (
 	"github.com/dewebprotocol/malt-core/execution"
 	runtimegraph "github.com/dewebprotocol/malt-core/graph/runtime"
 	"github.com/dewebprotocol/malt-core/protocol"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
@@ -87,7 +86,7 @@ func Generate() ([]byte, error) {
 		return 0
 	})
 
-	corpus := conformance.Corpus{SchemaVersion: conformance.ResolveReadV2, Vectors: vectors}
+	corpus := conformance.Corpus{SchemaVersion: conformance.ResolveReadV3, Vectors: vectors}
 	if err := corpus.Validate(); err != nil {
 		return nil, fmt.Errorf("validate generated corpus: %w", err)
 	}
@@ -366,7 +365,7 @@ func negativeVectors(name string, positives map[string]conformance.Vector, other
 }
 
 func newGraph(scope string, scheme commitment.IndexCommitment) (*runtimegraph.RuntimeGraph, error) {
-	graph, err := runtimegraph.NewGraph(scope, materialmemory.New(true), runtimegraph.WithNamespace(scope), runtimegraph.WithCommitmentScheme(scheme), runtimegraph.WithMALTVersion(maltcid.MALTVersionID))
+	graph, err := runtimegraph.NewGraph(scope, materialmemory.New(true), runtimegraph.WithNamespace(scope), runtimegraph.WithCommitmentScheme(scheme))
 	if err != nil {
 		return nil, fmt.Errorf("create graph %q: %w", scope, err)
 	}
@@ -639,7 +638,7 @@ func objectField(value map[string]any, name string) (map[string]any, error) {
 	return field, nil
 }
 
-// tamperSemanticProof preserves the radix proof JSON envelope and the
+// tamperSemanticProof preserves the V0 binding proof JSON envelope and the
 // primitive proof framing. Built-in KZG and IPA index proofs both end in the
 // authenticated uint32 index, so changing its final byte remains decodable but
 // makes verification reject the proof/query binding.
@@ -668,17 +667,17 @@ func mutateSemanticProof(proof []byte, mutate func([]byte) ([]byte, error)) ([]b
 	if err != nil {
 		return nil, fmt.Errorf("decode semantic proof envelope: %w", err)
 	}
-	steps, ok := envelope["steps"].([]any)
+	steps, ok := envelope["nodes"].([]any)
 	if !ok || len(steps) == 0 {
-		return nil, fmt.Errorf("semantic proof envelope has no steps")
+		return nil, fmt.Errorf("semantic proof envelope has no nodes")
 	}
 	step, ok := steps[0].(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("semantic proof step is not an object")
+		return nil, fmt.Errorf("semantic proof node is not an object")
 	}
 	encoded, ok := step["proof"].(string)
 	if !ok {
-		return nil, fmt.Errorf("semantic proof step has no encoded proof")
+		return nil, fmt.Errorf("semantic proof node has no encoded proof")
 	}
 	primitive, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {

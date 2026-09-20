@@ -110,7 +110,6 @@ semantic owner.
 - resolver is the read/proof port: `(root, query) -> result + ProofList`
 - writer is an execution port: `Apply(baseRoot, semantic mutation) -> newRoot + receipt`
 - `graph.StructureCreator` is the separate no-base-root bootstrap capability
-- `graph.ReferenceWriter` contains legacy compatibility helpers and is not a gateway product API
 
 Resolver traversal lives under `graph/resolver`. Mutation application lives
 under `graph/writer`. These are SDK execution algorithms, not transport

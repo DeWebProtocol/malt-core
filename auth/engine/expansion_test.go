@@ -46,7 +46,7 @@ func TestSnapshotRejectsHugeLogicalExpansionAtRoot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c, err := maltcid.ExtractCommitment(primitive)
+	c, err := primitive.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestRetainNestedRootWithSharedAAIndependentNodes(t *testing.T) {
 	}
 }
 
-func TestRetainHistoricalListPointingToV0Child(t *testing.T) {
+func TestRetainListPointingToV0Child(t *testing.T) {
 	e, _ := setup(t, maltcid.IPA256)
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "mixed"}
@@ -128,7 +128,7 @@ func TestRetainHistoricalListPointingToV0Child(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	list, err := tree.NewListForVersion(scheme, store, 3)
+	list, err := tree.NewList(scheme, store)
 	if err != nil {
 		t.Fatal(err)
 	}

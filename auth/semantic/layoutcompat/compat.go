@@ -59,11 +59,10 @@ func PathInput(rule uint8, key arcset.Path) (input.Value, error) {
 }
 
 type Prefix struct {
-	engine     *engine.Engine
-	profile    maltcid.ProfileID
-	rule       input.ID
-	store      materializer.NodeStore
-	commitment *mapping.Commitment
+	engine  *engine.Engine
+	profile maltcid.ProfileID
+	rule    input.ID
+	store   materializer.NodeStore
 }
 
 func NewPrefix(s commitment.IndexCommitment, store materializer.NodeStore, rules *input.Registry, rule input.ID) (*Prefix, error) {
@@ -71,13 +70,8 @@ func NewPrefix(s commitment.IndexCommitment, store materializer.NodeStore, rules
 	if err != nil {
 		return nil, err
 	}
-	c, err := mapping.NewCommitment(s)
-	if err != nil {
-		return nil, err
-	}
-	return &Prefix{e, p, rule, store, c}, nil
+	return &Prefix{e, p, rule, store}, nil
 }
-func (s *Prefix) Commitment() *mapping.Commitment { return s.commitment }
 func (s *Prefix) nodes(scope string) encoded.Nodes {
 	return encoded.Nodes{Lookup: s.store, Updater: s.store, Scope: scope}
 }
@@ -178,10 +172,9 @@ func (s *Prefix) BatchUpdate(ctx context.Context, scope string, root cid.Cid, up
 }
 
 type Positional struct {
-	engine     *engine.Engine
-	profile    maltcid.ProfileID
-	store      materializer.NodeStore
-	commitment *list.Commitment
+	engine  *engine.Engine
+	profile maltcid.ProfileID
+	store   materializer.NodeStore
 }
 
 func NewPositional(s commitment.IndexCommitment, store materializer.NodeStore) (*Positional, error) {
@@ -189,13 +182,8 @@ func NewPositional(s commitment.IndexCommitment, store materializer.NodeStore) (
 	if err != nil {
 		return nil, err
 	}
-	c, err := list.NewCommitment(s)
-	if err != nil {
-		return nil, err
-	}
-	return &Positional{e, p, store, c}, nil
+	return &Positional{e, p, store}, nil
 }
-func (s *Positional) Commitment() *list.Commitment { return s.commitment }
 func (s *Positional) nodes(scope string) encoded.Nodes {
 	return encoded.Nodes{Lookup: s.store, Updater: s.store, Scope: scope}
 }

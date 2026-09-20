@@ -17,17 +17,17 @@ type checkpointCommitCounter struct {
 	commits int
 }
 
-func (c *checkpointCommitCounter) Commit(values []commitment.Cell) (cid.Cid, error) {
+func (c *checkpointCommitCounter) Commit(values []commitment.Cell) (commitment.Value, error) {
 	c.commits++
 	return c.IndexCommitment.Commit(values)
 }
 
-func (c *checkpointCommitCounter) ProveAtRoot(root cid.Cid, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func (c *checkpointCommitCounter) ProveAtRoot(root commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	return c.IndexCommitment.(commitment.IndexRootProver).ProveAtRoot(root, values, index)
 }
 
 func (c *checkpointCommitCounter) BatchProveAtRoot(
-	root cid.Cid,
+	root commitment.Value,
 	values []commitment.Cell,
 	indices []uint64,
 ) ([]commitment.Cell, []byte, error) {
@@ -147,4 +147,8 @@ func TestAuthenticatedCheckpointRejectsWrongKeyAndMutatedBindings(t *testing.T) 
 
 func (c *checkpointCommitCounter) ProfileID() maltcid.ProfileID {
 	return c.IndexCommitment.(interface{ ProfileID() maltcid.ProfileID }).ProfileID()
+}
+
+func (c *checkpointCommitCounter) PrepareOpeningAtRoot(root commitment.Value, values []commitment.Cell) (commitment.IndexOpening, error) {
+	return c.IndexCommitment.(commitment.IndexRootOpener).PrepareOpeningAtRoot(root, values)
 }

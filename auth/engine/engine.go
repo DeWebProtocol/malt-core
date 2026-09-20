@@ -243,11 +243,11 @@ func (b *builder) commit(cells []commitment.Cell) (maltcid.NodeRef, error) {
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	c, err := maltcid.ExtractCommitment(root)
+	c, err := root.CommitmentBytes(b.profile.ID)
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	if maltcid.BackendKindOf(root) != b.profile.Algorithm {
+	if root.ProfileID() != b.profile.ID {
 		return maltcid.NodeRef{}, errors.New("commitment implementation returned the wrong profile algorithm")
 	}
 	ref := maltcid.NodeRef{Layout: b.descriptor.Layout, Profile: b.profile.ID, Commitment: c}

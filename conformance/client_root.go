@@ -12,12 +12,10 @@ import (
 
 // These identify corpus revisions, independently of the Root format version.
 const (
-	ClientRootV1 = "malt.client-root.conformance/v1" // Frozen historical V3 outputs.
-	ClientRootV2 = "malt.client-root.conformance/v2" // Archived operation_id wire format.
-	ClientRootV3 = "malt.client-root.conformance/v3" // Transaction IDs, V0 output and V3 input migration.
+	ClientRootV4 = "malt.client-root.conformance/v4" // Transaction IDs and current V0 input/output only.
 )
 
-//go:generate go run ../internal/conformancegen/cmd -corpus client-root-v3 -out client-root/v3/vectors.json
+//go:generate go run ../internal/conformancegen/cmd -corpus client-root-v4 -out client-root/v4/vectors.json
 
 // ClientRootCorpus freezes complete-view inputs and exact candidate outputs
 // without treating a candidate or receipt as a portable transition proof.
@@ -68,11 +66,11 @@ func (e *ClientRootExpected) UnmarshalJSON(data []byte) error {
 
 // LoadClientRoot loads the current transaction-ID corpus.
 func LoadClientRoot() (ClientRootCorpus, error) {
-	return LoadClientRootVersion(ClientRootV3)
+	return LoadClientRootVersion(ClientRootV4)
 }
 
 func LoadClientRootVersion(version string) (ClientRootCorpus, error) {
-	if version != ClientRootV3 {
+	if version != ClientRootV4 {
 		return ClientRootCorpus{}, fmt.Errorf("archived client-root corpus is not a current transaction contract: %q", version)
 	}
 	data, err := ClientRootBytesVersion(version)
@@ -93,7 +91,7 @@ func LoadClientRootVersion(version string) (ClientRootCorpus, error) {
 }
 
 func ClientRootBytes() ([]byte, error) {
-	return ClientRootBytesVersion(ClientRootV3)
+	return ClientRootBytesVersion(ClientRootV4)
 }
 
 func ClientRootBytesVersion(version string) ([]byte, error) {
@@ -109,7 +107,7 @@ func ClientRootBytesVersion(version string) ([]byte, error) {
 }
 
 func ClientRootSchema(name string) ([]byte, error) {
-	return ClientRootSchemaVersion(ClientRootV3, name)
+	return ClientRootSchemaVersion(ClientRootV4, name)
 }
 
 func ClientRootSchemaVersion(version, name string) ([]byte, error) {
@@ -129,19 +127,15 @@ func ClientRootSchemaVersion(version, name string) ([]byte, error) {
 
 func clientRootDirectory(version string) (string, error) {
 	switch version {
-	case ClientRootV1:
-		return "client-root/v1", nil
-	case ClientRootV2:
-		return "client-root/v2", nil
-	case ClientRootV3:
-		return "client-root/v3", nil
+	case ClientRootV4:
+		return "client-root/v4", nil
 	default:
 		return "", fmt.Errorf("unsupported client-root conformance schema version %q", version)
 	}
 }
 
 func (c ClientRootCorpus) Validate() error {
-	if c.SchemaVersion != ClientRootV3 {
+	if c.SchemaVersion != ClientRootV4 {
 		return fmt.Errorf("unsupported client-root conformance schema version %q", c.SchemaVersion)
 	}
 	if len(c.Vectors) == 0 {

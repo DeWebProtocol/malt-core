@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/dewebprotocol/malt-core"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core"
 	"github.com/dewebprotocol/malt-core/auth/arcset"
 	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
 	structure "github.com/dewebprotocol/malt-core/auth/semantic"

@@ -17,10 +17,6 @@ type mapBackendDispatcher struct {
 	backends       map[maltcid.BackendKind]mapping.Semantics
 }
 
-func (d *mapBackendDispatcher) Commitment() *mapping.Commitment {
-	return d.backends[d.defaultBackend].Commitment()
-}
-
 func (d *mapBackendDispatcher) Commit(ctx context.Context, namespace string, view mapping.View) (cid.Cid, error) {
 	backend, err := d.defaultSemantics()
 	if err != nil {
@@ -102,10 +98,6 @@ func (d *mapBackendDispatcher) forRoot(root cid.Cid) (mapping.Semantics, error) 
 type listBackendDispatcher struct {
 	defaultBackend maltcid.BackendKind
 	backends       map[maltcid.BackendKind]list.MeasuredSemantics
-}
-
-func (d *listBackendDispatcher) Commitment() *list.Commitment {
-	return d.backends[d.defaultBackend].Commitment()
 }
 
 func (d *listBackendDispatcher) Commit(ctx context.Context, namespace string, view list.View) (cid.Cid, error) {

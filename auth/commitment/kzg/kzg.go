@@ -11,7 +11,6 @@ import (
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
-	cid "github.com/ipfs/go-cid"
 )
 
 // bls12381ScalarMod is the BLS12-381 scalar field modulus.
@@ -75,18 +74,18 @@ func (s *VerifierScheme) MaxValues() int {
 }
 
 // Commit commits a stable indexed cell vector.
-func (s *Scheme) Commit(values []commitment.Cell) (cid.Cid, error) {
+func (s *Scheme) Commit(values []commitment.Cell) (commitment.Value, error) {
 	return s.commitValues(values)
 }
 
 // Prove proves the value at a stable index.
-func (s *Scheme) Prove(values []commitment.Cell, index uint64) (cid.Cid, commitment.Cell, []byte, error) {
+func (s *Scheme) Prove(values []commitment.Cell, index uint64) (commitment.Value, commitment.Cell, []byte, error) {
 	comm, err := s.commitValues(values)
 	if err != nil {
-		return cid.Undef, nil, nil, err
+		return commitment.Undef, nil, nil, err
 	}
 	if index >= uint64(len(values)) {
-		return cid.Undef, nil, nil, fmt.Errorf("index %d out of range", index)
+		return commitment.Undef, nil, nil, fmt.Errorf("index %d out of range", index)
 	}
 	value, proof, err := s.proveValuesIndex(values, index)
 	return comm, value, proof, err
@@ -95,11 +94,11 @@ func (s *Scheme) Prove(values []commitment.Cell, index uint64) (cid.Cid, commitm
 // ProveAtRoot opens values against a caller-supplied root without recomputing
 // the KZG commitment. The generated proof is verified before it is returned so
 // inconsistent client materialization fails closed.
-func (s *Scheme) ProveAtRoot(root cid.Cid, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
-	if _, err := maltcid.ExtractCommitment(root); err != nil {
+func (s *Scheme) ProveAtRoot(root commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+	if _, err := root.CommitmentBytes(maltcid.KZG4096); err != nil {
 		return nil, nil, fmt.Errorf("invalid proof root: %w", err)
 	}
-	if maltcid.BackendKindOf(root) != maltcid.BackendKindKZG {
+	if root.ProfileID() != maltcid.KZG4096 {
 		return nil, nil, fmt.Errorf("proof root does not use the KZG backend")
 	}
 	if len(values) > MaxValues {
@@ -124,7 +123,7 @@ func (s *Scheme) ProveAtRoot(root cid.Cid, values []commitment.Cell, index uint6
 
 type opening struct {
 	scheme     *Scheme
-	root       cid.Cid
+	root       commitment.Value
 	values     []commitment.Cell
 	polynomial []blsfr.Element
 }
@@ -139,7 +138,7 @@ func (s *Scheme) PrepareOpening(values []commitment.Cell) (commitment.IndexOpeni
 	return s.PrepareOpeningAtRoot(root, values)
 }
 
-func (o *opening) Root() cid.Cid { return o.root }
+func (o *opening) Root() commitment.Value { return o.root }
 
 func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 	if index >= uint64(len(o.values)) {
@@ -168,13 +167,13 @@ func (s *Scheme) proveValuesIndex(values []commitment.Cell, index uint64) (commi
 // current go-kzg-4844 dependency does not expose batch opening generation.
 // TODO: replace this looped encoding with a real KZG multiproof when the
 // backend supports batch opening generation for our index-commitment setting.
-func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (cid.Cid, []commitment.Cell, []byte, error) {
+func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (commitment.Value, []commitment.Cell, []byte, error) {
 	if err := validateBatchOpening(values, indices); err != nil {
-		return cid.Undef, nil, nil, err
+		return commitment.Undef, nil, nil, err
 	}
 	comm, err := s.commitValues(values)
 	if err != nil {
-		return cid.Undef, nil, nil, err
+		return commitment.Undef, nil, nil, err
 	}
 
 	proved := make([]commitment.Cell, len(indices))
@@ -182,7 +181,7 @@ func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (cid.Cid
 	for i, index := range indices {
 		value, proof, err := s.proveValuesIndex(values, index)
 		if err != nil {
-			return cid.Undef, nil, nil, err
+			return commitment.Undef, nil, nil, err
 		}
 		proved[i] = value
 		proofs[i] = proof
@@ -192,11 +191,11 @@ func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (cid.Cid
 
 // BatchProveAtRoot opens values against a caller-supplied root without
 // recomputing the KZG commitment.
-func (s *Scheme) BatchProveAtRoot(root cid.Cid, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
-	if _, err := maltcid.ExtractCommitment(root); err != nil {
+func (s *Scheme) BatchProveAtRoot(root commitment.Value, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
+	if _, err := root.CommitmentBytes(maltcid.KZG4096); err != nil {
 		return nil, nil, fmt.Errorf("invalid proof root: %w", err)
 	}
-	if maltcid.BackendKindOf(root) != maltcid.BackendKindKZG {
+	if root.ProfileID() != maltcid.KZG4096 {
 		return nil, nil, fmt.Errorf("proof root does not use the KZG backend")
 	}
 	if err := validateBatchOpening(values, indices); err != nil {
@@ -225,7 +224,7 @@ func (s *Scheme) BatchProveAtRoot(root cid.Cid, values []commitment.Cell, indice
 }
 
 // VerifyIndex verifies a proof for a stable index without cache state.
-func (s *VerifierScheme) VerifyIndex(comm cid.Cid, index uint64, value commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) VerifyIndex(comm commitment.Value, index uint64, value commitment.Cell, proof []byte) (bool, error) {
 	if index >= uint64(len(s.domain.roots)) {
 		return false, fmt.Errorf("index %d exceeds max %d", index, len(s.domain.roots)-1)
 	}
@@ -244,7 +243,7 @@ func (s *VerifierScheme) VerifyIndex(comm cid.Cid, index uint64, value commitmen
 		return false, nil
 	}
 
-	commBytes, err := maltcid.ExtractCommitment(comm)
+	commBytes, err := comm.CommitmentBytes(maltcid.KZG4096)
 	if err != nil {
 		return false, fmt.Errorf("failed to extract commitment: %w", err)
 	}
@@ -261,7 +260,7 @@ func (s *VerifierScheme) VerifyIndex(comm cid.Cid, index uint64, value commitmen
 // current go-kzg-4844 dependency does not expose batch opening generation.
 // TODO: replace this looped verification path once BatchProve emits a real
 // KZG multiproof for our index-commitment setting.
-func (s *VerifierScheme) BatchVerify(comm cid.Cid, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) BatchVerify(comm commitment.Value, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
 	if err := validateBatchVerification(indices, values); err != nil {
 		return false, err
 	}
@@ -323,7 +322,7 @@ func validateBatchVerification(indices []uint64, values []commitment.Cell) error
 }
 
 // VerifyProof verifies a proof carrying its own index metadata.
-func (s *VerifierScheme) VerifyProof(comm cid.Cid, value commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) VerifyProof(comm commitment.Value, value commitment.Cell, proof []byte) (bool, error) {
 	_, _, index, err := deserializeProof(proof)
 	if err != nil {
 		return false, err
@@ -332,12 +331,12 @@ func (s *VerifierScheme) VerifyProof(comm cid.Cid, value commitment.Cell, proof 
 }
 
 // Replace performs an index-stable replacement.
-func (s *Scheme) Replace(values []commitment.Cell, index uint64, oldValue, newValue commitment.Cell) (cid.Cid, error) {
+func (s *Scheme) Replace(values []commitment.Cell, index uint64, oldValue, newValue commitment.Cell) (commitment.Value, error) {
 	if index >= uint64(len(values)) {
-		return cid.Cid{}, fmt.Errorf("index %d out of range", index)
+		return commitment.Undef, fmt.Errorf("index %d out of range", index)
 	}
 	if !values[index].Equal(oldValue) {
-		return cid.Cid{}, fmt.Errorf("old value mismatch at index %d", index)
+		return commitment.Undef, fmt.Errorf("old value mismatch at index %d", index)
 	}
 
 	nextValues := commitment.CloneCells(values)
@@ -358,22 +357,22 @@ func cellToKZGScalar(value commitment.Cell) gokzg4844.Scalar {
 	return scalar
 }
 
-func (s *Scheme) commitValues(values []commitment.Cell) (cid.Cid, error) {
+func (s *Scheme) commitValues(values []commitment.Cell) (commitment.Value, error) {
 	if len(values) > MaxValues {
-		return cid.Cid{}, fmt.Errorf("too many values: %d > %d", len(values), MaxValues)
+		return commitment.Undef, fmt.Errorf("too many values: %d > %d", len(values), MaxValues)
 	}
 
 	polynomial, err := polynomialFromValues(values)
 	if err != nil {
-		return cid.Cid{}, err
+		return commitment.Undef, err
 	}
 	comm, err := commitPolynomial(s.writerKey, polynomial)
 	if err != nil {
-		return cid.Cid{}, fmt.Errorf("failed to commit: %w", err)
+		return commitment.Undef, fmt.Errorf("failed to commit: %w", err)
 	}
 
 	commBytes := comm[:]
-	return maltcid.NewKZGCid(commBytes)
+	return commitment.NewValue(maltcid.KZG4096, commBytes)
 }
 
 func serializeProof(proof gokzg4844.KZGProof, claimedValue gokzg4844.Scalar, index uint64) []byte {
@@ -444,11 +443,11 @@ func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
 // ProfileID binds the verification-only implementation to the same VC profile.
 func (s *VerifierScheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
 
-func (s *Scheme) PrepareOpeningAtRoot(root cid.Cid, values []commitment.Cell) (commitment.IndexOpening, error) {
-	if _, err := maltcid.ExtractCommitment(root); err != nil {
+func (s *Scheme) PrepareOpeningAtRoot(root commitment.Value, values []commitment.Cell) (commitment.IndexOpening, error) {
+	if _, err := root.CommitmentBytes(maltcid.KZG4096); err != nil {
 		return nil, err
 	}
-	if maltcid.BackendKindOf(root) != maltcid.BackendKindKZG {
+	if root.ProfileID() != maltcid.KZG4096 {
 		return nil, fmt.Errorf("proof root does not use KZG")
 	}
 	if len(values) > MaxValues {

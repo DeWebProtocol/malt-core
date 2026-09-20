@@ -27,11 +27,8 @@ import (
 // persistent-free materialization used for local computation. The materializer
 // is not an ArcTable and no result is durable until a service accepts it.
 type Runtime struct {
-	targetVersion    uint8
-	store            materializer.MutableStore
-	graphs           map[maltcid.BackendKind]*runtimegraph.RuntimeGraph
-	legacyGraphs     map[maltcid.BackendKind]*runtimegraph.RuntimeGraph
-	historicalGraphs map[maltcid.BackendKind]*runtimegraph.RuntimeGraph
+	store  materializer.MutableStore
+	graphs map[maltcid.BackendKind]*runtimegraph.RuntimeGraph
 }
 
 // VerifiedUpdateView is a normalized view whose complete logical vectors have
@@ -81,15 +78,6 @@ type ComputeMetrics struct {
 // Callers normally provide the branching in-memory reference materializer;
 // SDK code does not choose persistence policy.
 func NewRuntime(store materializer.MutableStore, schemes map[maltcid.BackendKind]commitment.IndexCommitment) (*Runtime, error) {
-	return newRuntime(store, schemes, maltcid.RootVersion)
-}
-
-// NewHistoricalRuntime reproduces the frozen V=3 writer corpus. Application
-// writers must use NewRuntime, which constructs V=0 candidates.
-func NewHistoricalRuntime(store materializer.MutableStore, schemes map[maltcid.BackendKind]commitment.IndexCommitment) (*Runtime, error) {
-	return newRuntime(store, schemes, maltcid.MALTVersionID)
-}
-func newRuntime(store materializer.MutableStore, schemes map[maltcid.BackendKind]commitment.IndexCommitment, targetVersion uint8) (*Runtime, error) {
 	if store == nil {
 		return nil, fmt.Errorf("client writer materializer is nil")
 	}
@@ -101,11 +89,8 @@ func newRuntime(store materializer.MutableStore, schemes map[maltcid.BackendKind
 		return nil, fmt.Errorf("client writer has no commitment backends")
 	}
 	runtime := &Runtime{
-		targetVersion:    targetVersion,
-		store:            store,
-		graphs:           make(map[maltcid.BackendKind]*runtimegraph.RuntimeGraph, len(schemes)),
-		legacyGraphs:     make(map[maltcid.BackendKind]*runtimegraph.RuntimeGraph, len(schemes)),
-		historicalGraphs: make(map[maltcid.BackendKind]*runtimegraph.RuntimeGraph, len(schemes)),
+		store:  store,
+		graphs: make(map[maltcid.BackendKind]*runtimegraph.RuntimeGraph, len(schemes)),
 	}
 	for _, backend := range []maltcid.BackendKind{maltcid.BackendKindKZG, maltcid.BackendKindIPA} {
 		scheme, ok := schemes[backend]
@@ -120,30 +105,13 @@ func newRuntime(store materializer.MutableStore, schemes map[maltcid.BackendKind
 			store,
 			runtimegraph.WithCommitmentBackend(backend, scheme),
 			runtimegraph.WithDefaultCommitmentBackend(backend),
-			runtimegraph.WithMALTVersion(targetVersion),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("create client writer %s backend: %w", backend, err)
 		}
 		runtime.graphs[backend] = graph
-		historicalGraph, err := runtimegraph.NewGraph("client-root-historical-"+string(backend), store, runtimegraph.WithCommitmentBackend(backend, scheme), runtimegraph.WithDefaultCommitmentBackend(backend), runtimegraph.WithMALTVersion(maltcid.MALTVersionID))
-		if err != nil {
-			return nil, err
-		}
-		runtime.historicalGraphs[backend] = historicalGraph
-		legacyGraph, err := runtimegraph.NewGraph(
-			"client-root-legacy-"+string(backend),
-			store,
-			runtimegraph.WithCommitmentBackend(backend, scheme),
-			runtimegraph.WithDefaultCommitmentBackend(backend),
-			runtimegraph.WithMALTVersion(maltcid.LegacyMALTVersionID),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("create legacy client writer %s backend: %w", backend, err)
-		}
-		runtime.legacyGraphs[backend] = legacyGraph
 	}
-	if len(runtime.graphs) != len(schemes) || len(runtime.legacyGraphs) != len(schemes) {
+	if len(runtime.graphs) != len(schemes) {
 		return nil, fmt.Errorf("client writer schemes contain an unsupported backend")
 	}
 	return runtime, nil
@@ -169,17 +137,7 @@ func (r *Runtime) VerifyUpdateView(ctx context.Context, view mutation.UpdateView
 		if !ok {
 			return VerifiedUpdateView{}, fmt.Errorf("update object %q requires unavailable backend %q", object.ObjectID, backend)
 		}
-		verificationGraph := currentGraph
-		switch version := maltcid.VersionIDOf(object.Root); version {
-		case maltcid.RootVersion:
-		case maltcid.MALTVersionID:
-			verificationGraph = r.historicalGraphs[backend]
-		case maltcid.LegacyMALTVersionID:
-			verificationGraph = r.legacyGraphs[backend]
-		default:
-			return VerifiedUpdateView{}, fmt.Errorf("update object %q uses unsupported MALT version %d", object.ObjectID, version)
-		}
-		recomputed, err := commitCompleteObject(ctx, verificationGraph, objectScope(object.ObjectID), object)
+		recomputed, err := commitCompleteObject(ctx, currentGraph, objectScope(object.ObjectID), object)
 		if err != nil {
 			return VerifiedUpdateView{}, fmt.Errorf("verify update object %q: %w", object.ObjectID, err)
 		}
@@ -187,23 +145,12 @@ func (r *Runtime) VerifyUpdateView(ctx context.Context, view mutation.UpdateView
 			return VerifiedUpdateView{}, fmt.Errorf("verify update object %q: recomputed root %s does not match declared root %s", object.ObjectID, recomputed, object.Root)
 		}
 		workingRoot := recomputed
-		if verificationGraph != currentGraph {
-			workingRoot, err = commitCompleteObject(ctx, currentGraph, objectScope(object.ObjectID), object)
-			if err != nil {
-				return VerifiedUpdateView{}, fmt.Errorf("migrate update object %q materialization: %w", object.ObjectID, err)
-			}
-		}
 		logical, err := completeObjectArcSet(object)
 		if err != nil {
 			return VerifiedUpdateView{}, fmt.Errorf("verify update object %q: %w", object.ObjectID, err)
 		}
 		if err := r.store.Update(ctx, objectScope(object.ObjectID), recomputed, cid.Undef, logical); err != nil {
 			return VerifiedUpdateView{}, fmt.Errorf("seed update object %q: %w", object.ObjectID, err)
-		}
-		if !workingRoot.Equals(recomputed) {
-			if err := r.store.Update(ctx, objectScope(object.ObjectID), workingRoot, cid.Undef, logical); err != nil {
-				return VerifiedUpdateView{}, fmt.Errorf("seed migrated update object %q: %w", object.ObjectID, err)
-			}
 		}
 		workingRoots[object.ObjectID] = workingRoot
 	}
@@ -390,7 +337,7 @@ func (r *Runtime) ComputeBundle(ctx context.Context, transactionID string, verif
 	if err != nil {
 		return ComputeResult{}, fmt.Errorf("seal retained next view: %w", err)
 	}
-	nextWorkingRoots, err := workingRootsForView(next, workingRoots, r.targetVersion)
+	nextWorkingRoots, err := workingRootsForView(next, workingRoots)
 	if err != nil {
 		return ComputeResult{}, fmt.Errorf("seal retained working roots: %w", err)
 	}
@@ -405,17 +352,15 @@ func (r *Runtime) ComputeBundle(ctx context.Context, transactionID string, verif
 	}, nil
 }
 
-func workingRootsForView(view mutation.UpdateView, roots map[string]cid.Cid, targetVersion uint8) (map[string]cid.Cid, error) {
+func workingRootsForView(view mutation.UpdateView, roots map[string]cid.Cid) (map[string]cid.Cid, error) {
 	selected := make(map[string]cid.Cid, len(view.Objects))
 	for _, object := range view.Objects {
 		root, ok := roots[object.ObjectID]
 		if !ok || !root.Defined() {
 			return nil, fmt.Errorf("update object %q has no working root", object.ObjectID)
 		}
-		if maltcid.VersionIDOf(root) != targetVersion ||
-			maltcid.BackendKindOf(root) != maltcid.BackendKindOf(object.Root) ||
-			maltcid.SemanticKindOf(root) != maltcid.SemanticKindOf(object.Root) {
-			return nil, fmt.Errorf("update object %q working root profile does not match its retained root", object.ObjectID)
+		if !root.Equals(object.Root) {
+			return nil, fmt.Errorf("update object %q working root does not match its retained root", object.ObjectID)
 		}
 		selected[object.ObjectID] = root
 	}
@@ -440,14 +385,11 @@ func commitCompleteObject(ctx context.Context, graph *runtimegraph.RuntimeGraph,
 		for _, entry := range object.Entries.Entries() {
 			entries[arcset.CanonicalizePath(entry.Coordinate.String())] = entry.Target.CID()
 		}
-		if maltcid.VersionIDOf(object.Root) == maltcid.RootVersion && graph.RootVersion() == maltcid.RootVersion {
-			d, _, err := maltcid.ParseRoot(object.Root)
-			if err != nil {
-				return cid.Undef, err
-			}
-			return graph.CommitPrefix(ctx, scope, d, mapping.NewViewFromPaths(entries))
+		d, _, err := maltcid.ParseRoot(object.Root)
+		if err != nil {
+			return cid.Undef, err
 		}
-		return graph.Semantic().Commit(ctx, scope, mapping.NewViewFromPaths(entries))
+		return graph.CommitPrefix(ctx, scope, d, mapping.NewViewFromPaths(entries))
 	case arcset.KindList:
 		values, err := listValues(object.Entries)
 		if err != nil {

@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	MapProofV1        = "malt.map-proof.conformance/v1"
+	MapProofV2        = "malt.map-proof.conformance/v2"
 	OperationMapProof = "map_proof"
 )
 
-//go:generate go run ../internal/conformancegen/cmd -corpus map-proof -out map-proof/v1/vectors.json
+//go:generate go run ../internal/conformancegen/cmd -corpus map-proof -out map-proof/v2/vectors.json
 
 // MapProofCorpus is the frozen language-neutral membership/non-membership
 // verification corpus.
@@ -53,7 +53,7 @@ func LoadMapProof() (MapProofCorpus, error) {
 }
 
 func MapProofBytes() ([]byte, error) {
-	data, err := corpusFiles.ReadFile("map-proof/v1/vectors.json")
+	data, err := corpusFiles.ReadFile("map-proof/v2/vectors.json")
 	if err != nil {
 		return nil, fmt.Errorf("read embedded Map-proof conformance corpus: %w", err)
 	}
@@ -64,7 +64,7 @@ func MapProofSchema(name string) ([]byte, error) {
 	if name != "corpus.schema.json" && name != "vector.schema.json" {
 		return nil, fmt.Errorf("unknown Map-proof conformance schema %q", name)
 	}
-	data, err := corpusFiles.ReadFile("map-proof/v1/" + name)
+	data, err := corpusFiles.ReadFile("map-proof/v2/" + name)
 	if err != nil {
 		return nil, fmt.Errorf("read Map-proof conformance schema %q: %w", name, err)
 	}
@@ -72,7 +72,7 @@ func MapProofSchema(name string) ([]byte, error) {
 }
 
 func (c MapProofCorpus) Validate() error {
-	if c.SchemaVersion != MapProofV1 {
+	if c.SchemaVersion != MapProofV2 {
 		return fmt.Errorf("unsupported Map-proof conformance schema version %q", c.SchemaVersion)
 	}
 	if len(c.Vectors) == 0 {

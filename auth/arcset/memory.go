@@ -49,27 +49,6 @@ func NewArcSetFromPaths(arcs map[Path]cid.Cid) (ArcSet, error) {
 	return &Set{arcs: out}, nil
 }
 
-// NewSetFrom creates an in-memory arc set from path strings.
-// Input paths are canonicalized before insertion.
-//
-// Deprecated: use NewArcSet so malformed input is reported.
-func NewSetFrom(arcs map[string]cid.Cid) *Set {
-	out := make(map[Path]cid.Cid, len(arcs))
-	for path, target := range arcs {
-		out[CanonicalizePath(path)] = target
-	}
-	return &Set{arcs: out}
-}
-
-// NewSetFromPaths creates an in-memory arc set from canonical paths.
-func NewSetFromPaths(arcs map[Path]cid.Cid) *Set {
-	out := make(map[Path]cid.Cid, len(arcs))
-	for path, target := range arcs {
-		out[path] = target
-	}
-	return &Set{arcs: out}
-}
-
 // Get retrieves the target CID for a path.
 func (m *Set) Get(path Path) (cid.Cid, bool) {
 	c, ok := m.arcs[path]

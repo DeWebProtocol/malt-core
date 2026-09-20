@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	malt "github.com/dewebprotocol/malt-core"
-	"github.com/dewebprotocol/malt-core/artifact"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
@@ -97,18 +96,6 @@ func NewForBackend(kind maltcid.BackendKind) (*Verifier, error) {
 		return nil, err
 	}
 	return &Verifier{proofs: authverifier.NewWithRegistry(registry)}, nil
-}
-
-// Verify verifies the frozen malt.artifact/v0alpha2 compatibility envelope.
-// New callers should use VerifyResolve or VerifyRead.
-func (v *Verifier) Verify(ctx context.Context, request Request) error {
-	if err := request.Validate(); err != nil {
-		return err
-	}
-	if v == nil || v.proofs == nil {
-		return fmt.Errorf("client verifier is nil")
-	}
-	return artifact.Verify(ctx, artifact.VerifyRequest{Profile: artifact.Profile, Artifact: request.Artifact}, v.proofs)
 }
 
 // VerifyProofList verifies bare evidence locally. Prefer VerifyResolve or

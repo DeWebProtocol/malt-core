@@ -22,11 +22,11 @@ if (!globalThis.crypto) {
 }
 const corpus = JSON.parse(await readFile(fixturePath, "utf8"));
 if (
-  corpus.schema_version !== "malt.client-root.conformance/v3" ||
+  corpus.schema_version !== "malt.client-root.conformance/v4" ||
   !Array.isArray(corpus.vectors) ||
   corpus.vectors.length === 0
 ) {
-  throw new Error(`${fixturePath} is not a non-empty client-root v3 conformance corpus (V0 outputs)`);
+  throw new Error(`${fixturePath} is not a non-empty client-root v4 conformance corpus (V0 outputs)`);
 }
 
 await import(pathToFileURL(wasmExecPath).href);
@@ -173,7 +173,7 @@ const selectedVectors = corpus.vectors.filter(
 );
 const validFixtures = selectedVectors.filter(({ expected }) => expected?.valid === true);
 const invalidFixtures = selectedVectors.filter(({ expected }) => expected?.valid === false);
-if (validFixtures.length !== 2 || invalidFixtures.length === 0) {
+if (validFixtures.length !== 1 || invalidFixtures.length === 0) {
   throw new Error(
     `selected ${validFixtures.length} valid and ${invalidFixtures.length} invalid vectors for ${selectedBackend}`,
   );

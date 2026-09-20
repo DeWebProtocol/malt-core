@@ -19,7 +19,7 @@ const [{ createMaltWriterWorker }, wasm, fixtureJSON] = await Promise.all([
 ]);
 const module = await WebAssembly.compile(wasm);
 const corpus = JSON.parse(fixtureJSON);
-assert.equal(corpus.schema_version, "malt.client-root.conformance/v3");
+assert.equal(corpus.schema_version, "malt.client-root.conformance/v4");
 assert.ok(Array.isArray(corpus.vectors), "client-root corpus has no vectors array");
 const fixture = corpus.vectors.find(
   (candidate) => candidate.backend === backend && candidate.expected?.valid === true,

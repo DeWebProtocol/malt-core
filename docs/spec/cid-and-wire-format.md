@@ -7,9 +7,9 @@ objects remain ordinary CAS CIDs.
 
 New default construction uses [self-describing V0 Roots](./authentication-inputs.md)
 with `0x30VLAA` and an identity-wrapped multicommitment. The reference below
-records **historical V2/V3** interpretation retained for compatibility; its
-`MALTVersionID=3` and codec constants are not current construction defaults.
-Historical bytes and frozen corpora remain unchanged. Follow the
+records **retired historical V2/V3** interpretation. Current code rejects these
+Roots and no longer exports their constructors or constants. The historical
+source and corpus bytes remain in Git history. Follow the
 [Root version policy](../policy/root-versioning.md) for the production gate.
 
 ## MALT Root Codec Namespace

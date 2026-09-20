@@ -116,10 +116,6 @@ type fakeListSemantics struct {
 	verifyRangeCalls []rangeVerifyCall
 }
 
-func (l *fakeListSemantics) Commitment() *list.Commitment {
-	return nil
-}
-
 func (l *fakeListSemantics) Commit(context.Context, string, list.View) (cid.Cid, error) {
 	return cid.Undef, nil
 }

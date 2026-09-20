@@ -1,28 +1,15 @@
 # Commitment And Proof Encoding
 
-This document fixes the implementation-bound byte encodings exercised by the
-Resolve/Read conformance corpus v2. It complements the typed-root rules in
-[CID and wire format](./cid-and-wire-format.md) and the semantic contract in
-[ProofList format](./prooflist-format.md).
+This document describes current V0 primitive and semantic evidence exercised
+by Resolve/Read v3, Map-proof v2, and authentication/0 conformance. It complements
+[self-describing Roots](./authentication-inputs.md) and
+[ProofList format](./prooflist-format.md). Historical V2/V3 Root readers and
+semantic proof envelopes are retired; their original source and corpus bytes
+remain recoverable in Git history.
 
-## Status And Scope
-
-The [Root version policy](../policy/root-versioning.md) now reserves `V=0`
-for pre-production refactoring and gates `V=1` on an explicit maintainer
-production-ready declaration. The encodings and corpus versions below retain
-their existing implementation-bound meaning until a coordinated migration.
-
-These encodings are experimental. Before the first release, an intentional
-wire change may regenerate the checked-in v1 vectors in the same change. Once
-the corpus is released, its vectors are immutable conformance inputs and a
-byte-level change to an exercised encoding requires a new corpus version. If
-the change also makes a `malt.resolve/v0alpha1` or `malt.read/v0alpha1` value
-incompatible, it requires a new enclosing protocol profile as well.
-
-Resolve/Read evidence uses single-index openings wrapped in the map or list
-semantic envelopes described below. The primitive batch encodings are recorded
-for completeness, but they are not inputs to the v1 Resolve/Read verifier and
-are not independently locked by this corpus.
+Primitive proof encodings and cryptographic parameters are unchanged by this
+cleanup. Corpus versions are independent from Root `V=0` and from enclosing
+operation profile identifiers. Released corpus bytes are immutable.
 
 ## Common Cell And Root Rules
 
@@ -30,16 +17,17 @@ A primitive commitment authenticates an indexed vector of opaque
 `commitment.Cell` byte strings. A CID-valued semantic slot is the binary CID
 bytes, not its text form. An undefined slot is the empty cell.
 
-Typed MALT roots are CIDv1 values whose `0x30VSBB` multicodec fields select the
-MALT wire version, map/list semantic, and KZG/IPA backend suite. Their identity
-multihash digest is the raw commitment:
+Primitive `commitment.Value` objects contain a profile-qualified
+multicommitment. Semantic Roots are CIDv1 values with a `0x30VLAA` codec and
+an identity multihash over that multicommitment. The codec selects version,
+layout, and input rule; the multicommitment selects the exact VC profile:
 
 | Backend | Commitment bytes | Maximum primitive vector length |
 | --- | ---: | ---: |
 | KZG | 48 | 4096 |
 | IPA | 32 | 256 |
 
-The backend ID determines the commitment encoding and expected byte length.
+The VC profile ID determines the commitment encoding and expected byte length.
 Verification must not infer or override the backend from the digest length.
 
 Semantic node geometry is locked to the selected backend suite:
@@ -184,141 +172,50 @@ eight 32-byte `L` points, eight 32-byte `R` points, and a 32-byte little-endian
 `A_scalar`. It contains no count or index list; the ordered indices and
 expected cells are separate verifier inputs.
 
-## Radix Map Semantic Proof
+## Current semantic binding proof
 
-Both resolve map steps and primitive map reads carry the same UTF-8 JSON proof
-envelope. Every byte-valued field below uses standard padded base64 when the
-envelope itself is JSON-encoded:
+Both Prefix and Positional evidence serialize `engine.Proof` as JSON:
 
 ```json
 {
-  "steps": [
-    {"slot": "<CID bytes>", "proof": "<primitive single proof>"}
-  ],
-  "bucket": {
-    "entries": ["<canonical leaf-marker CID bytes>"],
-    "proof": "<membership proof or empty>",
-    "batches": ["<absence batch proof>"]
-  }
-}
-```
-
-`bucket` is optional. The map treats
-`SHA-256(canonical_key_utf8)` as one MSB-first bit string. KZG consumes
-successive 12-bit digits, so a digest has 22 radix digits:
-
-```text
-d0  = b0 << 4 | b1 >> 4
-d1  = (b1 & 0x0f) << 8 | b2
-...
-d20 = b30 << 4 | b31 >> 4
-d21 = (b31 & 0x0f) << 8
-```
-
-The final four digest bits occupy the high four bits of the final digit and
-the remaining eight low bits are zero-filled. IPA consumes successive 8-bit
-digits and therefore retains 32 radix levels. A `slot` is either an
-intermediate root marker, a terminal leaf marker, or a bucket-reference marker.
-The marker encodings are raw CIDv1 values with identity multihashes over:
-
-- leaf: `malt:map:radix:leaf:v1:` || key-byte-length as big-endian `uint16` ||
-  canonical key UTF-8 || target CID bytes;
-- current bucket reference: `malt:map:radix:bucket:v2:` || bucket-root CID bytes;
-- legacy read-compatible bucket reference: `malt:map:radix:bucket:v1:` || bucket-root CID bytes.
-
-Map proofs authenticate both membership and non-membership. Non-membership
-terminates at a proved empty radix slot, a proved terminal leaf for a different
-canonical key, or a collision bucket. A membership bucket witness leaves
-`entries` and `batches` absent and opens the expected leaf marker through
-`proof`, whose primitive encoding carries the bucket index.
-
-A v2 collision bucket commits a fixed-width vector: canonical leaf markers
-followed by explicit empty cells through the backend capacity. Its absence
-witness carries every canonical marker in `entries` and covers the complete
-fixed-width vector with ordered `batches`; each batch covers at most 16
-consecutive indices. Verification rejects noncanonical marker encodings,
-duplicate or out-of-order keys, a queried key present in the bucket, missing or
-extra batches, any nonempty tail cell, and any invalid batch opening. `proof`
-must be empty for bucket absence.
-
-The reader and portable verifier continue to recognize v1 bucket references
-for membership proofs under a v2 typed map root. Every internal node and bucket
-root must retain that parent root version and backend; a v3 root carrying a v1
-bucket reference, or any mixed-version child, is noncanonical and rejected.
-Because the legacy variable-length bucket commitment did not authenticate a
-fixed empty tail, it cannot produce the new sound collision-bucket
-non-membership proof. Direct incremental mutation rejects a root whose typed
-version differs from the semantic instance; the client writer migrates a v2
-object by exact complete-view replay and a full v3 rebuild, which rewrites every
-collision bucket into the v2 fixed-domain reference before it applies the
-requested change.
-
-In a resolve ProofList this envelope is stored in `step.evidence` with
-`evidence_kind="explicit"`; the primitive backend is inferred from the typed
-`step.from` root. In a primitive map read it is stored in `step.proof` with
-`evidence_kind="structure"` and `evidence_backend="map"`.
-
-## Tree List Semantic Proofs
-
-Every committed KZG list node has 4096 slots: slot 0 authenticates node
-metadata and slots 1 through 4095 authenticate content. IPA list nodes retain
-256 slots with content in slots 1 through 255. Metadata is a raw CIDv1
-identity marker over:
-
-```text
-"malt:list:node-meta:"
-|| height      as big-endian uint64
-|| child_count as big-endian uint64
-|| total_size  as big-endian uint64
-|| chunk_size  as big-endian uint64
-```
-
-`chunk_size == 0` denotes a plain list node and requires `total_size == 0`.
-A positive `chunk_size` denotes fixed-width measured metadata.
-
-### Index Envelope
-
-```json
-{
-  "metadata_proof": "<primitive single proof>",
-  "metadata_target": "<optional metadata-marker CID bytes>",
-  "steps": [
+  "format": "malt.binding/0",
+  "nodes": [
     {
-      "target": "<CID bytes>",
-      "proof": "<primitive single proof>",
-      "slot": 1
+      "cell": "<base64 cell bytes>",
+      "proof": "<base64 primitive opening>",
+      "metadata": "<base64 Positional metadata>",
+      "metadata_proof": "<base64 Positional metadata opening>"
     }
   ]
 }
 ```
 
-`metadata_target` is omitted when plain metadata can be reconstructed from the
-authenticated length. `slot` is the physical content slot and is emitted by
-the current prover. Each intermediate target is the next list-node root; the
-last target is the queried child CID.
+Empty byte fields are omitted. Prefix proofs carry only the selected cell and
+opening at each node. A terminal empty cell or a routed leaf for another key
+proves absence. Positional proofs also open slot-zero metadata at every node;
+a root-level out-of-range result contains only metadata evidence. All supplied
+nodes must be consumed. Metadata, leaf, and internal child framing follow
+[authentication inputs and Roots](./authentication-inputs.md).
 
-This envelope is stored in `step.proof` with
-`evidence_kind="structure"` and `evidence_backend="list"`.
+Resolve stores Prefix evidence in `step.evidence` with
+`evidence_kind="explicit"`. Map and List reads use `step.proof` with
+`evidence_kind="structure"` and the appropriate semantic evidence backend.
+The verifier derives coordinates from the caller's Root and query; it never
+uses a proof-supplied key or a historical semantic CID for primitive openings.
 
-### Fixed-Width Range Envelope
+## Fixed-width Positional range proof
 
-```json
-{
-  "metadata_proof": "<primitive single proof>",
-  "index_proofs": [
-    {"index": 0, "proof": "<complete index-envelope bytes>"}
-  ]
-}
-```
+The range envelope is the JSON projection of `engine.RangeResult`, containing
+`metadata`, `metadata_evidence`, and ordered `segments`. Each evidence value is
+an `engine.Result` with `present`, `target`, and its `malt.binding/0` proof.
+The metadata evidence opens the always-out-of-range maximum uint64 index.
+Segment results open precisely the indices selected by the requested byte
+range. The verifier checks the metadata opening, bounds, order, and targets.
+The Map/List convenience API carries this envelope in `step.proof` with
+`evidence_backend="measured_list"`.
 
-The outer ProofList step supplies the authenticated `child_count`,
-`total_size`, `chunk_size`, ordered segment CIDs, and requested bounds. Each
-`index_proofs[].proof` is itself a complete index-envelope JSON byte string.
-The range envelope is stored in `step.proof` with
-`evidence_kind="structure"` and `evidence_backend="measured_list"`.
-
-Only the current fixed-width measured list is covered. Variable-size measured
-evidence is proposal-stage and has no v1 conformance encoding.
+Only fixed-width measured lists are supported. Byte verification under each
+returned payload CID remains application work.
 
 ## JSON Projection
 
