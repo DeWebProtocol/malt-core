@@ -1,7 +1,8 @@
-# Frozen `malt.artifact/v0alpha2` Compatibility Profile
+# Retired `malt.artifact/v0alpha2` Profile
 
 `malt.artifact/v0alpha2` is the serialized compatibility profile published by
-MALT `v0.0.4`. Its operation set is frozen as:
+MALT `v0.0.4`. This page records its historical meaning. Its released operation
+set was:
 
 - `resolve`
 - `prove`
@@ -12,13 +13,16 @@ schema and verifiers. Any incompatible extension would require a new profile.
 
 ## Status
 
-The Go package `github.com/dewebprotocol/malt-core/artifact`, its schemas under
-`artifact/schemas/`, and fixtures under `artifact/testdata/v0alpha2/` remain
-available for v0.0.4 compatibility. Core is transport-neutral and no longer
-ships the historical `/v1/artifacts/*` HTTP projection. A gateway that
-deliberately reintroduces those routes owns their registration, access policy,
-and compatibility testing. The artifact profile is not the primary contract
-for new integrations.
+Current Core removes the `artifact` package, its embedded schemas and
+fixtures, `sdk/verifier.Request`, `sdk/verifier.Result`, `Verifier.Verify`,
+and the `maltVerifyArtifact` WASM export. It does not provide an artifact
+decoder, verifier, or `/v1/artifacts/*` HTTP projection.
+
+The implementation remains available at the immutable pre-cleanup revision
+[`ccae498e29a323eb003b74fb12aa23b87bd13832`](https://github.com/DeWebProtocol/malt-core/tree/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact).
+Pin a historical revision to reproduce historical behavior. Current
+integrations use the operation-specific contracts below; see also the
+[pre-beta API cleanup](../changes/prebeta-cleanup.md).
 
 The `prove` name in this legacy profile means “execute one primitive typed
 map/list read and return its evidence.” It is not a general semantic operation
@@ -44,26 +48,25 @@ selected trusted root and expected request before accepting the result.
 These route names are historical documentation, not routes provided by this
 module or promised by the current Gateway.
 
-## Embedded Schema Index
+## Historical Schema Index
 
-Every filename returned by `artifact.SchemaNames()` is indexed here:
+These schemas belong to the same immutable pre-cleanup revision. They are no
+longer embedded or shipped by current Core:
 
-<!-- schema-catalog:artifact:start -->
-- [`artifact.schema.json`](../../artifact/schemas/artifact.schema.json)
-- [`local-verify-request.schema.json`](../../artifact/schemas/local-verify-request.schema.json)
-- [`local-verify-result.schema.json`](../../artifact/schemas/local-verify-result.schema.json)
-- [`prove-request.schema.json`](../../artifact/schemas/prove-request.schema.json)
-- [`resolve-request.schema.json`](../../artifact/schemas/resolve-request.schema.json)
-- [`verify-request.schema.json`](../../artifact/schemas/verify-request.schema.json)
-- [`verify-result.schema.json`](../../artifact/schemas/verify-result.schema.json)
-<!-- schema-catalog:artifact:end -->
+- [`artifact.schema.json`](https://github.com/DeWebProtocol/malt-core/blob/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact/schemas/artifact.schema.json)
+- [`local-verify-request.schema.json`](https://github.com/DeWebProtocol/malt-core/blob/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact/schemas/local-verify-request.schema.json)
+- [`local-verify-result.schema.json`](https://github.com/DeWebProtocol/malt-core/blob/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact/schemas/local-verify-result.schema.json)
+- [`prove-request.schema.json`](https://github.com/DeWebProtocol/malt-core/blob/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact/schemas/prove-request.schema.json)
+- [`resolve-request.schema.json`](https://github.com/DeWebProtocol/malt-core/blob/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact/schemas/resolve-request.schema.json)
+- [`verify-request.schema.json`](https://github.com/DeWebProtocol/malt-core/blob/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact/schemas/verify-request.schema.json)
+- [`verify-result.schema.json`](https://github.com/DeWebProtocol/malt-core/blob/ccae498e29a323eb003b74fb12aa23b87bd13832/artifact/schemas/verify-result.schema.json)
 
 ## Root Identity Compatibility
 
 The v0.0.4 encoder used `omitempty` for zero path segments and could emit
-`{"kind":"path"}`. Conforming v0alpha2 decoders normalize that released form
-to `{"kind":"path","segments":[]}`. This narrow normalization preserves the
-published profile; it does not authorize adding operations or fields.
+`{"kind":"path"}`. Historical v0alpha2 decoders normalized that released form
+to `{"kind":"path","segments":[]}`. This describes the retired decoder;
+current operation-specific verifiers do not accept an artifact envelope.
 
 ## Migration For New Integrations
 
@@ -73,7 +76,9 @@ New clients use the operation-specific contracts in
 - `malt.resolve/v0alpha1` with `ResolveRequest`, `ResolveResult`, and local
   `VerifyResolve`;
 - `malt.read/v0alpha1` with `ReadRequest`, `ReadResult`, and local
-  `VerifyRead`; and
+  `VerifyRead`;
+- `malt.map-proof/v0alpha1` with `MapProofRequest`, `MapProofResult`, and local
+  `VerifyMapProof`; and
 - ProofList as evidence carried by those results, not as a generic operation.
 
 Payload selection is an ordinary explicit resolve segment. For example,

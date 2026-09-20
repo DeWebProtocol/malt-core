@@ -17,9 +17,10 @@ JSON Schemas live in `protocol/schemas/` and are embedded through
 `protocol.Schema` and `protocol.SchemaNames`.
 
 Cross-language accept/reject behavior for resolve and read is locked by the
-[Resolve/Read conformance corpus v2](./resolve-read-conformance-v2.md).
-Map-proof behavior is covered by KZG/IPA runtime, portable-verifier, protocol,
-and WASM registration tests; it does not alter the frozen resolve/read corpus.
+[Resolve/Read conformance corpus v3](./resolve-read-conformance-v3.md).
+Map-proof behavior uses its own v2 corpus. Both exercise current V0 Roots;
+see [conformance corpora](./conformance-corpora.md) for their versioning and
+native/WASM validation gates.
 
 ## Resolve
 
@@ -82,7 +83,7 @@ accepted result still proves its own root-to-target relation.
 
 ## Primitive Read
 
-Read is the proof-bearing primitive formerly named `prove` in the frozen
+Read is the proof-bearing primitive formerly named `prove` in the retired
 artifact profile. It accepts exactly one typed query:
 
 - `map_key` with a non-empty segment array;

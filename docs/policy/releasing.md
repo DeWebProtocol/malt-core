@@ -7,8 +7,10 @@ Root's `V=0` throughout pre-production, including experimental source/SDK
 releases. Set `V=1` only after the maintainer explicitly declares the system
 production ready and going live. This is independent of CIDv1 and package
 SemVer; a release workflow must not infer that declaration or bump `V`.
-The current executable `V=3` format is an older experiment awaiting the
-coordinated migration described by that policy.
+Current constructors and readers use self-describing V0 Roots. Historical
+V2/V3 readers and writer-view migration are retired; releases must document
+these source and compatibility changes as described in the
+[pre-beta API cleanup](../changes/prebeta-cleanup.md).
 
 ## Validation
 

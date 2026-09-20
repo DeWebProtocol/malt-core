@@ -12,9 +12,10 @@ permits `V=1`. Experimental incompatible changes must remain distinguishable
 without automatically increasing this field. This does not renumber CIDv1,
 operation profiles, package releases, storage schemas, or conformance corpora.
 
-The existing flat and `V=2/3` formats described below are current/historical
-implementation facts, not the future version-allocation rule. No executable
-migration or old-root reinterpretation is performed by this policy update.
+Current construction and verification accept only self-describing V0 Roots.
+Historical flat and V2/V3 formats are rejected. The current writer does not
+migrate old update views; recreate experimental state as described in the
+[pre-beta API cleanup](../changes/prebeta-cleanup.md).
 
 ## Compatibility surfaces
 
@@ -33,18 +34,19 @@ migration or old-root reinterpretation is performed by this policy update.
 | `malt.writer-compute-result/v3` | Experimental in v0.0.7-rc.1; browser-local bundle, Map materialization, and next-view result |
 | `malt.materialization-receipt/v2` | Experimental in v0.0.7-rc.1; exact-bundle durability acknowledgement |
 | ProofList JSON and proof semantics | Experimental, verifier-facing |
-| Typed MALT root CIDs/codecs | Experimental, verifier-facing |
+| Typed MALT root CIDs/codecs | Experimental, verifier-facing; current self-describing V0 only |
 | `SegmentPath` projection | `/`-joined UTF-8 segments; experimental |
 | Public Go semantic/materializer interfaces | Experimental source API |
 | `sdk/writer` | Experimental source API for local complete-view client-root computation |
 | `auth/observation` phases | Diagnostic source API; not wire data or proof evidence |
-| `malt.artifact/v0alpha2` | Frozen v0.0.4 compatibility profile |
+| `malt.artifact/v0alpha2` | Retired; its package, schemas, and verifier entry points are removed |
 | ArcTable/KV/CAS implementations | Outside this module and not a core compatibility surface |
 | CLI, daemon, HTTP routes, UnixFS | Outside this module |
 
-The frozen artifact profile accepts only its released operation set. New
-integrations use operation-specific resolve/read request/result pairs rather
-than extending that union.
+The historical artifact profile and its released operation set remain
+documented in the [retired profile reference](../spec/artifacts.md). Current
+integrations use operation-specific resolve/read/Map-proof request/result
+pairs and their local verifiers.
 
 The `/v1` suffixes on the client-root profiles version those serialized
 contracts. They do not mean that MALT, the Go module, or the source APIs have
@@ -66,37 +68,37 @@ documentation in the same PR:
 
 The root-codec compatibility boundaries are intentionally explicit:
 
-- v0.0.6 emitted flat experimental codecs `0x300001` through `0x300004`.
-  The structured decoder does not accept those roots. No migration layer is
-  provided in this pre-v1 release; recreate experimental roots and their
-  materialized proof-serving state.
-- Structured version-2 codecs (`0x302...`) were introduced on `main` after
-  v0.0.6. They are not v0.0.6 roots and remain readable and verifiable.
-- Current constructors emit structured version-3 codecs (`0x303...`) in the
-  project private-use `0x30VSBB` layout.
+- Current constructors and readers use the self-describing `0x30VLAA`
+  format with `RootVersion=0`. The codec selects the layout and input rule;
+  the identity-wrapped multicommitment selects the exact VC profile.
+- The v0.0.6 flat experimental codecs `0x300001` through `0x300004`, the later
+  structured V2 codecs (`0x302...`), and the historical V3 codecs (`0x303...`)
+  are unsupported. Their constructors, readers, and replay graphs are removed.
+- Recreate old experimental state and its proof-serving materialization with
+  the current implementation, then recompute dependent parents. A changed CID
+  prefix does not convert old node or proof encodings.
 
-Typed-root constructors emit `MALTVersionID=3`.
-Decoders explicitly retain v2 typed roots for read/proof compatibility and
-reject every other unknown version, semantic ID, backend suite ID, and
-combination; there is no heuristic fallback mapping.
+Root parsing validates canonical framing, `V=0`, the layout, and the exact VC
+profile and commitment width. Operations also require the selected input rule
+and VC implementation to be registered. Unsupported combinations fail closed;
+there is no heuristic fallback. See
+[authentication inputs and Roots](../spec/authentication-inputs.md).
 
-Radix map profiles bind the entire internal tree to one typed-root version and
-backend: v2 roots use v1 variable-length collision-bucket references, while v3
-roots use v2 fixed-domain references. Readers recognize both profiles but reject
-mixed-version internal children or a bucket reference that does not match its
-parent profile. Only the v3/fixed-domain profile supports collision-bucket
-non-membership proofs. Incremental map/list mutation APIs require the input root
-version to match the semantics instance. The client writer handles v2 updates
-by exactly replaying the complete v2 view, fully rebuilding it as v3, and
-applying changes only to that v3 working root; direct partial v2-to-v3 mutation
-is rejected so unchanged v2 child CIDs cannot leak into a v3 root.
+Historical collision-bucket layouts and their proof envelopes are retired.
+Current Prefix and Positional evidence uses `malt.binding/0`, as specified in
+[commitment and proof encoding](../spec/commitment-proof-encoding.md).
 
 Map non-membership proves only the absence of one exact keyed relation in a
 Map. It does not prove List-index, graph-path, object, payload-byte, or remote
 data absence, and ordinary `Read` retains its `ErrQueryNotFound` behavior.
-There is no List non-membership API. Empty-slot and conflicting-leaf absence
-work for compatible roots; collision-bucket non-membership requires the
-version-3 fixed-domain bucket profile.
+The Map-proof operation does not provide List non-membership. Current Prefix
+absence terminates at a proved empty slot or a routed leaf for a different
+key. Typed authentication has its own Positional out-of-range evidence rules.
+
+Current conformance corpora are Resolve/Read v3, Map-proof v2, client-root v4,
+and typed authentication/0. Historical corpus bytes and schema identifiers
+remain in Git history; current loaders reject those retired corpus versions.
+See [conformance corpora](../spec/conformance-corpora.md).
 
 v0.0.6 intentionally removes application and deployment packages from this
 module. Consumers of the former CLI/daemon/UnixFS/server/storage packages must

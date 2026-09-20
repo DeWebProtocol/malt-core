@@ -84,8 +84,7 @@ malt (module facade)
 ├── sdk/writer               complete-view client-root computation
 ├── cmd/malt-verifier-wasm   browser verification adapter
 ├── cmd/malt-writer-wasm     browser client-root adapter
-├── wire/maltcid             typed CID rules
-└── artifact                 frozen compatibility profile
+└── wire/maltcid             typed CID rules
 ```
 
 `graph/runtime` means an in-process algorithm composition. It owns no process
@@ -238,7 +237,6 @@ RPC may transmit the array directly.
 ## Import guards
 
 `architecture_test.go` enforces the trusted-layer dependency direction. In
-particular, the module facade, portable mutation values, artifact compatibility
-layer, and client verifier cannot import server, storage, application, or
-runtime process packages. Removed product packages must not be reintroduced to
-this module.
+particular, the module facade, portable mutation values, and client verifier
+cannot import server, storage, application, or runtime process packages.
+Removed product packages must not be reintroduced to this module.
