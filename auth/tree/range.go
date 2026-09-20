@@ -1,4 +1,4 @@
-package engine
+package tree
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"math"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -29,7 +29,7 @@ func (e *Engine) ReadMetadata(ctx context.Context, root cid.Cid, source material
 	if d.Layout != maltcid.Positional {
 		return Metadata{}, Result{}, errors.New("metadata requires Positional")
 	}
-	result, err := e.Prove(ctx, root, input.IndexValue(math.MaxUint64), source)
+	result, err := e.Prove(ctx, root, coordinate.At(math.MaxUint64), source)
 	if err != nil {
 		return Metadata{}, Result{}, err
 	}
@@ -65,7 +65,7 @@ func (e *Engine) ProveRange(ctx context.Context, root cid.Cid, start uint64, end
 	}
 	result := RangeResult{Metadata: meta, MetadataEvidence: evidence, Segments: []Result{}}
 	for offset := uint64(0); offset < count; offset++ {
-		segment, err := e.Prove(ctx, root, input.IndexValue(first+offset), source)
+		segment, err := e.Prove(ctx, root, coordinate.At(first+offset), source)
 		if err != nil {
 			return RangeResult{}, err
 		}
@@ -84,7 +84,7 @@ func (e *Engine) VerifyRange(root cid.Cid, start uint64, end *uint64, result Ran
 	if d.Layout != maltcid.Positional {
 		return false, errors.New("range requires Positional")
 	}
-	valid, err := e.Verify(root, input.IndexValue(math.MaxUint64), result.MetadataEvidence)
+	valid, err := e.Verify(root, coordinate.At(math.MaxUint64), result.MetadataEvidence)
 	if err != nil || !valid {
 		return valid, err
 	}
@@ -106,7 +106,7 @@ func (e *Engine) VerifyRange(root cid.Cid, start uint64, end *uint64, result Ran
 		if !segment.Present {
 			return false, nil
 		}
-		valid, err := e.Verify(root, input.IndexValue(first+uint64(offset)), segment)
+		valid, err := e.Verify(root, coordinate.At(first+uint64(offset)), segment)
 		if err != nil || !valid {
 			return valid, err
 		}

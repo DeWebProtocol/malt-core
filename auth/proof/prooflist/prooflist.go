@@ -16,9 +16,6 @@ const (
 	KindPayloadBinding StepKind = "payload_binding"
 	KindListIndex      StepKind = "list_index"
 	KindListRange      StepKind = "list_range"
-	KindBlobBinding    StepKind = "blob_binding"
-	KindImplicitBlock  StepKind = "implicit_block"
-	KindLegacyUnknown  StepKind = "legacy_unknown"
 )
 
 // ProofList is an ordered verifier-facing proof artifact for a read.
@@ -149,7 +146,7 @@ func (p ProofList) LastStepTarget() (cid.Cid, error) {
 // Known reports whether k is part of the current ProofList schema.
 func (k StepKind) Known() bool {
 	switch k {
-	case KindMapStep, KindMapAbsence, KindPayloadBinding, KindListIndex, KindListRange, KindBlobBinding, KindImplicitBlock, KindLegacyUnknown:
+	case KindMapStep, KindMapAbsence, KindPayloadBinding, KindListIndex, KindListRange:
 		return true
 	default:
 		return false

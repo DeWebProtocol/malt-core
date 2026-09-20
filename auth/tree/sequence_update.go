@@ -1,4 +1,4 @@
-package engine
+package tree
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -107,7 +107,7 @@ func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next Metadat
 			if childMeta.Count != 1 {
 				return maltcid.NodeRef{}, errors.New("missing prior Positional child")
 			}
-			child, err = b.positional([]binding{{coordinate: input.Coordinate{Kind: input.Index}, target: target}}, childMeta)
+			child, err = b.positional([]binding{{coordinate: coordinate.Value{Kind: coordinate.Index}, target: target}}, childMeta)
 		} else {
 			child, err = parseChild(cells[slot], ref)
 			if err != nil {

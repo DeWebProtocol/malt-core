@@ -44,9 +44,6 @@ func transcriptStepKind(step StepEvidence) prooflist.StepKind {
 	if step.Path.String() == "@payload" {
 		return prooflist.KindPayloadBinding
 	}
-	if step.Evidence != nil && step.Evidence.Kind() == evidence.EvidenceKindImplicit {
-		return prooflist.KindImplicitBlock
-	}
 	return prooflist.KindMapStep
 }
 
@@ -57,10 +54,6 @@ func evidenceKindLabel(ev evidence.Evidence) string {
 	switch ev.Kind() {
 	case evidence.EvidenceKindExplicit:
 		return "explicit"
-	case evidence.EvidenceKindImplicit:
-		return "implicit"
-	case evidence.EvidenceKindHAMT:
-		return "hamt"
 	default:
 		return "unknown"
 	}

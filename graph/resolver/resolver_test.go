@@ -86,7 +86,7 @@ func TestResolverExplicitOnly(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result, err := g.Resolve(ctx, root, tt.path)
+		result, err := g.ResolveKey(ctx, root, tt.path)
 		if err != nil {
 			t.Errorf("Resolve(%s) failed: %v", tt.path, err)
 			continue
@@ -98,13 +98,6 @@ func TestResolverExplicitOnly(t *testing.T) {
 			t.Errorf("Resolve(%s) should have exactly one step, got %d", tt.path, len(result.Transcript.Steps))
 		}
 
-		valid, err := g.VerifyTranscript(ctx, root, result.Transcript)
-		if err != nil {
-			t.Errorf("VerifyTranscript(%s) failed: %v", tt.path, err)
-		}
-		if !valid {
-			t.Errorf("VerifyTranscript(%s) should be valid", tt.path)
-		}
 	}
 }
 
@@ -122,7 +115,7 @@ func TestResolverCanonicalizesResolvePath(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, root, "/a//b/")
+	result, err := g.ResolveKey(ctx, root, "/a//b/")
 	if err != nil {
 		t.Fatalf("Resolve failed: %v", err)
 	}
@@ -153,7 +146,7 @@ func TestResolverExplicitLongestPrefix(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, root, "a/b/c/d")
+	result, err := g.ResolveKey(ctx, root, "a/b/c/d")
 	if err == nil && !result.Target.Equals(k3) {
 		t.Errorf("Resolve(a/b/c/d) = %v, want %v", result.Target, k3)
 	}
@@ -171,7 +164,7 @@ func TestResolverStopsAtNonMaltPayload(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, root, "data")
+	result, err := g.ResolveKey(ctx, root, "data")
 	if err != nil {
 		t.Fatalf("Resolve failed: %v", err)
 	}
@@ -200,7 +193,7 @@ func TestResolverTranscript(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, root, "inner")
+	result, err := g.ResolveKey(ctx, root, "inner")
 	if err != nil {
 		t.Fatalf("Resolve failed: %v", err)
 	}
@@ -220,7 +213,7 @@ func TestResolverTranscript(t *testing.T) {
 	}
 }
 
-func TestResolverPayloadRedirect(t *testing.T) {
+func TestResolverExplicitPayloadBinding(t *testing.T) {
 	e := newTestMaterializer()
 	semantic := newSemantic(t, e)
 
@@ -235,7 +228,7 @@ func TestResolverPayloadRedirect(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, root, "")
+	result, err := g.ResolveKey(ctx, root, "@payload")
 	if err != nil {
 		t.Fatalf("Resolve with empty path failed: %v", err)
 	}
@@ -249,16 +242,9 @@ func TestResolverPayloadRedirect(t *testing.T) {
 		t.Errorf("Step path = %s, want @payload", result.Transcript.Steps[0].Path)
 	}
 
-	valid, err := g.VerifyTranscript(ctx, root, result.Transcript)
-	if err != nil {
-		t.Fatalf("VerifyTranscript failed: %v", err)
-	}
-	if !valid {
-		t.Error("Transcript should be valid")
-	}
 }
 
-func TestResolveKeyAndResolve_ListTerminalNoPayloadRedirect(t *testing.T) {
+func TestResolveKeyListTerminal(t *testing.T) {
 	e := newTestMaterializer()
 	semantic := newSemantic(t, e)
 
@@ -289,18 +275,7 @@ func TestResolveKeyAndResolve_ListTerminalNoPayloadRedirect(t *testing.T) {
 		t.Fatalf("ResolveKey steps = %d, want 1", len(keyResult.Transcript.Steps))
 	}
 
-	resolveResult, err := g.Resolve(ctx, root, "file")
-	if err != nil {
-		t.Fatalf("Resolve failed: %v", err)
-	}
-	if !resolveResult.Target.Equals(listRoot) {
-		t.Fatalf("Resolve target = %v, want list root %v", resolveResult.Target, listRoot)
-	}
-	if len(resolveResult.Transcript.Steps) != 1 {
-		t.Fatalf("Resolve should not append @payload for list; steps = %d", len(resolveResult.Transcript.Steps))
-	}
-
-	incompleteResult, err := g.Resolve(ctx, root, "file/extra")
+	incompleteResult, err := g.ResolveKey(ctx, root, "file/extra")
 	if err != nil {
 		t.Fatalf("Resolve incomplete list path failed: %v", err)
 	}
@@ -315,7 +290,7 @@ func TestResolveKeyAndResolve_ListTerminalNoPayloadRedirect(t *testing.T) {
 	}
 }
 
-func TestResolverMissingPayloadBindingFails(t *testing.T) {
+func TestResolverExplicitMissingPayloadFails(t *testing.T) {
 	e := newTestMaterializer()
 	semantic := newSemantic(t, e)
 
@@ -327,7 +302,7 @@ func TestResolverMissingPayloadBindingFails(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, root, "")
+	result, err := g.ResolveKey(ctx, root, "@payload")
 	if err == nil {
 		t.Fatalf("Resolve unexpectedly succeeded: %+v", result)
 	}
@@ -343,7 +318,7 @@ func TestResolverNonMaltEmptyPathIsTerminal(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, payloadCID, "")
+	result, err := g.ResolveKey(ctx, payloadCID, "")
 	if err != nil {
 		t.Fatalf("Resolve failed: %v", err)
 	}
@@ -365,7 +340,7 @@ func TestResolverNonMaltPathReportsRemaining(t *testing.T) {
 	explicitR := explicit.NewResolver(e, semantic, testNamespace)
 	g := resolver.NewResolver(explicitR)
 
-	result, err := g.Resolve(ctx, payloadCID, "missing/path")
+	result, err := g.ResolveKey(ctx, payloadCID, "missing/path")
 	if err != nil {
 		t.Fatalf("Resolve failed: %v", err)
 	}

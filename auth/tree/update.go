@@ -1,4 +1,4 @@
-package engine
+package tree
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -51,7 +51,7 @@ func (e *Engine) edit(ctx context.Context, root cid.Cid, source materializer.Nod
 	if source == nil || out == nil {
 		return nil, ref, errors.New("node lookup and updater are required")
 	}
-	u := &nodeEdit{builder: builder{ctx: ctx, descriptor: d, profile: p, scheme: prover, out: out}, verifier: s, source: source, loaded: make(map[string][]commitment.Cell)}
+	u := &nodeEdit{builder: builder{registry: e.Profiles, ctx: ctx, descriptor: d, profile: p, scheme: prover, out: out}, verifier: s, source: source, loaded: make(map[string][]commitment.Cell)}
 	return u, ref, nil
 }
 func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitment.Cell, error) {
@@ -62,12 +62,14 @@ func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitme
 	if cells, ok := u.loaded[string(key)]; ok {
 		return cloneVector(cells), nil
 	}
-	cells, err := u.source.GetNode(ctx, ref)
+	cells, err := u.source.GetNode(ctx, copyNodeRef(ref))
 	if err != nil {
 		return nil, err
 	}
-	if _, _, err = openVector(u.verifier, ref, cells, 0); err != nil {
-		return nil, err
+	if w, ok := u.source.(*Workspace); !ok || w.registry != u.registry || w.engine.Profiles != u.registry {
+		if _, _, err = openVector(u.verifier, ref, cells, 0); err != nil {
+			return nil, err
+		}
 	}
 	u.loaded[string(key)] = cloneVector(cells)
 	return cloneVector(cells), nil
@@ -85,7 +87,7 @@ func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
 		if err := u.ctx.Err(); err != nil {
 			return cid.Undef, err
 		}
-		if err := u.builder.out.PutNode(u.ctx, node.ref, node.cells); err != nil {
+		if err := putComputed(u.ctx, u.builder.out, node.ref, node.cells, u.registry); err != nil {
 			return cid.Undef, err
 		}
 	}
@@ -93,7 +95,7 @@ func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
 }
 
 type coordinateChange struct {
-	key           input.Coordinate
+	key           coordinate.Value
 	before, after cid.Cid
 }
 
@@ -108,9 +110,9 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 	b := u.builder
 	b.out = u
 	items := make([]coordinateChange, 0, len(changes))
-	seen := make(map[input.Coordinate]bool)
+	seen := make(map[coordinate.Value]bool)
 	for _, change := range changes {
-		k, err := e.coordinate(u.descriptor, change.Input)
+		k, err := checkCoordinate(u.descriptor, change.Coordinate)
 		if err != nil {
 			return cid.Undef, err
 		}
@@ -245,7 +247,7 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 		}
 		bindings := make([]binding, 0, len(entries))
 		for key, target := range entries {
-			bindings = append(bindings, binding{coordinate: input.Coordinate{Kind: input.Key, Key: key}, target: target})
+			bindings = append(bindings, binding{coordinate: coordinate.Value{Kind: coordinate.Key, Key: key}, target: target})
 		}
 		sort.Slice(bindings, func(i, j int) bool {
 			return bytes.Compare(bindings[i].coordinate.Key[:], bindings[j].coordinate.Key[:]) < 0

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://malt.dev/schemas/authentication-delta.schema.json",
+  "title": "Retained writer typed delta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile",
+    "changes"
+  ],
+  "properties": {
+    "profile": {
+      "const": "malt.authentication-delta/0"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ],
+        "properties": {
+          "input": {
+            "$ref": "authentication.schema.json#/$defs/input"
+          },
+          "before": {
+            "type": "string",
+            "minLength": 1
+          },
+          "after": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "before"
+            ]
+          },
+          {
+            "required": [
+              "after"
+            ]
+          }
+        ]
+      }
+    },
+    "count": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "total_size": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    }
+  }
+}

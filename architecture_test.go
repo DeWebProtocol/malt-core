@@ -32,6 +32,8 @@ func TestProductionImportBoundaries(t *testing.T) {
 		recursive bool
 		forbidden []string
 	}{
+		{name: "coordinate-only authentication tree", dir: filepath.Join(root, "auth", "tree"), recursive: true,
+			forbidden: []string{"auth/input", "auth/engine", "graph", "protocol", "sdk", "mutation", "execution"}},
 		{
 			name:      "authentication kernel",
 			dir:       filepath.Join(root, "auth"),

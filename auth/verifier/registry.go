@@ -64,7 +64,7 @@ func (r *BackendRegistry) RegisterScheme(kind maltcid.BackendKind, scheme commit
 			kind, scheme.MaxValues(), geometry.NodeWidth(),
 		)
 	}
-	return r.Register(kind, newRadixMapVerifier(scheme, geometry), newTreeListVerifier(scheme, geometry))
+	return r.Register(kind, newRadixMapVerifier(scheme), newTreeListVerifier(scheme))
 }
 
 func (r *BackendRegistry) mapVerifier(root cid.Cid) (MapVerifier, error) {

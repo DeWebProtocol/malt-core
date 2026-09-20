@@ -21,9 +21,6 @@ const (
 	MaxValues = 4096
 	// ProofSize is the size of a primitive KZG index proof in bytes.
 	ProofSize = 84
-	// MaxCacheEntries is the maximum number of cached commitments.
-	// When exceeded, the oldest entries are evicted.
-	MaxCacheEntries = 1024
 )
 
 // VerifierScheme is the verification-only KZG backend. It deliberately does

@@ -25,7 +25,7 @@
       "additionalProperties": false,
       "required": ["kind", "from", "target"],
       "properties": {
-        "kind": {"enum": ["map_step", "map_absence", "payload_binding", "list_index", "list_range", "blob_binding", "implicit_block", "legacy_unknown"]},
+        "kind": {"enum": ["map_step", "map_absence", "payload_binding", "list_index", "list_range"]},
         "from": {"$ref": "#/$defs/cid_link"},
         "query": {"type": "string"},
         "coordinate": {"type": "string"},

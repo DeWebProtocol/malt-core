@@ -19,6 +19,8 @@ node "$repo_root/scripts/run-writer-wasm-smoke.mjs" \
 node "$repo_root/scripts/run-authentication-wasm.mjs" writer \
   "$work_dir/writer/malt-writer-kzg.wasm" "$work_dir/writer/wasm_exec.js" \
   "$repo_root/conformance/authentication-v0.json" kzg
+node "$repo_root/scripts/run-retained-writer-wasm.mjs" \
+  "$work_dir/writer/malt-writer-kzg.wasm" "$work_dir/writer/wasm_exec.js" kzg
 for profile in direct compact fast; do
   node "$repo_root/scripts/run-writer-wasm-smoke.mjs" \
     "$work_dir/writer/malt-writer-ipa-$profile.wasm" \
@@ -28,6 +30,8 @@ for profile in direct compact fast; do
   node "$repo_root/scripts/run-authentication-wasm.mjs" writer \
     "$work_dir/writer/malt-writer-ipa-$profile.wasm" "$work_dir/writer/wasm_exec.js" \
     "$repo_root/conformance/authentication-v0.json" ipa
+  node "$repo_root/scripts/run-retained-writer-wasm.mjs" \
+    "$work_dir/writer/malt-writer-ipa-$profile.wasm" "$work_dir/writer/wasm_exec.js" ipa "$profile"
 done
 node "$repo_root/scripts/run-writer-worker-smoke.mjs" \
   "$work_dir/writer/malt-writer-ipa-compact.wasm" \

@@ -42,6 +42,11 @@ profile. Start with [`sdk/authentication`](./sdk/authentication) and the
 remain compatibility conveniences. System bindings belong only to Prefix.
 The Root version stays zero until an explicit production-ready declaration.
 
+The coordinate-only [`auth/tree`](./auth/tree) implements canonical Prefix and
+Positional authentication. The typed engine and graph traversal compose it;
+retained writers apply deltas and export complete state explicitly. See the
+[tree and writer architecture](./docs/changes/authentication-tree.md).
+
 ## Boundary
 
 MALT core owns:

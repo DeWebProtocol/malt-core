@@ -215,8 +215,8 @@ retries and branches. Prefix changes and Positional replacement, append,
 truncation and measured-size changes reuse unchanged authentication paths.
 Changing chunk geometry explicitly falls back to complete materialization.
 The exported candidate remains a complete input/node view: this is neither a
-partial update witness nor a stateless transition proof. Export validation can
-still inspect the complete materialization; path reuse does not imply constant
+partial update witness nor a stateless transition proof. Complete export still traverses the materialization, but does not repeat
+cryptographic validation of owned nodes; path reuse does not imply constant
 update or transport cost. Applications update child ArcSets before rebinding
 parent entries, and retain candidate writers only under their own receipt and
 trust policies.
@@ -224,3 +224,30 @@ trust policies.
 Measured truncation uses `ResizeMeasured` with an explicit new count and total
 size. The application supplies any changed final payload CID separately; Core
 cannot infer re-chunked content or verify its bytes from relation state.
+
+## Independent tree and explicit export
+
+`auth/tree` implements single-ArcSet authentication over `auth/coordinate`
+values. The typed `auth/engine` supplies input interpretation; `graph/traversal`
+composes proofs across Roots. These are separate from application flat/rooted
+organization and from Gateway relation persistence.
+
+For a retained writer, `Apply(ctx, Delta)` accepts expected-before typed changes.
+Prefix supports insert/replace/delete. Positional changes replace existing
+positions or supply appended bindings; `Count` controls suffix length, and
+measured length changes require `TotalSize`. Changing chunk geometry uses full
+`Update`/construction. `Update(ctx, State)` compiles complete desired inputs to
+the same path, with an unavoidable input scan.
+
+Use `Root()` for the candidate identity and `Export(ctx)` when a complete
+portable candidate is needed. `Candidate()` also performs a complete export.
+Export is no longer part of every update. A new or externally imported writer
+owns its immutable vectors; unchanged subtrees can be shared across independent
+branches without revalidating them or retaining obsolete ancestors. External
+materializations still undergo complete Root-bound validation.
+
+The corresponding JSON delta profile is `malt.authentication-delta/0`; the
+[schema](../../protocol/schemas/authentication-delta.schema.json) requires typed
+changes, optional decimal-string count/total size, and exact field names. It is
+an instruction for retained complete state, not an authenticated-update witness.
+See [implementation and lifecycle details](../changes/authentication-tree.md).

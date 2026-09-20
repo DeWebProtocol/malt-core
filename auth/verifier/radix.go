@@ -6,13 +6,12 @@ import (
 	structure "github.com/dewebprotocol/malt-core/auth/semantic"
 	"github.com/dewebprotocol/malt-core/auth/semantic/layoutcompat"
 	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
-	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
 	cid "github.com/ipfs/go-cid"
 )
 
 type radixMapVerifier struct{ scheme commitment.IndexVerifier }
 
-func newRadixMapVerifier(scheme commitment.IndexVerifier, _ nodegeometry.Geometry) MapVerifier {
+func newRadixMapVerifier(scheme commitment.IndexVerifier) MapVerifier {
 	return &radixMapVerifier{scheme: scheme}
 }
 func (v *radixMapVerifier) Verify(root cid.Cid, key arcset.Path, expected mapping.Binding, proof structure.Proof) (bool, error) {

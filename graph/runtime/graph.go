@@ -168,11 +168,6 @@ func (g *RuntimeGraph) ListSemantic() list.Semantics {
 	return g.listSemantic
 }
 
-// Resolver returns the per-graph resolver.
-func (g *RuntimeGraph) Resolver() graph.Resolver {
-	return g.resolver
-}
-
 // Resolve adapts the reference graph resolver transcript to the portable core
 // result consumed by execution.Executor and malt.VerifyResolve.
 func (g *RuntimeGraph) Resolve(ctx context.Context, req malt.ResolveRequest) (malt.ResolveResult, error) {
