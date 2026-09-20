@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core/artifact"
 	"github.com/dewebprotocol/malt-core/protocol"
 )
 
@@ -26,12 +25,6 @@ func TestEmbeddedSchemaCatalogsMatchDocumentation(t *testing.T) {
 			path:   "docs/spec/README.md",
 			marker: "protocol",
 			want:   protocol.SchemaNames(),
-		},
-		{
-			name:   "artifact",
-			path:   "docs/spec/artifacts.md",
-			marker: "artifact",
-			want:   artifact.SchemaNames(),
 		},
 	}
 

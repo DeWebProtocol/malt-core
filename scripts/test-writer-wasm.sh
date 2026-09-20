@@ -14,7 +14,7 @@ sh "$repo_root/scripts/build-writer-wasm.sh" "$work_dir/writer"
 node "$repo_root/scripts/run-writer-wasm-smoke.mjs" \
   "$work_dir/writer/malt-writer-kzg.wasm" \
   "$work_dir/writer/wasm_exec.js" \
-  "$repo_root/conformance/client-root/v3/vectors.json" \
+  "$repo_root/conformance/client-root/v4/vectors.json" \
   kzg
 node "$repo_root/scripts/run-authentication-wasm.mjs" writer \
   "$work_dir/writer/malt-writer-kzg.wasm" "$work_dir/writer/wasm_exec.js" \
@@ -23,7 +23,7 @@ for profile in direct compact fast; do
   node "$repo_root/scripts/run-writer-wasm-smoke.mjs" \
     "$work_dir/writer/malt-writer-ipa-$profile.wasm" \
     "$work_dir/writer/wasm_exec.js" \
-    "$repo_root/conformance/client-root/v3/vectors.json" \
+    "$repo_root/conformance/client-root/v4/vectors.json" \
     ipa "$profile"
   node "$repo_root/scripts/run-authentication-wasm.mjs" writer \
     "$work_dir/writer/malt-writer-ipa-$profile.wasm" "$work_dir/writer/wasm_exec.js" \
@@ -34,5 +34,5 @@ node "$repo_root/scripts/run-writer-worker-smoke.mjs" \
   "$work_dir/writer/wasm_exec.js" \
   "$work_dir/writer/malt-writer-workers.mjs" \
   "$work_dir/writer/malt-writer-worker.mjs" \
-  "$repo_root/conformance/client-root/v3/vectors.json" \
+  "$repo_root/conformance/client-root/v4/vectors.json" \
   ipa compact

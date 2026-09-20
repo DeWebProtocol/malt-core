@@ -74,12 +74,6 @@ func TestProductionImportBoundaries(t *testing.T) {
 			recursive: false,
 			forbidden: []string{"graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
 		},
-		{
-			name:      "artifact contract",
-			dir:       filepath.Join(root, "artifact"),
-			recursive: true,
-			forbidden: []string{"graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
-		},
 	}
 
 	for _, tc := range tests {

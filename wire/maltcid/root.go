@@ -138,7 +138,7 @@ func ParseRoot(root cid.Cid) (RootDescriptor, []byte, error) {
 	}
 	d := RootDescriptor{Version: uint8((codec >> 12) & 15), Layout: Layout((codec >> 8) & 15), InputRule: uint8(codec)}
 	if d.Version != RootVersion {
-		return RootDescriptor{}, nil, fmt.Errorf("historical Root requires its legacy reader")
+		return RootDescriptor{}, nil, fmt.Errorf("unsupported Root version %d", d.Version)
 	}
 	hash, err := mh.Decode(root.Hash())
 	if err != nil || hash.Code != mh.IDENTITY {
@@ -196,14 +196,4 @@ func ParseNodeRef(data []byte) (NodeRef, error) {
 func RootNode(root cid.Cid) (NodeRef, RootDescriptor, error) {
 	d, c, err := ParseRoot(root)
 	return NodeRef{Layout: d.Layout, Profile: d.Profile, Commitment: c}, d, err
-}
-
-// PrimitiveCID adapts an internal vector to the existing primitive API. This
-// historical envelope is never persisted or returned as an application Root.
-func (r NodeRef) PrimitiveCID() (cid.Cid, error) {
-	p, err := Profile(r.Profile)
-	if err != nil {
-		return cid.Undef, err
-	}
-	return NewTypedCIDForVersion(3, SemanticKindMap, p.Algorithm, r.Commitment)
 }

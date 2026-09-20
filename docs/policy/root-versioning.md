@@ -2,7 +2,7 @@
 
 Decision date: 2026-09-12.
 Status: maintainer-directed policy for the self-describing Root refactor;
-new construction implements V0; V2/V3 readers retain historical interpretation.
+current construction and verification use V0; V2/V3 readers are retired.
 
 ## Production-readiness gate
 
@@ -44,15 +44,21 @@ and tracked by [MIP-1014](../mips/mip-1014-self-describing-roots.md).
 
 ## Existing experimental encodings
 
-At inspected Core commit `c90b4d35ec95003b14422546b777fbf9ada2b0c7`, constructors
-still emit the older `0x30VSBB` format with `MALTVersionID=3`, and decoders
-retain explicit version-2 compatibility. Earlier experiments also used
+At historical Core commit `c90b4d35ec95003b14422546b777fbf9ada2b0c7`, constructors
+emitted the older `0x30VSBB` format with `MALTVersionID=3`, and decoders
+retained explicit version-2 compatibility. Earlier experiments also used
 version-1 structured roots and flat codecs `0x300001` through `0x300004`.
 None of those historical numbers declares production readiness.
 
-New default construction now uses `RootVersion=0`. Historical `MALTVersionID=3`
-and explicit V2/V3 constructors/readers retain their frozen meanings. Old flat
-codecs are not aliases of the new format. Do not migrate by replacing a Root
-prefix alone: reconstruct the selected state and recompute dependent parents.
-Payload CIDs can be reused. Historical release notes and fixtures retain their
-original bytes and dates. See the [current Root specification](../spec/authentication-inputs.md).
+Current constructors and readers accept only self-describing `RootVersion=0`
+Roots. The pre-beta cleanup removes the V2/V3 constructors, readers, and
+automatic writer-view migration. Historical source and corpus bytes remain
+in Git history with their original identities; old flat and V2/V3 codecs are
+not aliases of the current format.
+
+Recreate old experimental state with the current implementation and recompute
+dependent parents. Replacing a Root prefix alone does not migrate the state.
+Payload CIDs can be reused. Historical release notes retain their original
+dates and release-specific claims. See the
+[current Root specification](../spec/authentication-inputs.md) and
+[pre-beta migration guidance](../changes/prebeta-cleanup.md).

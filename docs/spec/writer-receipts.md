@@ -36,10 +36,9 @@ Package `mutation` is the stable portable contract. It defines
 root. `graph.MutationWriter` is the reference graph adapter over that contract.
 
 `graph.StructureCreator` separately bootstraps a root when no authenticated
-base exists. `graph.ReferenceWriter` groups legacy root-consuming and
-inspection methods such as `UpdateArc`, `BatchUpdateArcs`, `GetArc`, and
-`GetSnapshot`. `RuntimeGraph.Writer()` returns only `MutationWriter`; reference
-helpers require the explicitly named `ReferenceWriter()` accessor.
+base exists. `RuntimeGraph.Writer()` returns only `MutationWriter`.
+Historical root-consuming arc helpers and the `ReferenceWriter` capability
+are removed; lookup and snapshots belong to the caller-owned materializer.
 
 Transport projections and application-level diagnostic counts belong to the
 gateway or client that exposes them. They are not verifier evidence unless

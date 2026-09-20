@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dewebprotocol.github.io/malt/conformance/resolve-read/v3/corpus.schema.json",
+  "title": "MALT Resolve/Read Conformance Corpus v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "vectors"],
+  "properties": {
+    "schema_version": {
+      "const": "malt.resolve-read.conformance/v3"
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "vector.schema.json"
+      }
+    }
+  }
+}

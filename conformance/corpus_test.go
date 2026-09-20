@@ -16,31 +16,7 @@ import (
 	sdkverifier "github.com/dewebprotocol/malt-core/sdk/verifier"
 )
 
-func TestResolveReadCorpora(t *testing.T) {
-	for _, version := range []string{conformance.ResolveReadV1, conformance.ResolveReadV2} {
-		t.Run(version, func(t *testing.T) {
-			corpus, err := conformance.LoadVersion(version)
-			if err != nil {
-				t.Fatalf("LoadVersion: %v", err)
-			}
-			verifier, err := sdkverifier.NewDefault()
-			if err != nil {
-				t.Fatalf("NewDefault: %v", err)
-			}
-			for _, vector := range corpus.Vectors {
-				vector := vector
-				t.Run(vector.ID, func(t *testing.T) {
-					accepted := conformance.Accepted(context.Background(), verifier, vector)
-					if accepted != vector.Expected.Valid {
-						t.Fatalf("accepted = %t, want %t", accepted, vector.Expected.Valid)
-					}
-				})
-			}
-		})
-	}
-}
-
-func TestResolveReadV2CorpusIsGenerated(t *testing.T) {
+func TestResolveReadV3CorpusIsGenerated(t *testing.T) {
 	want, err := conformance.Bytes()
 	if err != nil {
 		t.Fatalf("Bytes: %v", err)
@@ -54,41 +30,17 @@ func TestResolveReadV2CorpusIsGenerated(t *testing.T) {
 	}
 }
 
-func TestResolveReadSchemasAreJSON(t *testing.T) {
-	for _, version := range []string{conformance.ResolveReadV1, conformance.ResolveReadV2} {
-		for _, name := range []string{"corpus.schema.json", "vector.schema.json"} {
-			data, err := conformance.SchemaVersion(version, name)
-			if err != nil {
-				t.Fatalf("SchemaVersion(%q, %q): %v", version, name, err)
-			}
-			if !json.Valid(data) {
-				t.Fatalf("SchemaVersion(%q, %q) is not valid JSON", version, name)
-			}
-		}
-	}
-}
-
-func TestResolveReadV1CorpusDigestIsImmutable(t *testing.T) {
-	data, err := conformance.BytesVersion(conformance.ResolveReadV1)
+func TestResolveReadV3CorpusDigestIsImmutable(t *testing.T) {
+	data, err := conformance.BytesVersion(conformance.ResolveReadV3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != "8fadfc423acdcb78b0c0db520c7320bb72f995e6e5e0dd9da63a41a6c6603e36" {
-		t.Fatalf("v1 corpus digest changed: %s", got)
+	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != "8eb376e91904c0489c0aacaa98562bbf05b616292edc7994f81c927670b5d4c9" {
+		t.Fatalf("v3 corpus digest changed: %s", got)
 	}
 }
 
-func TestResolveReadV2CorpusDigestIsImmutable(t *testing.T) {
-	data, err := conformance.BytesVersion(conformance.ResolveReadV2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != "f96aad71c4b60a3073f823bb2aa0b05307f18400630e1920ad25889beb4600d5" {
-		t.Fatalf("v2 corpus digest changed: %s", got)
-	}
-}
-
-func TestResolveReadV2CoverageMatrix(t *testing.T) {
+func TestResolveReadV3CoverageMatrix(t *testing.T) {
 	corpus, err := conformance.Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -133,7 +85,7 @@ func TestResolveReadV2CoverageMatrix(t *testing.T) {
 	}
 }
 
-func TestResolveReadV2CryptographicTamperInputsRemainDecodable(t *testing.T) {
+func TestResolveReadV3CryptographicTamperInputsRemainDecodable(t *testing.T) {
 	corpus, err := conformance.Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -172,13 +124,13 @@ func validateSemanticProofEnvelope(raw []byte) error {
 	var envelope struct {
 		Steps []struct {
 			Proof string `json:"proof"`
-		} `json:"steps"`
+		} `json:"nodes"`
 	}
 	if err := json.Unmarshal(raw, &envelope); err != nil {
 		return err
 	}
 	if len(envelope.Steps) == 0 {
-		return fmt.Errorf("steps are empty")
+		return fmt.Errorf("nodes are empty")
 	}
 	proof, err := base64.StdEncoding.DecodeString(envelope.Steps[0].Proof)
 	if err != nil {
@@ -188,4 +140,42 @@ func validateSemanticProofEnvelope(raw []byte) error {
 		return fmt.Errorf("primitive proof is too short")
 	}
 	return nil
+}
+
+func TestResolveReadCorpora(t *testing.T) {
+	for _, version := range []string{conformance.ResolveReadV3} {
+		t.Run(version, func(t *testing.T) {
+			corpus, err := conformance.LoadVersion(version)
+			if err != nil {
+				t.Fatalf("LoadVersion: %v", err)
+			}
+			verifier, err := sdkverifier.NewDefault()
+			if err != nil {
+				t.Fatalf("NewDefault: %v", err)
+			}
+			for _, vector := range corpus.Vectors {
+				vector := vector
+				t.Run(vector.ID, func(t *testing.T) {
+					accepted := conformance.Accepted(context.Background(), verifier, vector)
+					if accepted != vector.Expected.Valid {
+						t.Fatalf("accepted = %t, want %t", accepted, vector.Expected.Valid)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestResolveReadSchemasAreJSON(t *testing.T) {
+	for _, version := range []string{conformance.ResolveReadV3} {
+		for _, name := range []string{"corpus.schema.json", "vector.schema.json"} {
+			data, err := conformance.SchemaVersion(version, name)
+			if err != nil {
+				t.Fatalf("SchemaVersion(%q, %q): %v", version, name, err)
+			}
+			if !json.Valid(data) {
+				t.Fatalf("SchemaVersion(%q, %q) is not valid JSON", version, name)
+			}
+		}
+	}
 }

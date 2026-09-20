@@ -84,8 +84,7 @@ malt (module facade)
 ├── sdk/writer               complete-view client-root computation
 ├── cmd/malt-verifier-wasm   browser verification adapter
 ├── cmd/malt-writer-wasm     browser client-root adapter
-├── wire/maltcid             typed CID rules
-└── artifact                 frozen compatibility profile
+└── wire/maltcid             typed CID rules
 ```
 
 `graph/runtime` means an in-process algorithm composition. It owns no process
@@ -160,8 +159,7 @@ remote-data absence.
 
 Resolve and Read generate their operation-specific evidence during execution.
 Map membership and non-membership use the dedicated Map-proof operation; there
-is no generic `prove` union. `malt.artifact/v0alpha2` remains frozen
-compatibility data.
+is no generic `prove` union. The historical artifact compatibility API is retired.
 
 ### Apply
 
@@ -173,8 +171,8 @@ policy.
 
 `RuntimeGraph.Writer()` exposes only `MutationWriter`. Bootstrap creation is a
 separate `StructureCreator` because a new structure has no authenticated base
-root. Legacy `UpdateArc`, `BatchUpdateArcs`, and inspection helpers are exposed
-only through the explicitly named `ReferenceWriter()` capability.
+root. Caller-owned materializer capabilities provide lookup and snapshots.
+The historical root-consuming reference helpers are removed.
 
 ### Client-root computation
 
@@ -239,7 +237,6 @@ RPC may transmit the array directly.
 ## Import guards
 
 `architecture_test.go` enforces the trusted-layer dependency direction. In
-particular, the module facade, portable mutation values, artifact compatibility
-layer, and client verifier cannot import server, storage, application, or
-runtime process packages. Removed product packages must not be reintroduced to
-this module.
+particular, the module facade, portable mutation values, and client verifier
+cannot import server, storage, application, or runtime process packages.
+Removed product packages must not be reintroduced to this module.

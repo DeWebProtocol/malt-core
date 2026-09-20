@@ -25,19 +25,19 @@ if (typeof globalThis.Go !== "function") {
 
 const corpus = JSON.parse(await readFile(corpusPath, "utf8"));
 if (
-  corpus.schema_version !== "malt.resolve-read.conformance/v2" ||
+  corpus.schema_version !== "malt.resolve-read.conformance/v3" ||
   !Array.isArray(corpus.vectors) ||
   corpus.vectors.length === 0
 ) {
-  throw new Error(`${corpusPath} is not a non-empty Resolve/Read v2 corpus`);
+  throw new Error(`${corpusPath} is not a non-empty Resolve/Read v3 corpus`);
 }
 const mapProofCorpus = JSON.parse(await readFile(mapProofCorpusPath, "utf8"));
 if (
-  mapProofCorpus.schema_version !== "malt.map-proof.conformance/v1" ||
+  mapProofCorpus.schema_version !== "malt.map-proof.conformance/v2" ||
   !Array.isArray(mapProofCorpus.vectors) ||
   mapProofCorpus.vectors.length === 0
 ) {
-  throw new Error(`${mapProofCorpusPath} is not a non-empty Map-proof v1 corpus`);
+  throw new Error(`${mapProofCorpusPath} is not a non-empty Map-proof v2 corpus`);
 }
 
 globalThis.maltVerifierBackend = selectedBackend;
@@ -50,6 +50,9 @@ void go.run(instance).catch((error) => {
 });
 
 await waitForVerifierGlobals();
+if (typeof globalThis.maltVerifyArtifact !== "undefined") {
+  throw new Error("retired artifact verifier is still exported");
+}
 const invalidMapProof = JSON.parse(globalThis.maltVerifyMapProof("{}"));
 if (invalidMapProof.valid !== false || invalidMapProof.profile !== "malt.map-proof/v0alpha1") {
   throw new Error("maltVerifyMapProof did not fail closed on an invalid verification envelope");

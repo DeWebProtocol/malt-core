@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Accept only current self-describing V0 Roots. Remove historical V2/V3
+  constructors, readers, writer replay graphs, and the artifact/v0alpha2 API.
+- Return profile-qualified `commitment.Value` values from primitive backends
+  instead of wrapping them in historical semantic CIDs.
+- Generate openings with `IndexRootOpener` and verify each opening once.
+- Remove deprecated ArcSet constructors, writer aliases/reference helpers,
+  unused historical algorithms, and their process-global freshness registry.
+- Publish distinct current V0 Resolve/Read v3, Map-proof v2, and client-root
+  v4 conformance corpora. Retired corpora remain recoverable in Git history.
+
+These are intentional pre-beta source breaks. See
+[pre-beta API cleanup](docs/changes/prebeta-cleanup.md) for replacements.
+
 ## [0.0.7] - 2026-08-17
 
 This release moves the application-neutral MALT SDK from

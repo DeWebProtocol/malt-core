@@ -13,7 +13,7 @@ module registers:
 globalThis.maltVerifyResolve(verificationJSON) -> resultJSON
 globalThis.maltVerifyRead(verificationJSON) -> resultJSON
 globalThis.maltVerifyMapProof(verificationJSON) -> resultJSON
-globalThis.maltVerifyArtifact(requestJSON) -> resultJSON  # v0.0.4 compatibility
+globalThis.maltVerifyAuthentication(verificationJSON) -> resultJSON
 ```
 
 The default module initializes both built-in commitment backends. IPA verifier
@@ -40,8 +40,8 @@ non-membership pair. The caller constructs the request from its trusted root and
 passing the untrusted result to WASM. Schemas live in `protocol/schemas/`.
 
 The release gate `scripts/test-verifier-wasm-vectors.sh` runs the current
-Resolve/Read v2 corpus together with the frozen
-`conformance/map-proof/v1/vectors.json` corpus. It checks the same WASM artifact
+Resolve/Read v3 corpus together with the current
+`conformance/map-proof/v2/vectors.json` corpus. It checks the same WASM artifact
 with all backends enabled and in backend-selected KZG and IPA runs. The
 Map-proof corpus covers membership, non-membership, proof tampering, cross-root
 relabeling, wrong-key requests, target tampering, and strict JSON rejection.
@@ -68,5 +68,4 @@ closed unless the request/result profile, root, exact query, target, ordering,
 and all cryptographic bindings validate locally. `error` is diagnostic and
 `valid` is the acceptance boolean.
 
-`maltVerifyArtifact` remains available solely for the frozen
-`malt.artifact/v0alpha2` v0.0.4 compatibility envelope.
+The historical `maltVerifyArtifact` export is removed.

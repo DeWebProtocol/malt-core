@@ -178,11 +178,12 @@ Payload CIDs in the bundle support service-side availability checks. Their
 presence does not prove that payload bytes are durable, published, fresh, or
 authorized for another reader.
 
-`sdk/writer.NewRuntime` emits V0 Roots, including when the supplied complete
-view uses historical V3 Roots. `NewHistoricalRuntime` is only for exact V3
-replay. Current native/WASM equality is frozen in `conformance/client-root/v3`;
-the v1/v2 corpus files retain their historical bytes. Corpus `/v3`, bundle and
-receipt `/v2`, and writer-result `/v3` are separate from Root `V=0`.
+`sdk/writer.NewRuntime` accepts and emits current V0 Roots. Historical V2/V3
+update views are rejected; there is no automatic replay or migration runtime.
+Current native/WASM equality is frozen in `conformance/client-root/v4`.
+Historical corpora retain their original meanings in Git history. Corpus
+`/v4`, bundle and receipt `/v2`, and writer-result `/v3` are separate from Root
+`V=0`.
 
 Browser clients may invoke the same computation through
 `cmd/malt-writer-wasm`. Its `maltComputeClientRootV1` entry point strictly

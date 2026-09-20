@@ -17,36 +17,10 @@ import (
 var (
 	// ErrInvalidNamespace is returned when an executor has no internal materialization namespace.
 	ErrInvalidNamespace = errors.New("invalid materialization namespace")
-
-	// Deprecated: use the corresponding portable sentinel in package mutation.
-	ErrInvalidBaseRoot = coremutation.ErrInvalidBaseRoot
-	// Deprecated: use the corresponding portable sentinel in package mutation.
-	ErrEmptyDeltas = coremutation.ErrEmptyDeltas
-	// Deprecated: use the corresponding portable sentinel in package mutation.
-	ErrObjectKindMismatch = coremutation.ErrObjectKindMismatch
-	// Deprecated: use the corresponding portable sentinel in package mutation.
-	ErrNilDelta = coremutation.ErrNilDelta
-	// Deprecated: use the corresponding portable sentinel in package mutation.
-	ErrExpectedRootMismatch = coremutation.ErrExpectedRootMismatch
 )
 
-// Deprecated: import package mutation for portable contract types.
-type SemanticMutation = coremutation.SemanticMutation
-
-// Deprecated: import package mutation for portable contract types.
-type ArcSetDelta = coremutation.ArcSetDelta
-
-// Deprecated: import package mutation for portable contract types.
-type CommitDescriptor = coremutation.CommitDescriptor
-
-// Deprecated: import package mutation for portable contract types.
-type FixedListCommit = coremutation.FixedListCommit
-
-// Deprecated: import package mutation for portable contract types.
-type WriteReceipt = coremutation.WriteReceipt
-
 // ValidateSemanticMutation validates the shape of an update semantic mutation.
-func ValidateSemanticMutation(mut SemanticMutation) error {
+func ValidateSemanticMutation(mut coremutation.SemanticMutation) error {
 	return coremutation.Validate(mut)
 }
 
@@ -55,12 +29,12 @@ func ValidateSemanticMutation(mut SemanticMutation) error {
 // The executor treats BaseRoot as the caller's update base for receipt and
 // validation purposes only. It does not publish heads, arbitrate freshness, or
 // merge concurrent roots.
-func (w *Writer) Apply(ctx context.Context, namespace string, mut SemanticMutation) (WriteReceipt, error) {
+func (w *Writer) Apply(ctx context.Context, namespace string, mut coremutation.SemanticMutation) (coremutation.WriteReceipt, error) {
 	if namespace == "" {
-		return WriteReceipt{}, ErrInvalidNamespace
+		return coremutation.WriteReceipt{}, ErrInvalidNamespace
 	}
 	if err := ValidateSemanticMutation(mut); err != nil {
-		return WriteReceipt{}, err
+		return coremutation.WriteReceipt{}, err
 	}
 
 	var newRoot cid.Cid
@@ -68,13 +42,13 @@ func (w *Writer) Apply(ctx context.Context, namespace string, mut SemanticMutati
 	for i, delta := range mut.Deltas {
 		root, count, err := w.commitDelta(ctx, namespace, delta)
 		if err != nil {
-			return WriteReceipt{}, fmt.Errorf("delta %d: %w", i, err)
+			return coremutation.WriteReceipt{}, fmt.Errorf("delta %d: %w", i, err)
 		}
 		newRoot = root
 		arcCount += count
 	}
 
-	return WriteReceipt{
+	return coremutation.WriteReceipt{
 		BaseRoot:   mut.BaseRoot,
 		NewRoot:    newRoot,
 		DeltaCount: len(mut.Deltas),
@@ -82,7 +56,7 @@ func (w *Writer) Apply(ctx context.Context, namespace string, mut SemanticMutati
 	}, nil
 }
 
-func (w *Writer) commitDelta(ctx context.Context, namespace string, delta ArcSetDelta) (cid.Cid, int, error) {
+func (w *Writer) commitDelta(ctx context.Context, namespace string, delta coremutation.ArcSetDelta) (cid.Cid, int, error) {
 	switch delta.Kind {
 	case arcset.KindMap:
 		if w.semantic == nil {
@@ -113,7 +87,7 @@ func (w *Writer) commitDelta(ctx context.Context, namespace string, delta ArcSet
 	}
 }
 
-func (w *Writer) commitMapDelta(ctx context.Context, namespace string, delta ArcSetDelta) (cid.Cid, error) {
+func (w *Writer) commitMapDelta(ctx context.Context, namespace string, delta coremutation.ArcSetDelta) (cid.Cid, error) {
 	changes := delta.Changes.Changes()
 	if !delta.Object.Defined() {
 		entries := make(map[arcset.Path]cid.Cid, len(changes))
@@ -213,7 +187,7 @@ func (w *Writer) commitMapDelta(ctx context.Context, namespace string, delta Arc
 	return root, nil
 }
 
-func (w *Writer) commitListDelta(ctx context.Context, namespace string, delta ArcSetDelta) (cid.Cid, error) {
+func (w *Writer) commitListDelta(ctx context.Context, namespace string, delta coremutation.ArcSetDelta) (cid.Cid, error) {
 	changes := delta.Changes.Changes()
 	if !delta.Object.Defined() {
 		values, err := listCreateValues(changes)
@@ -327,7 +301,7 @@ func (w *Writer) commitListDelta(ctx context.Context, namespace string, delta Ar
 	return root, nil
 }
 
-func (w *Writer) commitList(ctx context.Context, namespace string, values []cid.Cid, descriptor CommitDescriptor) (cid.Cid, error) {
+func (w *Writer) commitList(ctx context.Context, namespace string, values []cid.Cid, descriptor coremutation.CommitDescriptor) (cid.Cid, error) {
 	if descriptor.FixedList == nil {
 		return w.listSemantic.Commit(ctx, namespace, list.NewViewFromSlice(values))
 	}
@@ -394,5 +368,5 @@ func checkExpectedRoot(expectedRoot, actualRoot cid.Cid) error {
 	if !expectedRoot.Defined() || expectedRoot.Equals(actualRoot) {
 		return nil
 	}
-	return fmt.Errorf("%w: got %s want %s", ErrExpectedRootMismatch, actualRoot, expectedRoot)
+	return fmt.Errorf("%w: got %s want %s", coremutation.ErrExpectedRootMismatch, actualRoot, expectedRoot)
 }

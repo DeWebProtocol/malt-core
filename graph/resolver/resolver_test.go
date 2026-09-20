@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core/auth/arcset"
 	materialmemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
 	"github.com/dewebprotocol/malt-core/auth/proof/evidence"
@@ -50,7 +49,7 @@ func commitStructure(t *testing.T, ctx context.Context, semantic mapping.Semanti
 	if err != nil {
 		t.Fatalf("Commit failed: %v", err)
 	}
-	if err := e.Update(ctx, namespace, root, cid.Undef, arcset.NewSetFrom(arcs)); err != nil {
+	if err := e.Update(ctx, namespace, root, cid.Undef, checkedArcSet(arcs)); err != nil {
 		t.Fatalf("ArcSet materializer.Update failed: %v", err)
 	}
 	return root
@@ -268,7 +267,7 @@ func TestResolveKeyAndResolve_ListTerminalNoPayloadRedirect(t *testing.T) {
 	for i := range commitment {
 		commitment[i] = byte(i + 1)
 	}
-	listRoot, err := maltcid.NewListKZGCid(commitment)
+	listRoot, err := maltcid.NewSemanticRoot(maltcid.SemanticKindList, maltcid.BackendKindKZG, commitment)
 	if err != nil {
 		t.Fatalf("NewListKZGCid failed: %v", err)
 	}

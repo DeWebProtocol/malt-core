@@ -28,8 +28,9 @@ Follow [docs/policy/root-versioning.md](docs/policy/root-versioning.md): the
 Root format must use `V=0` throughout pre-production; only an explicit
 maintainer production-ready/go-live declaration permits `V=1`. Do not
 automatically increment this field for experimental format changes or source
-releases. Historical `V=2/3` readers preserve their original meanings; do not
-relabel historical fixtures or change CIDv1's container version.
+releases. Current constructors and readers accept only self-describing `V=0`
+Roots. Historical `V=2/3` formats and fixtures retain their original meanings
+in Git history; do not relabel them or change CIDv1's container version.
 
 ## Package Ownership
 
@@ -48,8 +49,9 @@ relabel historical fixtures or change CIDv1's container version.
 - `sdk/writer` owns application-neutral complete-view verification and exact
   client-root computation. It does not own application syntax, durable
   persistence, publication, synchronization, or trusted-root promotion.
-- `artifact/` and its verifier entry points are frozen v0.0.4 compatibility
-  surfaces. Do not add new operations to `malt.artifact/v0alpha2`.
+- The historical `artifact/` package and its verifier entry points are retired.
+  Use operation-specific verification contracts; do not restore or extend
+  `malt.artifact/v0alpha2` as a current API.
 - `cmd/malt-verifier-wasm` is a portable local-verification build target, not a
   network client or application runtime.
 

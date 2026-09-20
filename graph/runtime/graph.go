@@ -32,7 +32,6 @@ import (
 type RuntimeGraph struct {
 	authentication *engine.Engine
 	nodeStore      materializer.NodeStore
-	rootVersion    uint8
 	id             string
 	namespace      string
 	semantic       mapping.Semantics
@@ -40,7 +39,6 @@ type RuntimeGraph struct {
 	resolver       graph.Resolver
 	wr             graph.MutationWriter
 	structures     graph.StructureCreator
-	reference      graph.ReferenceWriter
 }
 
 // NewGraph creates a new per-graph instance with its own semantic layer,
@@ -77,7 +75,7 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 		maps := make(map[maltcid.BackendKind]mapping.Semantics, len(o.Backends))
 		lists := make(map[maltcid.BackendKind]list.MeasuredSemantics, len(o.Backends))
 		for kind, scheme := range o.Backends {
-			if o.MALTVersion == maltcid.RootVersion {
+			{
 				profile, ok := scheme.(engine.ProfileVerifier)
 				if !ok {
 					return nil, fmt.Errorf("unprofiled VC implementation")
@@ -86,11 +84,11 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 					return nil, err
 				}
 			}
-			maps[kind], err = mappingradix.NewMapForVersion(scheme, materializer, o.MALTVersion)
+			maps[kind], err = mappingradix.NewMap(scheme, materializer)
 			if err != nil {
 				return nil, fmt.Errorf("create %s mapping semantic: %w", kind, err)
 			}
-			lists[kind], err = listtree.NewListForVersion(scheme, materializer, o.MALTVersion)
+			lists[kind], err = listtree.NewList(scheme, materializer)
 			if err != nil {
 				return nil, fmt.Errorf("create %s list semantic: %w", kind, err)
 			}
@@ -108,7 +106,7 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 			scheme = s
 		}
 
-		if o.MALTVersion == maltcid.RootVersion {
+		{
 			profile, ok := scheme.(engine.ProfileVerifier)
 			if !ok {
 				return nil, fmt.Errorf("unprofiled VC implementation")
@@ -118,11 +116,11 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 			}
 		}
 		var err error
-		semantic, err = mappingradix.NewMapForVersion(scheme, materializer, o.MALTVersion)
+		semantic, err = mappingradix.NewMap(scheme, materializer)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create mapping semantic: %w", err)
 		}
-		listSemantic, err = listtree.NewListForVersion(scheme, materializer, o.MALTVersion)
+		listSemantic, err = listtree.NewList(scheme, materializer)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create list semantic: %w", err)
 		}
@@ -139,15 +137,14 @@ func NewGraph(id string, materializer materializer.MutableStore, opts ...Option)
 
 	return &RuntimeGraph{
 		authentication: engine.New(rules, profiles),
-		nodeStore:      materializer, rootVersion: o.MALTVersion,
-		id:           id,
-		namespace:    namespace,
-		semantic:     semantic,
-		listSemantic: listSemantic,
-		resolver:     res,
-		wr:           wr,
-		structures:   wr,
-		reference:    wr,
+		nodeStore:      materializer,
+		id:             id,
+		namespace:      namespace,
+		semantic:       semantic,
+		listSemantic:   listSemantic,
+		resolver:       res,
+		wr:             wr,
+		structures:     wr,
 	}, nil
 }
 
@@ -219,13 +216,6 @@ func (g *RuntimeGraph) StructureCreator() graph.StructureCreator {
 	return g.structures
 }
 
-// ReferenceWriter returns legacy helpers for reference executors and
-// conformance tests. Product integrations should not use it as their default
-// mutation surface.
-func (g *RuntimeGraph) ReferenceWriter() graph.ReferenceWriter {
-	return g.reference
-}
-
 // Authentication exposes the V=0 input/layout engine. Callers inject narrow
 // NodeLookup/NodeUpdater capabilities and retain application inputs themselves.
 func (g *RuntimeGraph) Authentication() *engine.Engine { return g.authentication }
@@ -234,7 +224,7 @@ func (g *RuntimeGraph) Authentication() *engine.Engine { return g.authentication
 // Prefix through the compatibility string-view API. Native typed callers use
 // Authentication().Build with input.Value entries directly.
 func (g *RuntimeGraph) CommitPrefix(ctx context.Context, scope string, d maltcid.RootDescriptor, view mapping.View) (cid.Cid, error) {
-	if d.Layout != maltcid.Prefix || g.rootVersion != maltcid.RootVersion {
+	if d.Layout != maltcid.Prefix {
 		return cid.Undef, fmt.Errorf("Prefix descriptor requires V=0 graph")
 	}
 	state := engine.State{Descriptor: d}
@@ -255,4 +245,4 @@ func (g *RuntimeGraph) CommitPrefix(ctx context.Context, scope string, d maltcid
 	}
 	return g.authentication.Build(ctx, state, encoded.Nodes{Lookup: g.nodeStore, Updater: g.nodeStore, Scope: scope})
 }
-func (g *RuntimeGraph) RootVersion() uint8 { return g.rootVersion }
+func (g *RuntimeGraph) RootVersion() uint8 { return maltcid.RootVersion }

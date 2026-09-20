@@ -18,11 +18,10 @@ import (
 )
 
 const (
-	// ResolveReadV1 and ResolveReadV2 are independent conformance-corpus
-	// versions, not replacements for the resolve/read wire profile identifiers.
-	ResolveReadV1      = "malt.resolve-read.conformance/v1"
-	ResolveReadV2      = "malt.resolve-read.conformance/v2"
-	ResolveReadCurrent = ResolveReadV2
+	// ResolveReadV3 tests current V0 Roots. Corpus versions are independent
+	// of resolve/read wire profile identifiers.
+	ResolveReadV3      = "malt.resolve-read.conformance/v3"
+	ResolveReadCurrent = ResolveReadV3
 
 	OperationResolve = "resolve"
 	OperationRead    = "read"
@@ -32,9 +31,9 @@ const (
 	BackendIPA  = "ipa"
 )
 
-//go:generate go run ../internal/conformancegen/cmd -out resolve-read/v2/vectors.json
+//go:generate go run ../internal/conformancegen/cmd -out resolve-read/v3/vectors.json
 
-//go:embed resolve-read/v1/*.json resolve-read/v2/*.json map-proof/v1/*.json client-root/v1/*.json client-root/v2/*.json client-root/v3/*.json
+//go:embed resolve-read/v3/*.json map-proof/v2/*.json client-root/v4/*.json
 var corpusFiles embed.FS
 
 // Corpus is the stable, ordered envelope shared by every verifier adapter.
@@ -149,10 +148,8 @@ func SchemaVersion(version, name string) ([]byte, error) {
 
 func corpusDirectory(version string) (string, error) {
 	switch version {
-	case ResolveReadV1:
-		return "resolve-read/v1", nil
-	case ResolveReadV2:
-		return "resolve-read/v2", nil
+	case ResolveReadV3:
+		return "resolve-read/v3", nil
 	default:
 		return "", fmt.Errorf("unsupported conformance schema version %q", version)
 	}
@@ -161,7 +158,7 @@ func corpusDirectory(version string) (string, error) {
 // Validate checks corpus-level invariants that JSON Schema alone cannot make
 // convenient for small consumers, including stable ID uniqueness.
 func (c Corpus) Validate() error {
-	if c.SchemaVersion != ResolveReadV1 && c.SchemaVersion != ResolveReadV2 {
+	if c.SchemaVersion != ResolveReadV3 {
 		return fmt.Errorf("unsupported conformance schema version %q", c.SchemaVersion)
 	}
 	if len(c.Vectors) == 0 {

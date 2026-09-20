@@ -64,8 +64,8 @@ func TestMapProofCorpusDigestIsImmutable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != "d4af2e419c00c367220a71e9d540d42b370154b74daaeb28f5259b8894cc0dcd" {
-		t.Fatalf("Map-proof v1 corpus digest changed: %s", got)
+	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != "c3ed3a666be01d3e7069673ce4e5dfdff5931173341ca64c9bcecb5cd491d58a" {
+		t.Fatalf("Map-proof v2 corpus digest changed: %s", got)
 	}
 }
 

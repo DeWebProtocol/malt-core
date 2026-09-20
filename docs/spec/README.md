@@ -17,8 +17,7 @@ contracts are `malt.update-view/v1`, `malt.semantic-intent/v1`,
 `malt.client-root-bundle/v2`, `malt.client-root-materialization/v1`,
 `malt.writer-compute-result/v3`, and `malt.materialization-receipt/v2`. The
 client-root contracts are included in v0.0.7-rc.1. The v0.0.4
-`malt.artifact/v0alpha2` profile
-remains frozen for compatibility. See [MIP-1012](../mips/mip-1012-segment-path-resolution.md) and
+`malt.artifact/v0alpha2` profile is retired. See [MIP-1012](../mips/mip-1012-segment-path-resolution.md) and
 [MIP-1013](../mips/mip-1013-client-gateway-core-boundary.md).
 
 The current typed-input API uses `malt.authentication/0`; see the
@@ -33,13 +32,12 @@ The current typed-input API uses `malt.authentication/0`; see the
 - [Resolve and read contracts](./resolve-read-contracts.md)
 - [Client-root contract](./client-root-contract.md)
 - [Language-neutral conformance corpora](./conformance-corpora.md)
-- [Frozen artifact compatibility profile](./artifacts.md)
+- [Retired artifact profile](./artifacts.md)
 - [Segment paths and resolution](./segment-paths.md)
 - [Commitment model](./commitment.md)
 - [Commitment and proof encoding](./commitment-proof-encoding.md)
 - [CID and wire format](./cid-and-wire-format.md)
-- [Resolve/Read conformance corpus v2](./resolve-read-conformance-v2.md)
-- [Frozen Resolve/Read conformance corpus v1](./resolve-read-conformance-v1.md)
+- [Resolve/Read conformance corpus v3](./resolve-read-conformance-v3.md)
 
 ## Protocol Schema Index
 

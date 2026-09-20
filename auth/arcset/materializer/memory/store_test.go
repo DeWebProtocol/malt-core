@@ -14,10 +14,10 @@ func TestStorePreservesBranchSnapshots(t *testing.T) {
 	rootA := testCID(t, "a")
 	rootB := testCID(t, "b")
 	target := testCID(t, "target")
-	if err := store.Update(context.Background(), "test", rootA, cid.Undef, arcset.NewSetFrom(map[string]cid.Cid{"a": target})); err != nil {
+	if err := store.Update(context.Background(), "test", rootA, cid.Undef, checkedArcSet(map[string]cid.Cid{"a": target})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Update(context.Background(), "test", rootB, rootA, arcset.NewSetFrom(map[string]cid.Cid{"b": target})); err != nil {
+	if err := store.Update(context.Background(), "test", rootB, rootA, checkedArcSet(map[string]cid.Cid{"b": target})); err != nil {
 		t.Fatal(err)
 	}
 	first, err := store.Snapshot(context.Background(), "test", rootA)
@@ -36,22 +36,22 @@ func TestStoreRetainRootsPrunesBranchesAndPreservesReachableNodes(t *testing.T) 
 	discarded := testCID(t, "discarded")
 	other := testCID(t, "other")
 	target := testCID(t, "target")
-	if err := store.UpdateNode(context.Background(), "scope", child, arcset.NewSetFrom(map[string]cid.Cid{"node/child": target})); err != nil {
+	if err := store.UpdateNode(context.Background(), "scope", child, checkedArcSet(map[string]cid.Cid{"node/child": target})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.UpdateNode(context.Background(), "scope", discarded, arcset.NewSetFrom(map[string]cid.Cid{"node/discarded": target})); err != nil {
+	if err := store.UpdateNode(context.Background(), "scope", discarded, checkedArcSet(map[string]cid.Cid{"node/discarded": target})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Update(context.Background(), "scope", child, cid.Undef, arcset.NewSetFrom(map[string]cid.Cid{"leaf": target})); err != nil {
+	if err := store.Update(context.Background(), "scope", child, cid.Undef, checkedArcSet(map[string]cid.Cid{"leaf": target})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Update(context.Background(), "scope", kept, cid.Undef, arcset.NewSetFrom(map[string]cid.Cid{"child": child})); err != nil {
+	if err := store.Update(context.Background(), "scope", kept, cid.Undef, checkedArcSet(map[string]cid.Cid{"child": child})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Update(context.Background(), "scope", discarded, cid.Undef, arcset.NewSetFrom(map[string]cid.Cid{"discarded": target})); err != nil {
+	if err := store.Update(context.Background(), "scope", discarded, cid.Undef, checkedArcSet(map[string]cid.Cid{"discarded": target})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Update(context.Background(), "other", other, cid.Undef, arcset.NewSetFrom(map[string]cid.Cid{"other": target})); err != nil {
+	if err := store.Update(context.Background(), "other", other, cid.Undef, checkedArcSet(map[string]cid.Cid{"other": target})); err != nil {
 		t.Fatal(err)
 	}
 

@@ -3,10 +3,6 @@
 // RAM-only state for correctness.
 package commitment
 
-import (
-	cid "github.com/ipfs/go-cid"
-)
-
 // IndexVerifier is the verification-only primitive surface required by light
 // clients, browser/WASM builds, and portable ProofList verification.
 type IndexVerifier interface {
@@ -14,14 +10,14 @@ type IndexVerifier interface {
 	MaxValues() int
 
 	// VerifyIndex verifies a proof for one index against the expected cell.
-	VerifyIndex(root cid.Cid, index uint64, value Cell, proof []byte) (bool, error)
+	VerifyIndex(root Value, index uint64, value Cell, proof []byte) (bool, error)
 
 	// BatchVerify verifies a proof payload for an ordered index list against
 	// the expected cells in the same order as indices.
-	BatchVerify(root cid.Cid, indices []uint64, values []Cell, proof []byte) (bool, error)
+	BatchVerify(root Value, indices []uint64, values []Cell, proof []byte) (bool, error)
 
 	// VerifyProof verifies a proof that already carries its own index metadata.
-	VerifyProof(root cid.Cid, value Cell, proof []byte) (bool, error)
+	VerifyProof(root Value, value Cell, proof []byte) (bool, error)
 }
 
 // IndexProver is the execution-only primitive surface used to create and
@@ -30,17 +26,17 @@ type IndexProver interface {
 	MaxValues() int
 
 	// Commit generates a commitment to a stable indexed cell vector.
-	Commit(values []Cell) (cid.Cid, error)
+	Commit(values []Cell) (Value, error)
 
 	// Prove generates a proof for one index and returns the proved cell.
-	Prove(values []Cell, index uint64) (root cid.Cid, value Cell, proof []byte, err error)
+	Prove(values []Cell, index uint64) (root Value, value Cell, proof []byte, err error)
 
 	// BatchProve generates one proof payload for an ordered index list and
 	// returns the proved cells in the same order as indices.
-	BatchProve(values []Cell, indices []uint64) (root cid.Cid, proved []Cell, proof []byte, err error)
+	BatchProve(values []Cell, indices []uint64) (root Value, proved []Cell, proof []byte, err error)
 
 	// Replace performs an index-stable replacement and returns the new root.
-	Replace(values []Cell, index uint64, oldValue, newValue Cell) (cid.Cid, error)
+	Replace(values []Cell, index uint64, oldValue, newValue Cell) (Value, error)
 }
 
 // IndexRootProver generates proofs against a caller-supplied root without
@@ -50,11 +46,11 @@ type IndexProver interface {
 // client.
 type IndexRootProver interface {
 	// ProveAtRoot opens one index against root. It must not call Commit.
-	ProveAtRoot(root cid.Cid, values []Cell, index uint64) (value Cell, proof []byte, err error)
+	ProveAtRoot(root Value, values []Cell, index uint64) (value Cell, proof []byte, err error)
 
 	// BatchProveAtRoot opens an ordered index list against root. It must not
 	// call Commit.
-	BatchProveAtRoot(root cid.Cid, values []Cell, indices []uint64) (proved []Cell, proof []byte, err error)
+	BatchProveAtRoot(root Value, values []Cell, indices []uint64) (proved []Cell, proof []byte, err error)
 }
 
 // IndexOpening is an opaque, prepared witness for one committed vector. Root
@@ -62,7 +58,7 @@ type IndexRootProver interface {
 // the preparation method. A supplied Root is not validated by preparation. Open
 // generates an index proof without recomputing that commitment.
 type IndexOpening interface {
-	Root() cid.Cid
+	Root() Value
 	Open(index uint64) (value Cell, proof []byte, err error)
 }
 
@@ -87,7 +83,7 @@ type IndexCommitment interface {
 // Implementations detach caller buffers and permit concurrent Open calls.
 // Cache policy and lifetime belong to the caller, never to the primitive.
 type IndexRootOpener interface {
-	PrepareOpeningAtRoot(root cid.Cid, values []Cell) (IndexOpening, error)
+	PrepareOpeningAtRoot(root Value, values []Cell) (IndexOpening, error)
 }
 
 // SizedOpening reports estimated retained witness bytes, excluding shared

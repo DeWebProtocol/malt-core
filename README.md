@@ -147,7 +147,6 @@ in the application client.
 | `sdk/writer` | Complete-view verification and exact client-root computation |
 | `cmd/malt-writer-wasm` | Browser exact client-root computation entry point |
 | `auth/observation` | Optional request-scoped execution diagnostics; never proof evidence |
-| `artifact` | Frozen `malt.artifact/v0alpha2` compatibility decoder/verifier |
 | `cmd/malt-verifier-wasm` | Browser verifier build entry point |
 
 ## Development
@@ -162,3 +161,5 @@ scripts/build-wasm-release.sh vX.Y.Z dist/wasm-release
 
 MALT is pre-v1 and experimental. Pin exact releases and reject unknown protocol
 profiles. See [compatibility policy](./docs/policy/compatibility.md).
+
+See [pre-beta API cleanup](docs/changes/prebeta-cleanup.md) for removed experimental interfaces and downstream migration guidance.

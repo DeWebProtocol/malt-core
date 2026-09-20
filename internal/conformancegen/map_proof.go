@@ -42,7 +42,7 @@ func GenerateMapProof() ([]byte, error) {
 		}
 		return 0
 	})
-	corpus := conformance.MapProofCorpus{SchemaVersion: conformance.MapProofV1, Vectors: vectors}
+	corpus := conformance.MapProofCorpus{SchemaVersion: conformance.MapProofV2, Vectors: vectors}
 	if err := corpus.Validate(); err != nil {
 		return nil, fmt.Errorf("validate generated Map-proof corpus: %w", err)
 	}
@@ -59,8 +59,8 @@ func generateMapProofBackend(backend maltcid.BackendKind) ([]conformance.MapProo
 	if err != nil {
 		return nil, err
 	}
-	scope := "map-proof-conformance-v1-" + string(backend)
-	semantic, err := mapradix.NewMapForVersion(scheme, materialmemory.New(true), maltcid.MALTVersionID)
+	scope := "map-proof-conformance-v2-" + string(backend)
+	semantic, err := mapradix.NewMap(scheme, materialmemory.New(true))
 	if err != nil {
 		return nil, fmt.Errorf("create %s Map semantic: %w", backend, err)
 	}
@@ -214,21 +214,7 @@ func tamperMapProof(value *protocol.MapProofVerification) error {
 	if value == nil || len(value.Result.ProofList.Steps) == 0 {
 		return fmt.Errorf("Map-proof conformance fixture has no proof step")
 	}
-	var envelope struct {
-		Steps []struct {
-			Slot  []byte `json:"slot,omitempty"`
-			Proof []byte `json:"proof"`
-		} `json:"steps"`
-		Bucket json.RawMessage `json:"bucket,omitempty"`
-	}
-	if err := json.Unmarshal(value.Result.ProofList.Steps[0].Proof, &envelope); err != nil {
-		return err
-	}
-	if len(envelope.Steps) == 0 || len(envelope.Steps[0].Proof) < 4 {
-		return fmt.Errorf("Map-proof conformance fixture has no mutable primitive proof")
-	}
-	envelope.Steps[0].Proof[len(envelope.Steps[0].Proof)-1] ^= 0x01
-	tampered, err := json.Marshal(envelope)
+	tampered, err := tamperSemanticProof(value.Result.ProofList.Steps[0].Proof)
 	if err != nil {
 		return err
 	}

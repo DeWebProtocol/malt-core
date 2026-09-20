@@ -556,9 +556,9 @@ func protocolTypedRoot(t *testing.T, kind arcset.Kind, seed byte) cid.Cid {
 		err  error
 	)
 	if kind == arcset.KindMap {
-		root, err = maltcid.NewMapKZGCid(commitment)
+		root, err = maltcid.NewSemanticRoot(maltcid.SemanticKindMap, maltcid.BackendKindKZG, commitment)
 	} else {
-		root, err = maltcid.NewListKZGCid(commitment)
+		root, err = maltcid.NewSemanticRoot(maltcid.SemanticKindList, maltcid.BackendKindKZG, commitment)
 	}
 	if err != nil {
 		t.Fatal(err)
@@ -577,9 +577,9 @@ func protocolIPARoot(t *testing.T, kind arcset.Kind, seed byte) cid.Cid {
 		err  error
 	)
 	if kind == arcset.KindMap {
-		root, err = maltcid.NewMapIPACid(commitment)
+		root, err = maltcid.NewSemanticRoot(maltcid.SemanticKindMap, maltcid.BackendKindIPA, commitment)
 	} else {
-		root, err = maltcid.NewListIPACid(commitment)
+		root, err = maltcid.NewSemanticRoot(maltcid.SemanticKindList, maltcid.BackendKindIPA, commitment)
 	}
 	if err != nil {
 		t.Fatal(err)

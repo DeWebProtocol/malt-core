@@ -52,7 +52,7 @@ func (s *Session) Checkpoint(materializationDigest [32]byte, key []byte) (Authen
 	if len(s.current.workingRoots) != len(view.Objects) {
 		return AuthenticatedCheckpoint{}, fmt.Errorf("verified update view working roots are incomplete")
 	}
-	roots, err := workingRootsForView(view, s.current.workingRoots, s.runtime.targetVersion)
+	roots, err := workingRootsForView(view, s.current.workingRoots)
 	if err != nil {
 		return AuthenticatedCheckpoint{}, err
 	}
@@ -93,7 +93,7 @@ func (s *Session) RestoreCheckpoint(ctx context.Context, checkpoint Authenticate
 	if len(checkpoint.WorkingRoots) != len(view.Objects) {
 		return fmt.Errorf("client writer checkpoint working roots are incomplete")
 	}
-	roots, err := workingRootsForView(view, checkpoint.WorkingRoots, s.runtime.targetVersion)
+	roots, err := workingRootsForView(view, checkpoint.WorkingRoots)
 	if err != nil {
 		return fmt.Errorf("client writer checkpoint working roots: %w", err)
 	}

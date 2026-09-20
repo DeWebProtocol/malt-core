@@ -15,12 +15,12 @@ func TestStateRoundTripPreservesRootsAndNodeOwnership(t *testing.T) {
 	root := testCID(t, "root")
 	nodeRoot := testCID(t, "node-root")
 	target := testCID(t, "target")
-	if err := store.Update(ctx, "scope", root, cid.Undef, arcset.NewSetFrom(map[string]cid.Cid{
+	if err := store.Update(ctx, "scope", root, cid.Undef, checkedArcSet(map[string]cid.Cid{
 		"payload": target,
 	})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.UpdateNode(ctx, "scope", nodeRoot, arcset.NewSetFrom(map[string]cid.Cid{
+	if err := store.UpdateNode(ctx, "scope", nodeRoot, checkedArcSet(map[string]cid.Cid{
 		"runtime/nodes/slot/7": target,
 	})); err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func TestStateRoundTripPreservesNonBranchingMode(t *testing.T) {
 	store := New(false)
 	root := testCID(t, "non-branching-root")
 	target := testCID(t, "non-branching-target")
-	if err := store.Update(ctx, "scope", root, cid.Undef, arcset.NewSetFrom(map[string]cid.Cid{
+	if err := store.Update(ctx, "scope", root, cid.Undef, checkedArcSet(map[string]cid.Cid{
 		"payload": target,
 	})); err != nil {
 		t.Fatal(err)
@@ -90,12 +90,12 @@ func TestUpdateNodeRejectsSecondOwnerWithoutMutatingState(t *testing.T) {
 	firstTarget := testCID(t, "first-node-target")
 	secondTarget := testCID(t, "second-node-target")
 	path := "runtime/nodes/shared"
-	if err := store.UpdateNode(ctx, "scope", firstRoot, arcset.NewSetFrom(map[string]cid.Cid{
+	if err := store.UpdateNode(ctx, "scope", firstRoot, checkedArcSet(map[string]cid.Cid{
 		path: firstTarget,
 	})); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.UpdateNode(ctx, "scope", secondRoot, arcset.NewSetFrom(map[string]cid.Cid{
+	if err := store.UpdateNode(ctx, "scope", secondRoot, checkedArcSet(map[string]cid.Cid{
 		path: secondTarget,
 	})); err == nil {
 		t.Fatal("a second node-root owner was accepted")
@@ -103,7 +103,7 @@ func TestUpdateNodeRejectsSecondOwnerWithoutMutatingState(t *testing.T) {
 	if got, err := store.Get(ctx, "scope", cid.Undef, arcset.Path(path)); err != nil || !got.Equals(firstTarget) {
 		t.Fatalf("first owner changed after rejected update: got %s, err %v", got, err)
 	}
-	if err := store.UpdateNode(ctx, "scope", secondRoot, arcset.NewSetFrom(map[string]cid.Cid{
+	if err := store.UpdateNode(ctx, "scope", secondRoot, checkedArcSet(map[string]cid.Cid{
 		path: cid.Undef,
 	})); err != nil {
 		t.Fatal(err)
