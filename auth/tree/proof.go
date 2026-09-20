@@ -1,14 +1,13 @@
-package engine
+package tree
 
 import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/auth/observation"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
@@ -85,8 +84,8 @@ func verifyOpening(s ProfileVerifier, ref maltcid.NodeRef, index uint64, cell, p
 }
 
 // Prove opens only the supplied coordinate. Storage errors are never converted
-// into authenticated absence, and labels are derived using the supplied Root.
-func (e *Engine) Prove(ctx context.Context, root cid.Cid, query input.Value, source materializer.NodeLookup) (Result, error) {
+// into authenticated absence. The caller derives the coordinate from its input.
+func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Value, source materializer.NodeLookup) (Result, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
 		return Result{}, err
@@ -95,7 +94,7 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query input.Value, sou
 	if err != nil {
 		return Result{}, err
 	}
-	k, err := e.coordinate(d, query)
+	k, err := checkCoordinate(d, query)
 	if err != nil {
 		return Result{}, err
 	}
@@ -110,7 +109,7 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query input.Value, sou
 			return Result{}, err
 		}
 		finishMaterialization := observation.Start(ctx, observation.PhaseMaterialization)
-		cells, err := source.GetNode(ctx, ref)
+		cells, err := source.GetNode(ctx, copyNodeRef(ref))
 		var cellBytes uint64
 		if observation.Enabled(ctx) {
 			for _, cell := range cells {
@@ -207,9 +206,9 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query input.Value, sou
 	return Result{}, errors.New("authentication path exceeds maximum depth")
 }
 
-// Verify binds evidence to the caller's full Root and original input. It
-// consumes no node materializer and never trusts a service-supplied key.
-func (e *Engine) Verify(root cid.Cid, query input.Value, result Result) (bool, error) {
+// Verify binds evidence to the caller's full Root and authentication coordinate.
+// It consumes no node materializer; callers must derive their own coordinates.
+func (e *Engine) Verify(root cid.Cid, query coordinate.Value, result Result) (bool, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
 		return false, err
@@ -218,7 +217,7 @@ func (e *Engine) Verify(root cid.Cid, query input.Value, result Result) (bool, e
 	if err != nil {
 		return false, err
 	}
-	k, err := e.coordinate(d, query)
+	k, err := checkCoordinate(d, query)
 	if err != nil {
 		return false, err
 	}
@@ -375,80 +374,6 @@ func childMetadata(parent Metadata, index uint64, slots int) (Metadata, uint64, 
 		}
 	}
 	return child, index - start, nil
-}
-
-type Traversal struct {
-	Results []Result `json:"results"`
-}
-
-// Resolve interprets each explicit step using the AA of the Root reached at
-// that step. No string separators or longest-path-prefix policy are involved.
-func (e *Engine) Resolve(ctx context.Context, root cid.Cid, steps []input.Value, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
-	target, proof, err := e.ResolvePath(ctx, root, steps, source)
-	if err == nil && !target.Defined() {
-		return cid.Undef, Traversal{}, fmt.Errorf("step %d: binding absent", len(proof.Results)-1)
-	}
-	return target, proof, err
-}
-
-// ResolvePath returns an undefined target and a terminal absence proof when a
-// selector is absent. Missing materialization and execution failures are errors.
-func (e *Engine) ResolvePath(ctx context.Context, root cid.Cid, steps []input.Value, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
-	current := root
-	out := Traversal{Results: []Result{}}
-	_, descriptor, err := maltcid.RootNode(root)
-	if err != nil {
-		return cid.Undef, out, err
-	}
-	if _, _, err := e.config(descriptor); err != nil {
-		return cid.Undef, out, err
-	}
-	for i, step := range steps {
-		result, err := e.Prove(ctx, current, step, source)
-		if err != nil {
-			return cid.Undef, Traversal{}, fmt.Errorf("step %d: %w", i, err)
-		}
-		out.Results = append(out.Results, result)
-		if !result.Present {
-			return cid.Undef, out, nil
-		}
-		current = result.Target
-	}
-	return current, out, nil
-}
-
-func (e *Engine) VerifyTraversal(root cid.Cid, steps []input.Value, target cid.Cid, proof Traversal) (bool, error) {
-	if !target.Defined() {
-		return false, nil
-	}
-	return e.VerifyPath(root, steps, target, proof)
-}
-
-// VerifyPath binds every supplied step to the selected Root. An undefined
-// target is valid only for a proven absent selector at the terminal proof step.
-func (e *Engine) VerifyPath(root cid.Cid, steps []input.Value, target cid.Cid, proof Traversal) (bool, error) {
-	if len(proof.Results) > len(steps) {
-		return false, nil
-	}
-	_, descriptor, err := maltcid.RootNode(root)
-	if err != nil {
-		return false, err
-	}
-	if _, _, err := e.config(descriptor); err != nil {
-		return false, err
-	}
-	current := root
-	for i, result := range proof.Results {
-		valid, err := e.Verify(current, steps[i], result)
-		if err != nil || !valid {
-			return valid, err
-		}
-		if !result.Present {
-			return !target.Defined() && i == len(proof.Results)-1, nil
-		}
-		current = result.Target
-	}
-	return target.Defined() && len(steps) == len(proof.Results) && current.Equals(target), nil
 }
 
 // RootMetadata decodes structural metadata from the first proof node. Callers

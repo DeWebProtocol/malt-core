@@ -116,13 +116,13 @@ func TestValidateShapeRejectsUndefinedRootTargetAndUnknownKind(t *testing.T) {
 	if err := (ProofList{
 		Root: root,
 		Steps: []Step{{
-			Kind:   KindLegacyUnknown,
+			Kind:   StepKind("legacy_unknown"),
 			From:   root,
 			Path:   "legacy",
 			Target: target,
 		}},
-	}).ValidateShape(); err != nil {
-		t.Fatalf("legacy/unknown compatibility kind should be accepted: %v", err)
+	}).ValidateShape(); err == nil {
+		t.Fatal("retired step kind should be rejected")
 	}
 
 	if err := (ProofList{Root: root}).ValidateShape(RequireSteps()); err == nil {

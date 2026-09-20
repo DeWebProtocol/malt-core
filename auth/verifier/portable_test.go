@@ -12,12 +12,12 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
+	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/auth/proof/prooflist"
 	"github.com/dewebprotocol/malt-core/auth/semantic/list"
 	listtree "github.com/dewebprotocol/malt-core/auth/semantic/list/tree"
 	"github.com/dewebprotocol/malt-core/auth/semantic/mapping"
 	mapradix "github.com/dewebprotocol/malt-core/auth/semantic/mapping/radix"
-	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
 	authverifier "github.com/dewebprotocol/malt-core/auth/verifier"
 	"github.com/dewebprotocol/malt-core/execution"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -338,19 +338,24 @@ func portableSharedFirstKZGDigitPaths(t *testing.T) (string, string) {
 
 func portableSharedFirstDigitPath(t *testing.T, capacity int, base arcset.Path) arcset.Path {
 	t.Helper()
-	geometry, err := nodegeometry.ForCapacity(capacity)
-	if err != nil {
-		t.Fatal(err)
+	digit := func(path arcset.Path) uint16 {
+		k, err := input.DefaultRegistry().Derive(input.BytesSHA256, input.LabelValue([]byte(path.String())))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if capacity == 256 {
+			return uint16(k.Key[0])
+		}
+		if capacity == 4096 {
+			return uint16(k.Key[0])<<4 | uint16(k.Key[1]>>4)
+		}
+		t.Fatalf("unsupported capacity %d", capacity)
+		return 0
 	}
-	baseDigest := sha256.Sum256([]byte(base.String()))
-	baseDigit, ok := geometry.MapDigit(baseDigest[:], 0)
-	if !ok {
-		t.Fatal("base path has no first radix digit")
-	}
+	baseDigit := digit(base)
 	for index := 0; index < 1<<18; index++ {
 		candidate := arcset.CanonicalizePath(fmt.Sprintf("portable-absent-shared-%d", index))
-		digest := sha256.Sum256([]byte(candidate.String()))
-		if digit, ok := geometry.MapDigit(digest[:], 0); ok && digit == baseDigit && candidate != base {
+		if digit(candidate) == baseDigit && candidate != base {
 			return candidate
 		}
 	}

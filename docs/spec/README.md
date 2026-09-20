@@ -49,6 +49,7 @@ Every filename returned by `protocol.SchemaNames()` is indexed here:
 - [`authentication-result.schema.json`](../../protocol/schemas/authentication-result.schema.json)
 - [`authentication-state.schema.json`](../../protocol/schemas/authentication-state.schema.json)
 - [`authentication-verification.schema.json`](../../protocol/schemas/authentication-verification.schema.json)
+- [`authentication-delta.schema.json`](../../protocol/schemas/authentication-delta.schema.json)
 - [`authentication.schema.json`](../../protocol/schemas/authentication.schema.json)
 
 - [`client-root-bundle.schema.json`](../../protocol/schemas/client-root-bundle.schema.json)

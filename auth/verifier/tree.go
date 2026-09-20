@@ -5,13 +5,12 @@ import (
 	structure "github.com/dewebprotocol/malt-core/auth/semantic"
 	"github.com/dewebprotocol/malt-core/auth/semantic/layoutcompat"
 	"github.com/dewebprotocol/malt-core/auth/semantic/list"
-	"github.com/dewebprotocol/malt-core/auth/semantic/nodegeometry"
 	cid "github.com/ipfs/go-cid"
 )
 
 type treeListVerifier struct{ scheme commitment.IndexVerifier }
 
-func newTreeListVerifier(scheme commitment.IndexVerifier, _ nodegeometry.Geometry) ListVerifier {
+func newTreeListVerifier(scheme commitment.IndexVerifier) ListVerifier {
 	return &treeListVerifier{scheme: scheme}
 }
 func (v *treeListVerifier) Verify(root cid.Cid, index uint64, expected list.Query, proof structure.Proof) (bool, error) {

@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"reflect"
 	"sync"
 	"unicode/utf8"
@@ -21,11 +22,11 @@ const (
 	UnixFSNameSHA256 ID = 2
 )
 
-type Kind string
+type Kind = coordinate.Kind
 
 const (
-	Index   Kind   = "index"
-	Key     Kind   = "key"
+	Index          = coordinate.Index
+	Key            = coordinate.Key
 	Label   Kind   = "label"
 	System  Kind   = "system"
 	Payload uint64 = 1
@@ -66,11 +67,7 @@ func (v Value) Validate() error {
 
 // Coordinate separates sequence indices from Prefix keys. It is the only
 // input interpreted by a layout; labels never reach Prefix routing.
-type Coordinate struct {
-	Kind  Kind
-	Index uint64
-	Key   [32]byte
-}
+type Coordinate = coordinate.Value
 
 // Rule is a deterministic input-to-coordinate function. A registered ID fixes
 // its full behavior, including validation, normalization and namespace rules.

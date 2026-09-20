@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	writerhost "github.com/dewebprotocol/malt-core/sdk/writer/host"
 	"os"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
@@ -23,7 +24,7 @@ func startupProfile(backend string) string {
 	return ""
 }
 
-func newComputer(backend string) (*computer, error) {
+func newComputer(backend string) (*writerhost.Computer, error) {
 	var (
 		kind   maltcid.BackendKind
 		scheme commitment.IndexCommitment
@@ -45,7 +46,7 @@ func newComputer(backend string) (*computer, error) {
 	default:
 		return nil, fmt.Errorf("unsupported writer backend %q", backend)
 	}
-	return &computer{schemes: map[maltcid.BackendKind]commitment.IndexCommitment{
+	return writerhost.NewComputer(map[maltcid.BackendKind]commitment.IndexCommitment{
 		kind: scheme,
-	}}, nil
+	})
 }

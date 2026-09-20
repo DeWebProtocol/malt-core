@@ -9,6 +9,7 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/auth/tree"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
@@ -61,29 +62,11 @@ func (v *vectors) PutNode(_ context.Context, ref maltcid.NodeRef, cells []commit
 // Prepare computes a complete candidate locally. Retained input bytes are
 // copied so later caller mutations cannot alter it.
 func Prepare(ctx context.Context, e *engine.Engine, state engine.State) (protocol.AuthenticationCandidate, error) {
-	v := &vectors{nodes: make(map[string][]commitment.Cell), used: make(map[string]bool)}
-	root, err := e.Build(ctx, state, v)
+	w, err := BuildWriter(ctx, e, state)
 	if err != nil {
 		return protocol.AuthenticationCandidate{}, err
 	}
-	candidate := protocol.AuthenticationCandidate{Profile: protocol.AuthenticationProfile, Root: root.String(), State: state, Nodes: []protocol.AuthenticationNode{}}
-	candidate.State.Entries = append([]engine.Entry(nil), state.Entries...)
-	for i := range candidate.State.Entries {
-		candidate.State.Entries[i].Input.Data = bytes.Clone(candidate.State.Entries[i].Input.Data)
-	}
-	keys := make([]string, 0, len(v.nodes))
-	for key := range v.nodes {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		node := protocol.AuthenticationNode{Reference: []byte(key), Cells: make([][]byte, len(v.nodes[key]))}
-		for i, c := range v.nodes[key] {
-			node.Cells[i] = bytes.Clone(c)
-		}
-		candidate.Nodes = append(candidate.Nodes, node)
-	}
-	return candidate, nil
+	return w.Export(ctx)
 }
 
 // ValidateCandidate checks complete materialization at the declared Root by
@@ -93,33 +76,37 @@ func ValidateCandidate(ctx context.Context, e *engine.Engine, candidate protocol
 	return err
 }
 func validateCandidate(ctx context.Context, e *engine.Engine, candidate protocol.AuthenticationCandidate) (*vectors, error) {
+	v, _, err := importCandidate(ctx, e, candidate)
+	return v, err
+}
+func importCandidate(ctx context.Context, e *engine.Engine, candidate protocol.AuthenticationCandidate) (*vectors, *tree.Materialization, error) {
 	if err := candidate.Validate(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	root, err := cid.Decode(candidate.Root)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	d, _, err := maltcid.ParseRoot(root)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	profile, err := maltcid.Profile(d.Profile)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	v := &vectors{nodes: make(map[string][]commitment.Cell), used: make(map[string]bool)}
 	for _, node := range candidate.Nodes {
 		ref, err := maltcid.ParseNodeRef(node.Reference)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if ref.Layout != d.Layout || ref.Profile != d.Profile || len(node.Cells) != profile.Slots {
-			return nil, errors.New("candidate node descriptor/width mismatch")
+			return nil, nil, errors.New("candidate node descriptor/width mismatch")
 		}
 		key := string(node.Reference)
 		if _, ok := v.nodes[key]; ok {
-			return nil, errors.New("duplicate candidate node")
+			return nil, nil, errors.New("duplicate candidate node")
 		}
 		cells := make([]commitment.Cell, len(node.Cells))
 		for i, c := range node.Cells {
@@ -127,13 +114,20 @@ func validateCandidate(ctx context.Context, e *engine.Engine, candidate protocol
 		}
 		v.nodes[key] = cells
 	}
-	if err := e.ValidateState(ctx, root, candidate.State, v); err != nil {
-		return nil, err
+	if err := e.CheckRoot(root); err != nil {
+		return nil, nil, err
+	}
+	nodes, view, err := e.Tree.Import(ctx, root, v, uint64(len(candidate.State.Entries)))
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := e.MatchView(candidate.State, view); err != nil {
+		return nil, nil, err
 	}
 	if len(v.used) != len(v.nodes) {
-		return nil, errors.New("candidate includes unreachable nodes")
+		return nil, nil, errors.New("candidate includes unreachable nodes")
 	}
-	return v, nil
+	return v, nodes, nil
 }
 
 // Materialize verifies before writing immutable nodes. The caller separately
@@ -191,7 +185,11 @@ type recordNodes struct {
 }
 
 func (r *recordNodes) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitment.Cell, error) {
-	cells, err := r.source.GetNode(ctx, ref)
+	// The collector key and the reference validated by Snapshot must remain
+	// independent of any mutations made by the external source.
+	request := ref
+	request.Commitment = bytes.Clone(ref.Commitment)
+	cells, err := r.source.GetNode(ctx, request)
 	if err != nil {
 		return nil, err
 	}

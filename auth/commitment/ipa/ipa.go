@@ -24,9 +24,6 @@ const (
 	// ProofSize is the size of a primitive IPA index proof in bytes.
 	// For 256 elements: numRounds=8, size=4 + 8*32(L) + 8*32(R) + 32(A_scalar) + 4(index) = 552
 	ProofSize = 552
-	// MaxCacheEntries is the maximum number of cached commitments.
-	// When exceeded, the oldest entries are evicted.
-	MaxCacheEntries = 1024
 )
 
 // ParameterSetID identifies the fixed IPA SRS serialization hashed by

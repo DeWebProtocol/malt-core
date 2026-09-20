@@ -34,7 +34,7 @@ func TestProofListFromTranscriptPreservesOrderPathTargetAndEvidenceKind(t *testi
 			{
 				Path:     arcset.CanonicalizePath("@payload"),
 				Target:   payload,
-				Evidence: evidence.NewImplicitEvidence([]byte("block bytes")),
+				Evidence: evidence.NewExplicitEvidence([]byte("payload proof")),
 			},
 		},
 	}
@@ -77,7 +77,7 @@ func TestProofListFromTranscriptPreservesOrderPathTargetAndEvidenceKind(t *testi
 	if pl.Steps[1].Path != "@payload" || !pl.Steps[1].Target.Equals(payload) {
 		t.Fatalf("step 1 path/target not preserved: %#v", pl.Steps[1])
 	}
-	if pl.Steps[1].EvidenceKind != "implicit" {
-		t.Fatalf("step 1 evidence kind = %q, want implicit", pl.Steps[1].EvidenceKind)
+	if pl.Steps[1].EvidenceKind != "explicit" {
+		t.Fatalf("step 1 evidence kind = %q, want explicit", pl.Steps[1].EvidenceKind)
 	}
 }

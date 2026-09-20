@@ -1,4 +1,4 @@
-package main
+package host
 
 import (
 	"encoding/json"
@@ -17,11 +17,11 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 			if err != nil {
 				t.Fatal(err)
 			}
-			session, err := newSessionComputer(computer)
+			session, err := NewSession(computer)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := session.bootstrap(t.Context()); err != nil {
+			if _, err := session.Bootstrap(t.Context()); err != nil {
 				t.Fatal(err)
 			}
 
@@ -46,10 +46,10 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
+				if _, err := session.Prepare(t.Context(), transactionID, intentJSON); err != nil {
 					t.Fatalf("prepare %s: %v", transactionID, err)
 				}
-				raw, err := session.getPreparedResult(transactionID)
+				raw, err := session.PreparedResult(transactionID)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -80,7 +80,7 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				if err != nil {
 					t.Fatal(err)
 				}
-				validated, err := validateMaterializationReceipt(raw, receiptJSON)
+				validated, err := ValidateMaterializationReceipt(raw, receiptJSON)
 				if err != nil {
 					t.Fatalf("validate receipt %s: %v", transactionID, err)
 				}
@@ -93,10 +93,10 @@ func TestSessionComputerAcceptsConsecutiveBootstrapWritesAcrossBackends(t *testi
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := validateMaterializationReceipt(raw, badReceiptJSON); err == nil {
+				if _, err := ValidateMaterializationReceipt(raw, badReceiptJSON); err == nil {
 					t.Fatal("stateless validation accepted a mismatched receipt")
 				}
-				accepted, err := session.acceptReceipt(transactionID, receiptJSON)
+				accepted, err := session.AcceptReceipt(transactionID, receiptJSON)
 				if err != nil {
 					t.Fatalf("accept %s: %v", transactionID, err)
 				}

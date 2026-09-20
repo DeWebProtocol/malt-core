@@ -340,9 +340,9 @@ func TestVerify_WrongEvidenceType(t *testing.T) {
 	root := makeCID(1)
 	target := makeCID(2)
 
-	// Pass ImplicitEvidence instead of ExplicitEvidence
-	implicitEv := evidence.NewImplicitEvidence([]byte("some block content"))
-	_, err := r.Verify(ctx, root, "a/b", target, implicitEv)
+	// A foreign evidence implementation must not be accepted by the MALT step.
+	foreign := foreignEvidence{evidence.NewExplicitEvidence([]byte("foreign proof"))}
+	_, err := r.Verify(ctx, root, "a/b", target, foreign)
 	if err == nil {
 		t.Fatal("expected error for wrong evidence type, got nil")
 	}
@@ -351,3 +351,5 @@ func TestVerify_WrongEvidenceType(t *testing.T) {
 		t.Error("error message should not be empty")
 	}
 }
+
+type foreignEvidence struct{ evidence.Evidence }

@@ -11,14 +11,14 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/graph/traversal"
 	"github.com/dewebprotocol/malt-core/protocol"
 	cid "github.com/ipfs/go-cid"
 )
 
 // RootLookup supplies nodes for one outer Root. Recovery, storage and cache
 // policy remain with the caller. It is invoked only for Roots actually queried.
-type RootLookup func(context.Context, cid.Cid) (materializer.NodeLookup, error)
+type RootLookup = traversal.RootLookup
 
 func Execute(ctx context.Context, e *engine.Engine, q protocol.AuthenticationRequest, source materializer.NodeLookup) (protocol.AuthenticationResult, error) {
 	return ExecuteWithRoots(ctx, e, q, func(context.Context, cid.Cid) (materializer.NodeLookup, error) { return source, nil })
@@ -35,30 +35,18 @@ func ExecuteWithRoots(ctx context.Context, e *engine.Engine, q protocol.Authenti
 		return protocol.AuthenticationResult{}, errors.New("Root lookup is nil")
 	}
 	root, _ := cid.Decode(q.Root)
-	current, _, err := e.Resolve(ctx, root, nil, nil)
+	current, proof, err := traversal.ResolvePathWithRoots(ctx, e, root, q.Steps, lookup)
 	if err != nil {
 		return protocol.AuthenticationResult{}, err
 	}
-	result := protocol.AuthenticationResult{Profile: q.Profile, Traversal: engine.Traversal{Results: []engine.Result{}}}
-	for i, step := range q.Steps {
-		source, err := lookup(ctx, current)
-		if err != nil {
-			return protocol.AuthenticationResult{}, err
+	result := protocol.AuthenticationResult{Profile: q.Profile, Traversal: proof}
+	if !current.Defined() {
+		if q.Profile != protocol.AuthenticationPathProfile {
+			return protocol.AuthenticationResult{}, errors.New("traversal binding absent")
 		}
-		target, proof, err := e.ResolvePath(ctx, current, []input.Value{step}, source)
-		if err != nil {
-			return protocol.AuthenticationResult{}, err
-		}
-		result.Traversal.Results = append(result.Traversal.Results, proof.Results...)
-		if !target.Defined() {
-			if q.Profile != protocol.AuthenticationPathProfile {
-				return protocol.AuthenticationResult{}, errors.New("traversal binding absent")
-			}
-			index := uint64(i)
-			result.AbsentStep = &index
-			return result, nil
-		}
-		current = target
+		index := uint64(len(proof.Results) - 1)
+		result.AbsentStep = &index
+		return result, nil
 	}
 	result.Resolved = current.String()
 	if q.Operation == "resolve" {
@@ -100,13 +88,13 @@ func Verify(e *engine.Engine, q protocol.AuthenticationRequest, result protocol.
 			*result.AbsentStep >= uint64(len(q.Steps)) || uint64(len(result.Traversal.Results)) != *result.AbsentStep+1 {
 			return false, nil
 		}
-		return e.VerifyPath(root, q.Steps, cid.Undef, result.Traversal)
+		return traversal.VerifyPath(e, root, q.Steps, cid.Undef, result.Traversal)
 	}
 	resolved, err := cid.Decode(result.Resolved)
 	if err != nil {
 		return false, err
 	}
-	valid, err := e.VerifyTraversal(root, q.Steps, resolved, result.Traversal)
+	valid, err := traversal.Verify(e, root, q.Steps, resolved, result.Traversal)
 	if err != nil || !valid {
 		return valid, err
 	}

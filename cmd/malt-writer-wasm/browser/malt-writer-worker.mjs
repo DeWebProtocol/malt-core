@@ -1,6 +1,14 @@
 const SUPPORTED_BACKENDS = new Set(["kzg", "ipa"]);
 const IPA_PROFILES = new Set(["direct", "compact", "fast"]);
 const RPC_FUNCTIONS = Object.freeze({
+  closeAuthentication: "maltCloseAuthentication",
+  discardAuthentication: "maltDiscardAuthentication",
+  exportAuthentication: "maltExportAuthentication",
+  applyAuthentication: "maltApplyAuthentication",
+  importAuthentication: "maltImportAuthentication",
+  createAuthentication: "maltCreateAuthentication",
+  updateAuthentication: "maltUpdateAuthentication",
+  prepareAuthentication: "maltPrepareAuthentication",
   compute: "maltComputeClientRootV1",
   bootstrap: "maltWriterBootstrapSessionV1",
   load: "maltWriterLoadSessionV1",
@@ -12,6 +20,12 @@ const RPC_FUNCTIONS = Object.freeze({
   closeSession: "maltWriterCloseSessionV1",
 });
 const STATEFUL_RPC_METHODS = new Set([
+  "createAuthentication",
+  "importAuthentication",
+  "applyAuthentication",
+  "exportAuthentication",
+  "discardAuthentication",
+  "closeAuthentication",
   "bootstrap",
   "load",
   "prepare",

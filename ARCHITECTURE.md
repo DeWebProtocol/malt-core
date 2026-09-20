@@ -72,6 +72,10 @@ malt (module facade)
 ├── auth
 │   ├── arcset               canonical arcs and ArcSet views
 │   │   └── materializer     caller-injected load/store capability
+│   ├── coordinate           interpreted key/index coordinates
+│   ├── input                typed input rules and reserved selectors
+│   ├── tree                 single-ArcSet authentication and retained node DAGs
+│   ├── engine               typed input/tree facade
 │   ├── commitment           KZG/IPA commitment primitives
 │   ├── observation          optional request-scoped diagnostics
 │   ├── semantic             map/list contracts and algorithms
@@ -79,9 +83,12 @@ malt (module facade)
 │   └── verifier             storage-free portable verifier
 ├── execution                untrusted operation composition
 ├── graph                    resolver/writer algorithms
+│   ├── traversal            explicit typed proofs across ArcSet Roots
 │   └── runtime              composition over an injected materializer
+├── sdk/authentication       typed queries and retained immutable writers
 ├── sdk/verifier             trusted client facade
 ├── sdk/writer               complete-view client-root computation
+│   └── host                 shared bounded native/WASM session coordination
 ├── cmd/malt-verifier-wasm   browser verification adapter
 ├── cmd/malt-writer-wasm     browser client-root adapter
 └── wire/maltcid             typed CID rules

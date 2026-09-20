@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	writerhost "github.com/dewebprotocol/malt-core/sdk/writer/host"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
@@ -20,7 +21,7 @@ func startupBackend() (string, error) {
 
 func startupProfile(string) string { return ipaCommitterProfile }
 
-func newComputer(backend string) (*computer, error) {
+func newComputer(backend string) (*writerhost.Computer, error) {
 	if backend != string(maltcid.BackendKindIPA) {
 		return nil, fmt.Errorf("IPA writer does not support backend %q", backend)
 	}
@@ -29,7 +30,7 @@ func newComputer(backend string) (*computer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize IPA %s writer: %w", profile, err)
 	}
-	return &computer{schemes: map[maltcid.BackendKind]commitment.IndexCommitment{
+	return writerhost.NewComputer(map[maltcid.BackendKind]commitment.IndexCommitment{
 		maltcid.BackendKindIPA: scheme,
-	}}, nil
+	})
 }

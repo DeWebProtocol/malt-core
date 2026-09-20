@@ -1,5 +1,5 @@
 // Package resolver implements path resolution with prefix consumption across
-// native MALT structure roots and interoperable legacy CIDs.
+// native MALT structure roots and terminal content CIDs.
 
 package resolver
 
@@ -12,13 +12,4 @@ var (
 
 	// ErrResolutionFailed is returned when a resolution step fails.
 	ErrResolutionFailed = errors.New("resolution failed")
-
-	// ErrTranscriptNil is returned when a nil transcript is passed for verification.
-	ErrTranscriptNil = errors.New("transcript is nil")
-
-	// ErrUnknownEvidenceKind is returned when an evidence kind is not recognized.
-	ErrUnknownEvidenceKind = errors.New("unknown evidence kind")
-
-	// ErrStepExecutorNotAvailable is returned when no step executor is available for an evidence kind.
-	ErrStepExecutorNotAvailable = errors.New("step executor not available")
 )

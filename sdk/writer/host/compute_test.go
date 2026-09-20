@@ -1,10 +1,9 @@
-package main
+package host
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset"
@@ -20,33 +19,6 @@ import (
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
-
-func TestParseStartupBackend(t *testing.T) {
-	for _, backend := range []string{"kzg", "ipa"} {
-		t.Run(backend, func(t *testing.T) {
-			got, err := parseStartupBackend([]string{backendArgumentPrefix + backend})
-			if err != nil {
-				t.Fatalf("parseStartupBackend failed: %v", err)
-			}
-			if got != backend {
-				t.Fatalf("backend = %q, want %q", got, backend)
-			}
-		})
-	}
-	for _, args := range [][]string{
-		nil,
-		{"kzg"},
-		{backendArgumentPrefix},
-		{backendArgumentPrefix + "all"},
-		{backendArgumentPrefix + "kzg", backendArgumentPrefix + "ipa"},
-	} {
-		t.Run(strings.Join(args, "_"), func(t *testing.T) {
-			if backend, err := parseStartupBackend(args); err == nil {
-				t.Fatalf("parseStartupBackend(%q) = %q, want error", args, backend)
-			}
-		})
-	}
-}
 
 func TestComputerComputesCanonicalClientRootBundle(t *testing.T) {
 	view, intent := computeFixture(t, maltcid.BackendKindKZG)
@@ -71,7 +43,7 @@ func TestComputerComputesCanonicalClientRootBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newComputer failed: %v", err)
 	}
-	raw, err := writer.compute(t.Context(), "browser-operation-1", viewJSON, intentJSON)
+	raw, err := writer.Compute(t.Context(), "browser-operation-1", viewJSON, intentJSON)
 	if err != nil {
 		t.Fatalf("compute failed: %v", err)
 	}
@@ -124,10 +96,10 @@ func TestComputerRejectsUnavailableBackendAndInvalidJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newComputer failed: %v", err)
 	}
-	if _, err := writer.compute(t.Context(), "browser-operation-2", viewJSON, intentJSON); err == nil {
+	if _, err := writer.Compute(t.Context(), "browser-operation-2", viewJSON, intentJSON); err == nil {
 		t.Fatal("IPA-only writer accepted a KZG update view")
 	}
-	if _, err := writer.compute(t.Context(), "browser-operation-3", []byte(`{}`), []byte(`{}`)); err == nil {
+	if _, err := writer.Compute(t.Context(), "browser-operation-3", []byte(`{}`), []byte(`{}`)); err == nil {
 		t.Fatal("writer accepted invalid client-root JSON")
 	}
 }
@@ -139,11 +111,11 @@ func TestSessionComputerBootstrapCarriesBaseMaterialization(t *testing.T) {
 			if err != nil {
 				t.Fatalf("newComputer: %v", err)
 			}
-			session, err := newSessionComputer(computer)
+			session, err := NewSession(computer)
 			if err != nil {
 				t.Fatal(err)
 			}
-			viewJSON, err := session.bootstrap(t.Context())
+			viewJSON, err := session.Bootstrap(t.Context())
 			if err != nil {
 				t.Fatalf("bootstrap: %v", err)
 			}
@@ -177,10 +149,10 @@ func TestSessionComputerBootstrapCarriesBaseMaterialization(t *testing.T) {
 				t.Fatal(err)
 			}
 			const transactionID = "bootstrap-first-write"
-			if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
+			if _, err := session.Prepare(t.Context(), transactionID, intentJSON); err != nil {
 				t.Fatalf("prepare: %v", err)
 			}
-			resultJSON, err := session.getPreparedResult(transactionID)
+			resultJSON, err := session.PreparedResult(transactionID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -223,11 +195,11 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newComputer failed: %v", err)
 	}
-	session, err := newSessionComputer(computer)
+	session, err := NewSession(computer)
 	if err != nil {
 		t.Fatalf("newSessionComputer failed: %v", err)
 	}
-	loadedRoot, err := session.load(t.Context(), viewJSON)
+	loadedRoot, err := session.Load(t.Context(), viewJSON)
 	if err != nil {
 		t.Fatalf("load failed: %v", err)
 	}
@@ -236,14 +208,14 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	}
 
 	const transactionID = "session-operation-1"
-	preparedRoot, err := session.prepare(t.Context(), transactionID, intentJSON)
+	preparedRoot, err := session.Prepare(t.Context(), transactionID, intentJSON)
 	if err != nil {
 		t.Fatalf("prepare failed: %v", err)
 	}
-	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err == nil {
+	if _, err := session.Prepare(t.Context(), transactionID, intentJSON); err == nil {
 		t.Fatal("session accepted a duplicate prepared operation")
 	}
-	raw, err := session.getPreparedResult(transactionID)
+	raw, err := session.PreparedResult(transactionID)
 	if err != nil {
 		t.Fatalf("getPreparedResult failed: %v", err)
 	}
@@ -273,13 +245,13 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	badReceipt := receipt
 	badReceipt.Candidate = view.BaseRoot.String()
 	badReceiptJSON, _ := json.Marshal(badReceipt)
-	if _, err := session.acceptReceipt(transactionID, badReceiptJSON); err == nil {
+	if _, err := session.AcceptReceipt(transactionID, badReceiptJSON); err == nil {
 		t.Fatal("session accepted a mismatched receipt")
 	}
 	if got := session.session.BaseRoot(); !got.Equals(view.BaseRoot) {
 		t.Fatalf("base advanced after bad receipt: %s", got)
 	}
-	stillPrepared, err := session.getPreparedResult(transactionID)
+	stillPrepared, err := session.PreparedResult(transactionID)
 	if err != nil {
 		t.Fatalf("getPreparedResult after rejected receipt failed: %v", err)
 	}
@@ -287,7 +259,7 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 		t.Fatal("rejected receipt changed the prepared result")
 	}
 	stillPrepared[0] ^= 0xff
-	unmodified, err := session.getPreparedResult(transactionID)
+	unmodified, err := session.PreparedResult(transactionID)
 	if err != nil {
 		t.Fatalf("getPreparedResult after caller mutation failed: %v", err)
 	}
@@ -296,7 +268,7 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	}
 
 	receiptJSON, _ := json.Marshal(receipt)
-	acceptedRoot, err := session.acceptReceipt(transactionID, receiptJSON)
+	acceptedRoot, err := session.AcceptReceipt(transactionID, receiptJSON)
 	if err != nil {
 		t.Fatalf("acceptReceipt failed: %v", err)
 	}
@@ -306,10 +278,10 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	if got := session.session.BaseRoot(); !got.Equals(bundle.Candidate) {
 		t.Fatalf("retained base = %s, want %s", got, bundle.Candidate)
 	}
-	if _, err := session.getPreparedResult(transactionID); err == nil {
+	if _, err := session.PreparedResult(transactionID); err == nil {
 		t.Fatal("accepted operation remained available as a prepared result")
 	}
-	fresh, err := newSessionComputer(computer)
+	fresh, err := NewSession(computer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,13 +289,13 @@ func TestSessionComputerAdvancesOnlyAfterExactReceipt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := fresh.load(t.Context(), nextViewJSON); err != nil {
+	if _, err := fresh.Load(t.Context(), nextViewJSON); err != nil {
 		t.Fatal(err)
 	}
 	if got, want := session.store.EntryCount(), fresh.store.EntryCount(); got != want {
 		t.Fatalf("accepted session retained %d entries, fresh accepted view retains %d", got, want)
 	}
-	if _, err := session.prepare(t.Context(), "stale-operation", intentJSON); err == nil {
+	if _, err := session.Prepare(t.Context(), "stale-operation", intentJSON); err == nil {
 		t.Fatal("session accepted an intent at the stale base")
 	}
 }
@@ -348,7 +320,7 @@ func wasmObjectRootByID(t *testing.T, view mutation.UpdateView, objectID string)
 	return cid.Undef
 }
 
-func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, transactionID string, intent mutation.SemanticIntent) cid.Cid {
+func prepareAndAcceptSessionIntent(t *testing.T, session *Session, transactionID string, intent mutation.SemanticIntent) cid.Cid {
 	t.Helper()
 	wireIntent, err := protocol.NewSemanticIntent(session.view, intent)
 	if err != nil {
@@ -358,10 +330,10 @@ func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, trans
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
+	if _, err := session.Prepare(t.Context(), transactionID, intentJSON); err != nil {
 		t.Fatalf("prepare %s: %v", transactionID, err)
 	}
-	resultJSON, err := session.getPreparedResult(transactionID)
+	resultJSON, err := session.PreparedResult(transactionID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -389,7 +361,7 @@ func prepareAndAcceptSessionIntent(t *testing.T, session *sessionComputer, trans
 	if err != nil {
 		t.Fatal(err)
 	}
-	accepted, err := session.acceptReceipt(transactionID, receiptJSON)
+	accepted, err := session.AcceptReceipt(transactionID, receiptJSON)
 	if err != nil {
 		t.Fatalf("accept %s: %v", transactionID, err)
 	}
@@ -415,27 +387,27 @@ func TestSessionComputerDiscardReclaimsCandidateSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := newSessionComputer(computer)
+	session, err := NewSession(computer)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := session.load(t.Context(), viewJSON); err != nil {
+	if _, err := session.Load(t.Context(), viewJSON); err != nil {
 		t.Fatal(err)
 	}
 	baseline := session.store.EntryCount()
-	if _, err := session.prepare(t.Context(), "discard-operation", intentJSON); err != nil {
+	if _, err := session.Prepare(t.Context(), "discard-operation", intentJSON); err != nil {
 		t.Fatal(err)
 	}
 	if got := session.store.EntryCount(); got <= baseline {
 		t.Fatalf("prepare retained %d entries, want more than loaded baseline %d", got, baseline)
 	}
-	if err := session.discard("discard-operation"); err != nil {
+	if err := session.Discard("discard-operation"); err != nil {
 		t.Fatal(err)
 	}
 	if got := session.store.EntryCount(); got != baseline {
 		t.Fatalf("discard retained %d entries, want loaded baseline %d", got, baseline)
 	}
-	if _, err := session.getPreparedResult("discard-operation"); err == nil {
+	if _, err := session.PreparedResult("discard-operation"); err == nil {
 		t.Fatal("discarded operation remained available as a prepared result")
 	}
 }
@@ -456,21 +428,21 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := newSessionComputer(computer)
+	session, err := NewSession(computer)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	session.closeSession()
-	session.closeSession()
-	if _, err := session.prepare(t.Context(), "before-load", intentJSON); err == nil {
+	session.Close()
+	session.Close()
+	if _, err := session.Prepare(t.Context(), "before-load", intentJSON); err == nil {
 		t.Fatal("closed session prepared without a loaded update view")
 	}
-	if _, err := session.load(t.Context(), viewJSON); err != nil {
+	if _, err := session.Load(t.Context(), viewJSON); err != nil {
 		t.Fatal(err)
 	}
 	const transactionID = "close-operation"
-	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
+	if _, err := session.Prepare(t.Context(), transactionID, intentJSON); err != nil {
 		t.Fatal(err)
 	}
 	firstStore := session.store
@@ -478,17 +450,17 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	if firstStore.EntryCount() == 0 {
 		t.Fatal("loaded and prepared session retained no materialized state")
 	}
-	if _, err := session.load(t.Context(), []byte(`{}`)); err == nil {
+	if _, err := session.Load(t.Context(), []byte(`{}`)); err == nil {
 		t.Fatal("session accepted an invalid replacement update view")
 	}
 	if session.store != firstStore || session.session != firstSession {
 		t.Fatal("failed load replaced the current session")
 	}
-	if _, err := session.getPreparedResult(transactionID); err != nil {
+	if _, err := session.PreparedResult(transactionID); err != nil {
 		t.Fatalf("failed load discarded the prepared result: %v", err)
 	}
 
-	if _, err := session.load(t.Context(), viewJSON); err != nil {
+	if _, err := session.Load(t.Context(), viewJSON); err != nil {
 		t.Fatal(err)
 	}
 	if got := firstStore.EntryCount(); got != 0 {
@@ -497,38 +469,38 @@ func TestSessionComputerCloseReleasesStateAndAllowsReload(t *testing.T) {
 	if session.store == firstStore {
 		t.Fatal("successful replacement reused the old store")
 	}
-	if _, err := session.getPreparedResult(transactionID); err == nil {
+	if _, err := session.PreparedResult(transactionID); err == nil {
 		t.Fatal("successful replacement retained an old prepared result")
 	}
-	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err != nil {
+	if _, err := session.Prepare(t.Context(), transactionID, intentJSON); err != nil {
 		t.Fatalf("prepare after successful replacement failed: %v", err)
 	}
 	secondStore := session.store
-	session.closeSession()
-	session.closeSession()
+	session.Close()
+	session.Close()
 	if got := secondStore.EntryCount(); got != 0 {
 		t.Fatalf("closed session retained %d materialized entries", got)
 	}
 	if session.session != nil || session.store != nil || session.view.BaseRoot.Defined() || session.prepared != nil || session.preparedResponseBytes != 0 {
 		t.Fatal("close did not clear all retained session state")
 	}
-	if _, err := session.getPreparedResult(transactionID); err == nil {
+	if _, err := session.PreparedResult(transactionID); err == nil {
 		t.Fatal("closed session returned a prepared result")
 	}
-	if _, err := session.prepare(t.Context(), transactionID, intentJSON); err == nil {
+	if _, err := session.Prepare(t.Context(), transactionID, intentJSON); err == nil {
 		t.Fatal("closed session prepared without reload")
 	}
-	if _, err := session.acceptReceipt(transactionID, []byte(`{}`)); err == nil {
+	if _, err := session.AcceptReceipt(transactionID, []byte(`{}`)); err == nil {
 		t.Fatal("closed session accepted a receipt")
 	}
-	if err := session.discard(transactionID); err == nil {
+	if err := session.Discard(transactionID); err == nil {
 		t.Fatal("closed session discarded a candidate")
 	}
 
-	if _, err := session.load(t.Context(), viewJSON); err != nil {
+	if _, err := session.Load(t.Context(), viewJSON); err != nil {
 		t.Fatalf("reload after close failed: %v", err)
 	}
-	if _, err := session.prepare(t.Context(), "after-close", intentJSON); err != nil {
+	if _, err := session.Prepare(t.Context(), "after-close", intentJSON); err != nil {
 		t.Fatalf("prepare after reload failed: %v", err)
 	}
 }

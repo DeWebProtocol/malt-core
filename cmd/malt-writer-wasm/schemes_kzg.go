@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	writerhost "github.com/dewebprotocol/malt-core/sdk/writer/host"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
@@ -16,7 +17,7 @@ func startupBackend() (string, error) {
 
 func startupProfile(string) string { return "" }
 
-func newComputer(backend string) (*computer, error) {
+func newComputer(backend string) (*writerhost.Computer, error) {
 	if backend != string(maltcid.BackendKindKZG) {
 		return nil, fmt.Errorf("KZG writer does not support backend %q", backend)
 	}
@@ -24,7 +25,7 @@ func newComputer(backend string) (*computer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize KZG writer: %w", err)
 	}
-	return &computer{schemes: map[maltcid.BackendKind]commitment.IndexCommitment{
+	return writerhost.NewComputer(map[maltcid.BackendKind]commitment.IndexCommitment{
 		maltcid.BackendKindKZG: scheme,
-	}}, nil
+	})
 }

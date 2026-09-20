@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	writerhost "github.com/dewebprotocol/malt-core/sdk/writer/host"
 	"math"
 	"syscall/js"
 
@@ -17,11 +18,11 @@ const maxTransactionIDBytes = 128
 func main() {
 	backend, initErr := startupBackend()
 	profile := startupProfile(backend)
-	var writer *computer
+	var writer *writerhost.Computer
 	if initErr == nil {
 		writer, initErr = newComputer(backend)
 	}
-	sessionWriter, sessionInitErr := newSessionComputer(writer)
+	sessionWriter, sessionInitErr := writerhost.NewSession(writer)
 	if initErr == nil && sessionInitErr != nil {
 		initErr = sessionInitErr
 	}
@@ -38,7 +39,7 @@ func main() {
 	select {}
 }
 
-func registerStatelessCompute(writer *computer, initErr error) {
+func registerStatelessCompute(writer *writerhost.Computer, initErr error) {
 	computeFunction := js.FuncOf(func(_ js.Value, args []js.Value) any {
 		promise := js.Global().Get("Promise")
 		if initErr != nil {
@@ -61,7 +62,7 @@ func registerStatelessCompute(writer *computer, initErr error) {
 			return promise.Call("reject", err.Error())
 		}
 		return promiseString(func() (string, error) {
-			result, err := writer.compute(context.Background(), transactionID, updateViewJSON, semanticIntentJSON)
+			result, err := writer.Compute(context.Background(), transactionID, updateViewJSON, semanticIntentJSON)
 			return string(result), err
 		})
 	})
@@ -83,13 +84,13 @@ func registerReceiptValidation() {
 			return promise.Call("reject", err.Error())
 		}
 		return promiseString(func() (string, error) {
-			return validateMaterializationReceipt(resultJSON, receiptJSON)
+			return writerhost.ValidateMaterializationReceipt(resultJSON, receiptJSON)
 		})
 	})
 	js.Global().Set("maltWriterValidateReceiptV1", validateFunction)
 }
 
-func registerSessionFunctions(writer *sessionComputer, initErr error) {
+func registerSessionFunctions(writer *writerhost.Session, initErr error) {
 	prepareGate := make(chan struct{}, 1)
 	bootstrapFunction := js.FuncOf(func(_ js.Value, args []js.Value) any {
 		promise := js.Global().Get("Promise")
@@ -100,7 +101,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", "maltWriterBootstrapSessionV1 expects no arguments")
 		}
 		return promiseString(func() (string, error) {
-			result, err := writer.bootstrap(context.Background())
+			result, err := writer.Bootstrap(context.Background())
 			return string(result), err
 		})
 	})
@@ -119,7 +120,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", err.Error())
 		}
 		return promiseString(func() (string, error) {
-			return writer.load(context.Background(), updateViewJSON)
+			return writer.Load(context.Background(), updateViewJSON)
 		})
 	})
 	js.Global().Set("maltWriterLoadSessionV1", loadFunction)
@@ -150,7 +151,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 		}
 		transactionID := string(transactionIDBytes)
 		return promiseStringFinally(func() (string, error) {
-			return writer.prepare(context.Background(), transactionID, intentJSON)
+			return writer.Prepare(context.Background(), transactionID, intentJSON)
 		}, releasePrepare)
 	})
 	js.Global().Set("maltWriterPrepareSessionV1", prepareFunction)
@@ -169,7 +170,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 		}
 		transactionID := string(transactionIDBytes)
 		return promiseString(func() (string, error) {
-			result, err := writer.getPreparedResult(transactionID)
+			result, err := writer.PreparedResult(transactionID)
 			return string(result), err
 		})
 	})
@@ -193,7 +194,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 		}
 		transactionID := string(transactionIDBytes)
 		return promiseString(func() (string, error) {
-			return writer.acceptReceipt(transactionID, receiptJSON)
+			return writer.AcceptReceipt(transactionID, receiptJSON)
 		})
 	})
 	js.Global().Set("maltWriterAcceptSessionReceiptV1", acceptFunction)
@@ -212,7 +213,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 		}
 		transactionID := string(transactionIDBytes)
 		return promiseString(func() (string, error) {
-			if err := writer.discard(transactionID); err != nil {
+			if err := writer.Discard(transactionID); err != nil {
 				return "", err
 			}
 			return transactionID, nil
@@ -229,7 +230,7 @@ func registerSessionFunctions(writer *sessionComputer, initErr error) {
 			return promise.Call("reject", "maltWriterCloseSessionV1 expects no arguments")
 		}
 		return promiseString(func() (string, error) {
-			writer.closeSession()
+			writer.Close()
 			return "", nil
 		})
 	})

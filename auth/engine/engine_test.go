@@ -10,6 +10,7 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
 	"github.com/dewebprotocol/malt-core/auth/engine"
 	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/graph/traversal"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
@@ -137,11 +138,11 @@ func TestNativePrefixDepthAndMixedRootTraversal(t *testing.T) {
 		t.Fatal(err)
 	}
 	steps := []input.Value{input.LabelValue([]byte("a/b")), input.KeyValue(b)}
-	got, proof, err := e.Resolve(ctx, entryRoot, steps, nodes)
+	got, proof, err := traversal.Resolve(ctx, e, entryRoot, steps, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	valid, err := e.VerifyTraversal(entryRoot, steps, got, proof)
+	valid, err := traversal.Verify(e, entryRoot, steps, got, proof)
 	if err != nil || !valid || !got.Equals(target("b")) {
 		t.Fatal("cross-AA traversal", err)
 	}

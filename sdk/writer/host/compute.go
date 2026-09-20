@@ -1,4 +1,4 @@
-package main
+package host
 
 import (
 	"context"
@@ -8,20 +8,63 @@ import (
 
 	materializermemory "github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/mutation"
 	"github.com/dewebprotocol/malt-core/protocol"
+	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	clientwriter "github.com/dewebprotocol/malt-core/sdk/writer"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 
-type computer struct {
-	schemes map[maltcid.BackendKind]commitment.IndexCommitment
+// Computer composes caller-installed backends for in-process writer entry points.
+// It owns no browser, transport, persistence or publication policy.
+type Computer struct {
+	authEngine  *engine.Engine
+	authSession *authentication.Session
+	schemes     map[maltcid.BackendKind]commitment.IndexCommitment
 }
 
-type sessionComputer struct {
+// NewComputer takes an owned copy of the backend table.
+func NewComputer(schemes map[maltcid.BackendKind]commitment.IndexCommitment) (*Computer, error) {
+	if len(schemes) == 0 {
+		return nil, fmt.Errorf("writer backends are required")
+	}
+	owned := make(map[maltcid.BackendKind]commitment.IndexCommitment, len(schemes))
+	profiles := engine.NewRegistry()
+	for kind, scheme := range schemes {
+		if scheme == nil {
+			return nil, fmt.Errorf("nil writer backend")
+		}
+		profile, ok := scheme.(engine.ProfileVerifier)
+		if !ok {
+			return nil, fmt.Errorf("writer backend must expose an exact VC profile")
+		}
+		if err := profiles.Register(profile); err != nil {
+			return nil, err
+		}
+		config, err := maltcid.Profile(profile.ProfileID())
+		if err != nil {
+			return nil, err
+		}
+		if config.Algorithm != kind {
+			return nil, fmt.Errorf("writer backend key differs from its profile")
+		}
+		owned[kind] = scheme
+	}
+	e := engine.New(input.DefaultRegistry(), profiles)
+	session, err := authentication.NewSession(e, authentication.SessionLimits{})
+	if err != nil {
+		return nil, err
+	}
+	return &Computer{schemes: owned, authEngine: e, authSession: session}, nil
+}
+
+// Session retains bounded candidate computations independently of a WASM host.
+type Session struct {
 	mu                    sync.Mutex
-	computer              *computer
+	computer              *Computer
 	session               *clientwriter.Session
 	store                 *materializermemory.Store
 	view                  mutation.UpdateView
@@ -40,25 +83,35 @@ const (
 	maxPreparedResponseBytes = 64 << 20
 )
 
-func newSessionComputer(computer *computer) (*sessionComputer, error) {
+func NewSession(computer *Computer) (*Session, error) {
 	if computer == nil || len(computer.schemes) == 0 {
 		return nil, fmt.Errorf("client writer is not initialized")
 	}
-	return &sessionComputer{computer: computer}, nil
+	return &Session{computer: computer}, nil
 }
 
-func (c *computer) newRuntime() (*clientwriter.Runtime, error) {
+func (c *Computer) newRuntime() (*clientwriter.Runtime, error) {
 	if c == nil || len(c.schemes) == 0 {
 		return nil, fmt.Errorf("client writer is not initialized")
 	}
 	return clientwriter.NewRuntime(materializermemory.New(true), c.schemes)
 }
 
-func (c *computer) newSessionRuntime() (*clientwriter.Runtime, *materializermemory.Store, error) {
+func (c *Computer) newSessionRuntime() (*clientwriter.Runtime, *materializermemory.Store, error) {
 	if c == nil || len(c.schemes) == 0 {
 		return nil, nil, fmt.Errorf("client writer is not initialized")
 	}
 	store := materializermemory.New(true)
+	return c.newSessionRuntimeWithStore(store)
+}
+
+func (c *Computer) newSessionRuntimeWithStore(store *materializermemory.Store) (*clientwriter.Runtime, *materializermemory.Store, error) {
+	if c == nil || len(c.schemes) == 0 {
+		return nil, nil, fmt.Errorf("client writer is not initialized")
+	}
+	if store == nil {
+		return nil, nil, fmt.Errorf("client writer materializer is nil")
+	}
 	runtime, err := clientwriter.NewRuntime(store, c.schemes)
 	if err != nil {
 		return nil, nil, err
@@ -66,7 +119,7 @@ func (c *computer) newSessionRuntime() (*clientwriter.Runtime, *materializermemo
 	return runtime, store, nil
 }
 
-func (c *computer) compute(ctx context.Context, transactionID string, updateViewJSON, semanticIntentJSON []byte) ([]byte, error) {
+func (c *Computer) Compute(ctx context.Context, transactionID string, updateViewJSON, semanticIntentJSON []byte) ([]byte, error) {
 	if c == nil || len(c.schemes) == 0 {
 		return nil, fmt.Errorf("client writer is not initialized")
 	}
@@ -101,7 +154,7 @@ func (c *computer) compute(ctx context.Context, transactionID string, updateView
 	return encodeComputeResult(result)
 }
 
-func (s *sessionComputer) bootstrap(ctx context.Context) ([]byte, error) {
+func (s *Session) Bootstrap(ctx context.Context) ([]byte, error) {
 	if s == nil || s.computer == nil {
 		return nil, fmt.Errorf("client writer session is not initialized")
 	}
@@ -144,7 +197,7 @@ func (s *sessionComputer) bootstrap(ctx context.Context) ([]byte, error) {
 	return json.Marshal(wire)
 }
 
-func (s *sessionComputer) load(ctx context.Context, updateViewJSON []byte) (string, error) {
+func (s *Session) Load(ctx context.Context, updateViewJSON []byte) (string, error) {
 	if s == nil || s.computer == nil {
 		return "", fmt.Errorf("client writer session is not initialized")
 	}
@@ -183,7 +236,7 @@ func (s *sessionComputer) load(ctx context.Context, updateViewJSON []byte) (stri
 	return view.BaseRoot.String(), nil
 }
 
-func (s *sessionComputer) prepare(ctx context.Context, transactionID string, semanticIntentJSON []byte) (string, error) {
+func (s *Session) Prepare(ctx context.Context, transactionID string, semanticIntentJSON []byte) (string, error) {
 	if s == nil {
 		return "", fmt.Errorf("client writer session is not initialized")
 	}
@@ -232,7 +285,7 @@ func (s *sessionComputer) prepare(ctx context.Context, transactionID string, sem
 	return result.Bundle.Candidate.String(), nil
 }
 
-func (s *sessionComputer) getPreparedResult(transactionID string) ([]byte, error) {
+func (s *Session) PreparedResult(transactionID string) ([]byte, error) {
 	if s == nil {
 		return nil, fmt.Errorf("client writer session is not initialized")
 	}
@@ -248,7 +301,7 @@ func (s *sessionComputer) getPreparedResult(transactionID string) ([]byte, error
 	return append([]byte(nil), candidate.encodedResult...), nil
 }
 
-func (s *sessionComputer) closeSession() {
+func (s *Session) Close() {
 	if s == nil {
 		return
 	}
@@ -265,7 +318,7 @@ func (s *sessionComputer) closeSession() {
 	s.preparedResponseBytes = 0
 }
 
-func (s *sessionComputer) acceptReceipt(transactionID string, receiptJSON []byte) (string, error) {
+func (s *Session) AcceptReceipt(transactionID string, receiptJSON []byte) (string, error) {
 	if s == nil {
 		return "", fmt.Errorf("client writer session is not initialized")
 	}
@@ -302,7 +355,7 @@ func (s *sessionComputer) acceptReceipt(transactionID string, receiptJSON []byte
 	return next.BaseRoot.String(), nil
 }
 
-func (s *sessionComputer) discard(transactionID string) error {
+func (s *Session) Discard(transactionID string) error {
 	if s == nil {
 		return fmt.Errorf("client writer session is not initialized")
 	}
@@ -321,7 +374,7 @@ func (s *sessionComputer) discard(transactionID string) error {
 	return nil
 }
 
-func (s *sessionComputer) retainMaterializedRoots() {
+func (s *Session) retainMaterializedRoots() {
 	if s.store == nil {
 		return
 	}
@@ -350,7 +403,7 @@ func addViewRoots(retain map[string][]cid.Cid, view mutation.UpdateView) {
 	}
 }
 
-func validateMaterializationReceipt(resultJSON, receiptJSON []byte) (string, error) {
+func ValidateMaterializationReceipt(resultJSON, receiptJSON []byte) (string, error) {
 	result, err := protocol.DecodeWriterComputeResult(resultJSON)
 	if err != nil {
 		return "", fmt.Errorf("decode prepared writer result: %w", err)
