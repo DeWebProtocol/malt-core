@@ -52,7 +52,11 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 					t.Fatal(err)
 				}
 				got := next.Candidate()
-				if got.Root != fresh.Root || got.Previous != w.Candidate().Root {
+				previous := w.Root().String()
+				if next.Root().Equals(w.Root()) {
+					previous = w.Candidate().Previous
+				}
+				if got.Root != fresh.Root || got.Previous != previous {
 					t.Fatalf("count %d root mismatch", count)
 				}
 				if err := authentication.ValidateCandidate(t.Context(), e, got); err != nil {

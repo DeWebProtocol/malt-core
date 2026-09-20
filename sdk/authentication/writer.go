@@ -171,6 +171,9 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 			return nil, err
 		}
 		next.previous = w.root.String()
+		if next.root.Equals(w.root) {
+			next.previous = w.previous
+		}
 		return next, nil
 	}
 	view, err := w.engine.Interpret(state)

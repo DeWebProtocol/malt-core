@@ -96,3 +96,60 @@ func TestBatchVerifiesCandidatesAndBindsExactReceipt(t *testing.T) {
 		t.Fatal("duplicate Root accepted")
 	}
 }
+
+// No-op results remain valid portable candidates, including after an earlier
+// real update. Batch and receipt checks must agree with both writer APIs.
+func TestNoOpCandidatesKeepLineageAndMaterialize(t *testing.T) {
+	e := pathEngine(t)
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: uint8(input.BytesSHA256), Profile: maltcid.IPA256}}
+	initial, err := authentication.Prepare(t.Context(), e, state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state.Entries = []engine.Entry{{Input: input.LabelValue([]byte("file")), Target: cid.MustParse("bafkqaaa")}}
+	changed, err := authentication.PrepareUpdate(t.Context(), e, initial, state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, base := range []protocol.AuthenticationCandidate{initial, changed} {
+		t.Run(base.Root, func(t *testing.T) {
+			complete, err := authentication.PrepareUpdate(t.Context(), e, base, base.State)
+			if err != nil {
+				t.Fatal(err)
+			}
+			session, err := authentication.NewSession(e, authentication.SessionLimits{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			handle, err := session.Import(t.Context(), base)
+			if err != nil {
+				t.Fatal(err)
+			}
+			next, err := session.Apply(t.Context(), handle.ID, authentication.Delta{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			retained, err := session.Export(t.Context(), next.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, candidate := range []protocol.AuthenticationCandidate{complete, retained} {
+				if candidate.Root != base.Root || candidate.Previous != base.Previous {
+					t.Fatal("no-op changed Root or lineage")
+				}
+				batch := protocol.AuthenticationBatch{Profile: protocol.AuthenticationBatchProfile, TransactionID: "no-op", Base: base.Root, Root: candidate.Root, Candidates: []protocol.AuthenticationCandidate{candidate}}
+				if err := authentication.ValidateBatch(t.Context(), e, batch); err != nil {
+					t.Fatal(err)
+				}
+				digest, err := batch.Digest()
+				if err != nil {
+					t.Fatal(err)
+				}
+				receipt := protocol.AuthenticationReceipt{Profile: protocol.AuthenticationReceiptProfile, TransactionID: batch.TransactionID, Base: batch.Base, Root: batch.Root, Digest: digest, DurableBoundary: "test-store:no-op"}
+				if err := receipt.Validate(batch); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}

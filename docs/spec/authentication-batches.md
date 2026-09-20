@@ -2,7 +2,9 @@
 
 Complete state uses `malt.authentication/0`. A candidate contains its exact
 Root, original typed inputs and targets, descriptor, and complete reachable
-node vectors. Optional `previous` records storage lineage. The query profile
+node vectors. Optional `previous` records storage lineage. Updates that leave
+the Root unchanged preserve the existing lineage instead of naming themselves
+as their predecessor. The query profile
 is independently versioned as `malt.authentication/1`.
 
 Structural JSON validation is not cryptographic validation.
