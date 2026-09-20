@@ -14,7 +14,7 @@ replaces: none
 ## Abstract
 
 This MIP proposes adopting the terminology in
-[`docs/spec/semantic.md`](../spec/semantic.md) for graph roots, semantic
+[`docs/spec/semantic.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/semantic.md) for graph roots, semantic
 objects, payloads, outgoing arcs, map relations, list child references, and CAS
 blobs.
 
@@ -27,7 +27,7 @@ boundary and avoids turning implementation helpers into semantic definitions.
 
 ## Specification
 
-Adopt [`docs/spec/semantic.md`](../spec/semantic.md) as the implementation
+Adopt [`docs/spec/semantic.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/semantic.md) as the implementation
 reference for semantic terminology. That reference classifies:
 
 - semantic object

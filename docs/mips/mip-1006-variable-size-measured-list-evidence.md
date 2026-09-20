@@ -15,8 +15,8 @@ replaces: none
 
 This MIP proposes a future measured-list proof model for variable-size child
 segments. The current fixed-width measured-list behavior is documented in
-[`docs/spec/semantic.md`](../spec/semantic.md) and
-[`docs/spec/prooflist-format.md`](../spec/prooflist-format.md).
+[`docs/spec/semantic.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/semantic.md) and
+[`docs/spec/prooflist-format.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/prooflist-format.md).
 
 ## Motivation
 

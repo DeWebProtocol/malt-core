@@ -14,7 +14,7 @@ func TestAuthenticationJSONExactFieldNamesAndValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prefix := fmt.Sprintf(`{"profile":"malt.authentication/0","root":%q,`, root.String())
+	prefix := fmt.Sprintf(`{"profile":"malt.authentication/1","root":%q,`, root.String())
 	for _, body := range []string{
 		`"operation":"resolve","start":null}`,
 		`"operation":"binding","input":{"kind":"index","number":"0","data":null}}`,

@@ -3,28 +3,20 @@ import { readFile } from "node:fs/promises";
 import { Worker as NodeWorker } from "node:worker_threads";
 import { pathToFileURL } from "node:url";
 
-const [wasmPath, wasmExecPath, controllerPath, workerPath, fixturePath, backend, profile = ""] =
+const [wasmPath, wasmExecPath, controllerPath, workerPath, backend, profile = ""] =
   process.argv.slice(2);
-if (!wasmPath || !wasmExecPath || !controllerPath || !workerPath || !fixturePath || !backend) {
+if (!wasmPath || !wasmExecPath || !controllerPath || !workerPath || !backend) {
   console.error(
-    "usage: node run-writer-worker-smoke.mjs <writer.wasm> <wasm_exec.js> <controller.mjs> <worker.mjs> <client-root-vectors.json> <kzg|ipa> [direct|compact|fast]",
+    "usage: node run-writer-worker-smoke.mjs <writer.wasm> <wasm_exec.js> <controller.mjs> <worker.mjs> <kzg|ipa> [direct|compact|fast]",
   );
   process.exit(2);
 }
 
-const [{ createMaltWriterWorker }, wasm, fixtureJSON] = await Promise.all([
+const [{ createMaltWriterWorker }, wasm] = await Promise.all([
   import(pathToFileURL(controllerPath).href),
   readFile(wasmPath),
-  readFile(fixturePath, "utf8"),
 ]);
 const module = await WebAssembly.compile(wasm);
-const corpus = JSON.parse(fixtureJSON);
-assert.equal(corpus.schema_version, "malt.client-root.conformance/v4");
-assert.ok(Array.isArray(corpus.vectors), "client-root corpus has no vectors array");
-const fixture = corpus.vectors.find(
-  (candidate) => candidate.backend === backend && candidate.expected?.valid === true,
-);
-assert.ok(fixture, `missing ${backend} fixture`);
 const nodeWorkerWrapper = new URL("./run-writer-worker-node.mjs", import.meta.url);
 const workerThreads = [];
 
@@ -64,42 +56,28 @@ try {
   await writer.ready;
   assert.deepEqual(writer.status(), { backend, profile, state: "ready" });
 
-  const encoder = new TextEncoder();
-  const loadedRoot = await writer.load(
-    backend,
-    encoder.encode(JSON.stringify(fixture.update_view)),
-  );
-  assert.equal(loadedRoot, fixture.update_view.base_root);
-  const candidate = await writer.prepare(
-    backend,
-    encoder.encode(fixture.transaction_id),
-    encoder.encode(JSON.stringify(fixture.semantic_intent)),
-  );
-  assert.equal(candidate, fixture.expected.bundle.candidate);
-  const preparedJSON = await writer.getPreparedResult(
-    backend,
-    encoder.encode(fixture.transaction_id),
-  );
-  const prepared = JSON.parse(preparedJSON);
-  assert.deepStrictEqual(prepared.bundle, fixture.expected.bundle);
-  assert.deepStrictEqual(prepared.materialization, fixture.expected.materialization);
-  assert.deepStrictEqual(prepared.next_view, fixture.expected.next_view);
-
-  const orderedReload = writer.load(
-    backend,
-    encoder.encode(JSON.stringify(fixture.update_view)),
-  );
-  const orderedClose = writer.closeSession(backend);
-  assert.equal(await orderedReload, fixture.update_view.base_root);
-  assert.equal(await orderedClose, undefined);
-  await assert.rejects(
-    writer.prepare(
-      backend,
-      encoder.encode(`${fixture.transaction_id}-after-close`),
-      encoder.encode(JSON.stringify(fixture.semantic_intent)),
-    ),
-    /has no update view/,
-  );
+  const bytes = value => new TextEncoder().encode(value);
+  const json = value => bytes(JSON.stringify(value));
+  const state = { descriptor: { layout: 1, input_rule: 1, vc_profile: backend === 'ipa' ? 2 : 1 }, entries: [] };
+  const base = JSON.parse(await writer.createAuthentication(backend, json(state)));
+  const next = JSON.parse(await writer.applyAuthentication(backend, bytes(base.handle), json({
+    profile: 'malt.authentication-delta/0', changes: [{ input: { kind: 'label', data: 'ZmlsZQ==' }, after: 'bafkqaaa' }]
+  })));
+  assert.notEqual(next.root, base.root);
+  const exported = JSON.parse(await writer.exportAuthentication(backend, bytes(next.handle)));
+  const imported = JSON.parse(await writer.importAuthentication(backend, json(exported)));
+  assert.equal(imported.root, next.root);
+  const batch = { profile: 'malt.authentication-batch/0', transaction_id: 'worker-smoke', base: base.root, root: next.root, candidates: [exported] };
+  const digest = await writer.validateAuthenticationBatch(backend, json(batch));
+  const receipt = { profile: 'malt.authentication-receipt/0', transaction_id: batch.transaction_id, base: batch.base, root: batch.root, digest, durable_boundary: 'worker-smoke/0' };
+  assert.equal(await writer.validateAuthenticationReceipt(backend, json(batch), json(receipt)), next.root);
+  await assert.rejects(writer.validateAuthenticationReceipt(backend, json(batch), json({ ...receipt, root: base.root })));
+  // Queued export completes before close invalidates every retained handle.
+  const pendingExport = writer.exportAuthentication(backend, bytes(next.handle));
+  const pendingClose = writer.closeAuthentication(backend);
+  assert.equal(JSON.parse(await pendingExport).root, next.root);
+  await pendingClose;
+  await assert.rejects(writer.exportAuthentication(backend, bytes(next.handle)));
 
   console.log(
     `single Worker smoke passed; target ${backend}${profile ? `/${profile}` : ""}; ready ${(performance.now() - startedAt).toFixed(1)} ms; thread ${workerThreads[0].threadId}`,

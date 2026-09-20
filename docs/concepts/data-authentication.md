@@ -118,8 +118,8 @@ This separation gives MALT four core advantages:
 
 - For a direct comparison, read [Merkle DAG vs MALT](./merkle-dag-vs-malt.md).
 - For exact proof fields and operation binding rules, read
-  [ProofList format](../spec/prooflist-format.md).
-- For the current resolver and writer model, read
-  [Semantic model](../spec/semantic.md).
+  [typed query evidence](../spec/authentication-contracts.md).
+- For the current input and tree model, read
+  [authentication model](../spec/authentication-inputs.md).
 - For the portable core contract, read
   [MIP-1011](../mips/mip-1011-arc-authentication-core-contract.md).

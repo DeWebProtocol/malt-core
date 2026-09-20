@@ -34,8 +34,6 @@ func New(branching bool) *Store {
 	return &Store{branching: branching, scopes: map[string]*scopeState{}}
 }
 
-func (s *Store) SupportsConcurrentBranches() bool { return s.branching }
-
 func (s *Store) Get(_ context.Context, scope string, root cid.Cid, path arcset.Path) (cid.Cid, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -327,41 +325,6 @@ func (s *Store) EntryCount() int {
 	return count
 }
 
-// DeleteRoot removes one materialized root. It exists for conformance and
-// failure-injection tests; production persistence belongs to the caller.
-func (s *Store) DeleteRoot(scope string, root cid.Cid) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if state := s.scopes[scope]; state != nil && root.Defined() {
-		delete(state.roots, root.KeyString())
-	}
-}
-
-// ReplaceRoot installs an explicit materialized ArcSet for conformance and
-// failure-injection tests.
-func (s *Store) ReplaceRoot(scope string, root cid.Cid, values map[arcset.Path]cid.Cid) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	state := s.ensureScope(scope)
-	state.roots[root.KeyString()] = clone(values)
-	if !s.branching {
-		state.current = clone(values)
-	}
-}
-
-// SetCurrent changes one unversioned materialized coordinate. It is intended
-// for integrity tests that simulate an untrusted or corrupted materializer.
-func (s *Store) SetCurrent(scope string, path arcset.Path, target cid.Cid) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	state := s.ensureScope(scope)
-	if target.Defined() {
-		state.current[path] = target
-	} else {
-		delete(state.current, path)
-	}
-}
-
 func (s *Store) ensureScope(scope string) *scopeState {
 	state := s.scopes[scope]
 	if state == nil {
@@ -402,6 +365,8 @@ func (i *errorIterator) Err() error                         { return i.err }
 func (i *errorIterator) Close()                             {}
 
 var (
-	_ materializer.Store          = (*Store)(nil)
-	_ materializer.BranchingStore = (*Store)(nil)
+	_ materializer.Lookup      = (*Store)(nil)
+	_ materializer.Updater     = (*Store)(nil)
+	_ materializer.Snapshotter = (*Store)(nil)
+	_ materializer.Iterator    = (*Store)(nil)
 )

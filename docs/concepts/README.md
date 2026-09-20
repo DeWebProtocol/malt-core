@@ -21,11 +21,10 @@ formats, proof fields, HTTP headers, and compatibility rules remain in
 After the conceptual overview, use the implementation-bound specs for exact
 mechanics:
 
-- [Semantic model](../spec/semantic.md) for map/list semantics, roots, payloads,
-  resolver, writer, and ArcTable boundaries.
-- [ProofList format](../spec/prooflist-format.md) for proof steps, ordering,
+- [authentication model](../spec/authentication-inputs.md) for typed inputs, Roots, payload selectors, and tree layouts.
+- [typed query evidence](../spec/authentication-contracts.md) for proof steps, ordering,
   serialized evidence, and range evidence.
-- [HTTP routing ownership](../spec/http-api.md) for why service routes,
+- [Core architecture](../../ARCHITECTURE.md) for why service routes,
   authentication, CORS, and daemon APIs remain outside MALT core.
 - [Commitment model](../spec/commitment.md) for backend proof assumptions.
 - [CID and wire format](../spec/cid-and-wire-format.md) for root encoding.

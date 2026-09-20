@@ -56,7 +56,7 @@ func TestCandidateRoundTripCustomAAAndIndependentVerification(t *testing.T) {
 	if err := authentication.Materialize(ctx, e, candidate, nodes); err != nil {
 		t.Fatal(err)
 	}
-	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationProfile, Root: candidate.Root, Steps: []input.Value{}, Operation: "binding", Input: &selector}
+	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: candidate.Root, Steps: []input.Value{}, Operation: "binding", Input: &selector}
 	result, err := authentication.Execute(ctx, e, q, nodes)
 	if err != nil {
 		t.Fatal(err)
@@ -113,7 +113,7 @@ func TestTypedWireRejectsAmbiguousInputs(t *testing.T) {
 	if err := json.Unmarshal(data, &round); err != nil || round.Number != index.Number {
 		t.Fatal(err)
 	}
-	if _, err := protocol.DecodeAuthenticationRequest([]byte(`{"profile":"malt.authentication/0","profile":"malt.authentication/0"}`)); err == nil {
+	if _, err := protocol.DecodeAuthenticationRequest([]byte(`{"profile":"malt.authentication/1","profile":"malt.authentication/1"}`)); err == nil {
 		t.Fatal("duplicate field accepted")
 	}
 }

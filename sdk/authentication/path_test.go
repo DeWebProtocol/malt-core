@@ -86,7 +86,7 @@ func TestPathAbsenceBindsPrefixAndRejectsFailures(t *testing.T) {
 	}
 	q.Profile = protocol.AuthenticationProfile
 	if _, err := authentication.Execute(ctx, e, q, nodes); err == nil {
-		t.Fatal("old profile changed absence semantics")
+		t.Fatal("obsolete query profile was accepted")
 	}
 	if ok, _ := authentication.Verify(e, q, result); ok {
 		t.Fatal("cross-profile result verified")

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://malt.dev/schemas/authentication-receipt.schema.json",
+  "title": "Exact authentication batch durable receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile", "transaction_id", "base", "root", "digest", "durable_boundary"],
+  "properties": {
+    "profile": {"const": "malt.authentication-receipt/0"},
+    "transaction_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$"},
+    "base": {"type": "string", "minLength": 1},
+    "root": {"type": "string", "minLength": 1},
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "durable_boundary": {"type": "string", "pattern": "\\S"}
+  }
+}

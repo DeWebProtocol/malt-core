@@ -46,30 +46,9 @@ func TestProductionImportBoundaries(t *testing.T) {
 			recursive: true,
 			forbidden: []string{"runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
 		},
-		{
-			name:      "portable mutation contract",
-			dir:       filepath.Join(root, "mutation"),
-			recursive: true,
-			forbidden: []string{"graph", "runtime", "storage", "model", "sdk", "api", "server", "execution", "logger"},
-		},
-		{
-			name:      "execution contract",
-			dir:       filepath.Join(root, "execution"),
-			recursive: true,
-			forbidden: []string{"graph", "runtime", "storage", "model", "sdk", "api", "server", "logger"},
-		},
-		{
-			name:      "client verifier",
-			dir:       filepath.Join(root, "sdk", "verifier"),
-			recursive: true,
-			forbidden: []string{"graph", "runtime", "storage", "model", "api", "server", "execution", "logger"},
-		},
-		{
-			name:      "client writer",
-			dir:       filepath.Join(root, "sdk", "writer"),
-			recursive: true,
-			forbidden: []string{"artifact", "execution", "storage", "layout", "model", "api", "server", "logger", "sdk/verifier"},
-		},
+		{name: "typed authentication SDK", dir: filepath.Join(root, "sdk", "authentication"), recursive: true,
+			forbidden: []string{"artifact", "execution", "mutation", "auth/semantic", "auth/proof", "auth/verifier", "graph/runtime", "graph/resolver", "storage", "model", "api", "server", "logger"}},
+
 		{
 			name:      "module facade",
 			dir:       root,
@@ -122,6 +101,7 @@ func TestSDKOnlyRepositoryDoesNotRetainProductResidue(t *testing.T) {
 	root := filepath.Dir(sourceFile)
 	for _, name := range []string{
 		"config.example.json",
+		"auth/semantic", "auth/proof", "auth/verifier", "sdk/writer", "sdk/verifier", "execution", "mutation", "graph/runtime", "graph/resolver", "graph/writer",
 		"logger",
 		filepath.Join("graph", "querypath"),
 	} {

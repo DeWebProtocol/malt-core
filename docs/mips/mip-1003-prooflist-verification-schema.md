@@ -14,7 +14,7 @@ replaces: none
 ## Abstract
 
 This MIP formalizes the verifier contract described in
-[`docs/spec/prooflist-format.md`](../spec/prooflist-format.md), including map
+[`docs/spec/prooflist-format.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/prooflist-format.md), including map
 traversal, terminal `@payload`, blob binding, measured-list `list_range`
 evidence, proof omission, and returned-body binding.
 
@@ -29,7 +29,7 @@ validation.
 ## Specification
 
 The current ProofList reference lives in
-[`docs/spec/prooflist-format.md`](../spec/prooflist-format.md). The `v0.0.3`
+[`docs/spec/prooflist-format.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/prooflist-format.md). The `v0.0.3`
 source release records this review boundary:
 
 - ordered path traversal is verifier-facing and implemented by

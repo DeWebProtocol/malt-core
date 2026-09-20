@@ -1,9 +1,9 @@
 # Commitment And Proof Encoding
 
 This document describes current V0 primitive and semantic evidence exercised
-by Resolve/Read v3, Map-proof v2, and authentication/0 conformance. It complements
+by authentication/1 conformance. It complements
 [self-describing Roots](./authentication-inputs.md) and
-[ProofList format](./prooflist-format.md). Historical V2/V3 Root readers and
+[typed query contracts](./authentication-contracts.md). Historical V2/V3 Root readers and
 semantic proof envelopes are retired; their original source and corpus bytes
 remain recoverable in Git history.
 
@@ -32,12 +32,12 @@ Verification must not infer or override the backend from the digest length.
 
 Semantic node geometry is locked to the selected backend suite:
 
-| Backend | Physical node slots | Map radix bits | List content slots |
+| Backend | Physical node slots | Prefix radix bits | Positional content slots |
 | --- | ---: | ---: | ---: |
 | KZG | 4096 | 12 | 4095 |
 | IPA | 256 | 8 | 255 |
 
-Slot zero is an ordinary radix-map slot. List nodes reserve slot zero for
+Slot zero is an ordinary Prefix slot. Positional nodes reserve slot zero for
 authenticated metadata, leaving the listed number of content slots. KZG
 semantic nodes supply all 4096 cells to the primitive commitment; IPA semantic
 nodes supply all 256.
@@ -197,11 +197,9 @@ a root-level out-of-range result contains only metadata evidence. All supplied
 nodes must be consumed. Metadata, leaf, and internal child framing follow
 [authentication inputs and Roots](./authentication-inputs.md).
 
-Resolve stores Prefix evidence in `step.evidence` with
-`evidence_kind="explicit"`. Map and List reads use `step.proof` with
-`evidence_kind="structure"` and the appropriate semantic evidence backend.
-The verifier derives coordinates from the caller's Root and query; it never
-uses a proof-supplied key or a historical semantic CID for primitive openings.
+Ordered traversal results and final binding results contain this same typed
+evidence. The verifier derives coordinates from the caller's Root and input;
+it never trusts a proof-supplied key or a historical semantic CID.
 
 ## Fixed-width Positional range proof
 
@@ -211,15 +209,14 @@ an `engine.Result` with `present`, `target`, and its `malt.binding/0` proof.
 The metadata evidence opens the always-out-of-range maximum uint64 index.
 Segment results open precisely the indices selected by the requested byte
 range. The verifier checks the metadata opening, bounds, order, and targets.
-The Map/List convenience API carries this envelope in `step.proof` with
-`evidence_backend="measured_list"`.
+The typed authentication result carries this envelope in its `range` field.
 
-Only fixed-width measured lists are supported. Byte verification under each
+Only fixed-width measured Positional ranges are supported. Byte verification under each
 returned payload CID remains application work.
 
 ## JSON Projection
 
-ProofList CID fields serialize as IPLD-link objects such as
+Primitive proof/result CID fields serialize as IPLD-link objects such as
 `{"/":"<cid>"}`. Go `[]byte` fields serialize as standard padded base64
 strings. Implementations must treat decoded proof bytes, CID bytes, segment
 order, integer widths, and optional-field presence as verifier inputs; error

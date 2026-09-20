@@ -13,8 +13,6 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/engine"
 	"github.com/dewebprotocol/malt-core/auth/input"
-	listview "github.com/dewebprotocol/malt-core/auth/semantic/list"
-	"github.com/dewebprotocol/malt-core/auth/semantic/list/tree"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -114,7 +112,7 @@ func TestRetainNestedRootWithSharedAAIndependentNodes(t *testing.T) {
 	}
 }
 
-func TestRetainListPointingToV0Child(t *testing.T) {
+func TestRetainPositionalParentPointingToPrefixChild(t *testing.T) {
 	e, _ := setup(t, maltcid.IPA256)
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "mixed"}
@@ -124,22 +122,14 @@ func TestRetainListPointingToV0Child(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	scheme, err := ipa.NewCommitterScheme(ipa.ProfileDirect)
-	if err != nil {
-		t.Fatal(err)
-	}
-	list, err := tree.NewList(scheme, store)
-	if err != nil {
-		t.Fatal(err)
-	}
-	parent, err := list.Commit(t.Context(), "mixed", listview.NewViewFromSlice([]cid.Cid{child}))
+	parent, err := e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: child}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	store.RetainRoots(map[string][]cid.Cid{"mixed": {parent}})
 	result, err := e.Prove(t.Context(), child, value, nodes)
 	if err != nil {
-		t.Fatal("historical parent lost new child", err)
+		t.Fatal("Positional parent lost its Prefix child", err)
 	}
 	if ok, err := e.Verify(child, value, result); err != nil || !ok {
 		t.Fatal("child proof", err)

@@ -3,7 +3,7 @@
 all: build
 
 build:
-	go build -buildvcs=false ./...
+	go build -p=6 -buildvcs=false ./...
 
 build-verifier-wasm:
 	./scripts/build-verifier-wasm.sh dist/verifier
@@ -16,10 +16,10 @@ generate-kzg-setup:
 	go generate ./auth/commitment/kzg
 
 test:
-	go test ./...
+	go test -p=6 -parallel=6 ./...
 
 vet:
-	go vet ./...
+	go vet -p=6 ./...
 
 clean:
 	rm -rf dist/

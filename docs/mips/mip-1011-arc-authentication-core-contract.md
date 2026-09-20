@@ -201,7 +201,7 @@ protocol, agent-memory, manifest, or other graph application.
 The current verifier-facing artifact profile is `v0alpha1`. It consists of the
 current `auth/proof/prooflist.ProofList` envelope and the typed
 `Query`/`ReadRequest`/`ReadResult` binding rules defined by this MIP and the
-[ProofList format](../spec/prooflist-format.md).
+[ProofList format](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/prooflist-format.md).
 
 `v0alpha1` is a contract profile, not a stability promise. The current JSON
 envelope does not carry an embedded version discriminator and does not yet have
@@ -297,7 +297,7 @@ it is not a valid final release tag for this contract.
 ## References
 
 - [MIP-1010: Data Authentication Core Boundary](./mip-1010-data-authentication-core-boundary.md)
-- [Semantic model](../spec/semantic.md)
-- [ProofList format](../spec/prooflist-format.md)
+- [Semantic model](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/semantic.md)
+- [ProofList format](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/prooflist-format.md)
 - [Commitment model](../spec/commitment.md)
 - [v0.0.3 release notes](../releases/v0.0.3.md)

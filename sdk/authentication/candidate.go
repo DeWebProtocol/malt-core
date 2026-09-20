@@ -30,14 +30,7 @@ func (v *vectors) GetNode(_ context.Context, ref maltcid.NodeRef) ([]commitment.
 		return nil, materializer.ErrIncomplete
 	}
 	v.used[string(key)] = true
-	return copyCells(cells), nil
-}
-func copyCells(cells []commitment.Cell) []commitment.Cell {
-	out := make([]commitment.Cell, len(cells))
-	for i, c := range cells {
-		out[i] = commitment.NewCell(c)
-	}
-	return out
+	return commitment.CloneCells(cells), nil
 }
 func (v *vectors) PutNode(_ context.Context, ref maltcid.NodeRef, cells []commitment.Cell) error {
 	key, err := ref.Bytes()
@@ -55,7 +48,7 @@ func (v *vectors) PutNode(_ context.Context, ref maltcid.NodeRef, cells []commit
 		}
 		return nil
 	}
-	v.nodes[string(key)] = copyCells(cells)
+	v.nodes[string(key)] = commitment.CloneCells(cells)
 	return nil
 }
 
@@ -149,7 +142,7 @@ func Materialize(ctx context.Context, e *engine.Engine, candidate protocol.Authe
 		if err != nil {
 			return err
 		}
-		if err := out.PutNode(ctx, ref, copyCells(v.nodes[string(node.Reference)])); err != nil {
+		if err := out.PutNode(ctx, ref, commitment.CloneCells(v.nodes[string(node.Reference)])); err != nil {
 			return err
 		}
 	}

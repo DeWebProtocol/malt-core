@@ -20,10 +20,9 @@ with candidate preparation, materialization and independent verification.
 The engine consumes narrow `materializer.NodeLookup`/`NodeUpdater` capabilities;
 it contains no persistent ArcTable, CAS, HTTP, application path or trust policy.
 
-Map/List remain convenience adapters. Current default Map construction uses
-Prefix/AA=1; List uses Positional/AA=0. A label with a slash is one opaque input
-to the typed API. The older string-path resolver retains its compatibility
-behavior; it is not the grammar for the new typed API.
+Prefix/AA=1 authenticates opaque labels; Positional/AA=0 authenticates dense
+indices. A label with a slash is one input. There is no Map/List adapter or
+string-path resolver; applications supply explicit typed traversal steps.
 
 ## Root and multicommitment
 
@@ -60,7 +59,7 @@ Profile 2's domain-separated compressed SRS fingerprint is
 `3799df0a77d1843b13a3a08744165180a12e1cd2dca529bee64ad691ac63adaf`.
 The exact parameter generation, cell-to-scalar conversion, commitment and
 opening encodings are fixed by `auth/commitment/kzg` and `auth/commitment/ipa`
-and the new conformance corpus. A changed parameter set or cryptographic
+and the current conformance corpus. A changed parameter set or cryptographic
 encoding requires a new immutable profile ID even within the same algorithm.
 IPA direct/compact/fast precomputation choices do not change profile identity.
 
@@ -93,9 +92,8 @@ system key = SHA256(D || 0x01 || uvarint(selector_number))
 
 All varints are minimal. Selector 1 denotes payload; other system selectors
 are currently rejected. Explicit label bytes `@payload` and selector 1 are
-different inputs with different derivations. The old Map string facade maps
-`@payload` to selector 1 as a compatibility convention. Its direct-key facade
-uses lowercase 64-character hex; the typed interface uses bytes.
+different inputs with different derivations. No string facade coerces labels
+to system selectors. Native keys are supplied as bytes.
 
 AA=2 uses the same hash framing after validating one nonempty UTF-8 name,
 excluding `/`, NUL, `.` and `..`. It specifies a MALT input profile useful to
@@ -156,7 +154,8 @@ Candidate preparation and materialization do not publish or trust a Root and
 do not prove a transition from a previous Root. A candidate's optional
 `previous` field is storage lineage only.
 
-The `malt.authentication/0` JSON contracts live in `protocol/authentication.go`
+The current query (`malt.authentication/1`) and candidate (`malt.authentication/0`)
+JSON contracts live in `protocol/authentication.go`
 and `protocol/schemas/authentication*.schema.json`. Queries select a Root,
 explicit typed traversal steps, and resolve/binding/range operation. Range
 endpoints and structural uint64 metadata use decimal strings. Results contain
@@ -177,10 +176,9 @@ writer does not migrate historical update views. Recreate old experimental
 state and dependent parents with the current implementation. Replacing a Root
 prefix alone is not a migration; payload CIDs remain reusable.
 
-`conformance/authentication-v0.json` retains its exact existing bytes. Current
-V0 Resolve/Read, Map-proof, and client-root behavior has independent corpus
-versions; see [conformance corpora](./conformance-corpora.md). Historical
-corpora remain in Git history under their original identifiers. Measurements
+`conformance/authentication-v1.json` is generated from current queries over
+V=0 Roots. Historical authentication/0 vectors remain only in Git history and are not
+accepted by the current verifier. See [conformance corpora](./conformance-corpora.md). Measurements
 must identify their exact Core revision, profile, and corpus. Browser release
 assets remain subject to `malt-ts`'s exact published-Core lock and conformance
 gate.
@@ -196,14 +194,14 @@ injected and must not import this convenience constructor.
 
 ## Rooted paths and retained writers
 
-`malt.authentication/1` adds authenticated early path termination. A missing
+`malt.authentication/1` supports authenticated early path termination. A missing
 traversal selector returns `absent_step` as a zero-based decimal string, an
 empty `resolved`, and exactly the successful prefix proofs followed by the
 missing binding proof. It carries neither a primitive binding nor a range
 result. Verification binds that prefix to the caller's Root and steps; it does
 not claim to have evaluated the suffix. I/O, recovery, unsupported-input and
-cancellation errors never become absence. `/0` retains its previous behavior.
-Both profiles use the same V=0 Roots and binding proofs; candidates remain `/0`.
+cancellation errors never become absence. The former `/0` query profile is
+rejected. Complete candidates use the independent `/0` candidate profile.
 
 `ExecuteWithRoots` accepts a Root-scoped node lookup. A service can reconstruct
 one ArcSet before serving its proof and defer other Roots until traversal

@@ -136,7 +136,7 @@ func (n Nodes) PutNode(ctx context.Context, ref maltcid.NodeRef, cells []commitm
 	return n.Updater.Update(ctx, n.Scope, cid.Undef, cid.Undef, arcs)
 }
 
-// Identity is the compatibility carrier used to own an internal vector. It
+// Identity is the internal-node CID carrier used to own an internal vector. It
 // carries NodeRef bytes and cannot be parsed as an external MALT Root.
 func Identity(ref maltcid.NodeRef) (cid.Cid, error) {
 	raw, err := ref.Bytes()

@@ -122,19 +122,6 @@ func ToPathMap(arcs ArcSet) (map[Path]cid.Cid, error) {
 	return out, nil
 }
 
-// ToStringMap clones an arc set into a canonical string-keyed map.
-func ToStringMap(arcs ArcSet) (map[string]cid.Cid, error) {
-	pathMap, err := ToPathMap(arcs)
-	if err != nil {
-		return nil, err
-	}
-	out := make(map[string]cid.Cid, len(pathMap))
-	for path, target := range pathMap {
-		out[path.String()] = target
-	}
-	return out, nil
-}
-
 func cidEqual(a, b cid.Cid) bool {
 	if !a.Defined() && !b.Defined() {
 		return true

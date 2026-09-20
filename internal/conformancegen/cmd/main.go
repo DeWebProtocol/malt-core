@@ -3,42 +3,23 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-
 	"github.com/dewebprotocol/malt-core/internal/conformancegen"
+	"os"
 )
 
 func main() {
-	corpus := flag.String("corpus", "resolve-read", "corpus to generate: resolve-read, map-proof, client-root-v4, or authentication")
-	out := flag.String("out", "", "output path for the generated corpus")
+	out := flag.String("out", "", "output path for current typed authentication vectors")
 	flag.Parse()
-	if *out == "" {
-		fmt.Fprintln(os.Stderr, "-out is required")
+	if *out == "" || flag.NArg() != 0 {
+		fmt.Fprintln(os.Stderr, "usage: conformancegen -out FILE")
 		os.Exit(2)
 	}
-	var (
-		data []byte
-		err  error
-	)
-	switch *corpus {
-	case "authentication":
-		data, err = conformancegen.GenerateAuthentication()
-	case "resolve-read":
-		data, err = conformancegen.Generate()
-	case "map-proof":
-		data, err = conformancegen.GenerateMapProof()
-	case "client-root-v4":
-		data, err = conformancegen.GenerateClientRootV4()
-	default:
-		fmt.Fprintf(os.Stderr, "unsupported conformance corpus %q\n", *corpus)
-		os.Exit(2)
+	data, err := conformancegen.GenerateAuthentication()
+	if err == nil {
+		err = os.WriteFile(*out, data, 0644)
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "generate %s conformance corpus: %v\n", *corpus, err)
-		os.Exit(1)
-	}
-	if err := os.WriteFile(*out, data, 0o644); err != nil {
-		fmt.Fprintf(os.Stderr, "write conformance corpus: %v\n", err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

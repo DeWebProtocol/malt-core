@@ -1,3 +1,5 @@
+// malt-ts owns browser runtime selection, lifecycle, and Worker RPC.
+// The generated WASM behind this controller imports the pinned MALT Core SDK.
 const BACKENDS = new Set(["kzg", "ipa"]);
 const IPA_PROFILES = new Set(["direct", "compact", "fast"]);
 
@@ -92,13 +94,16 @@ async function compileModule(
   signal,
   compileStreamingFunction,
   compileFunction,
+  onPhase,
 ) {
   throwIfAborted(signal);
+  onPhase?.({ phase: "fetching-wasm" });
   const response = await fetchFunction(wasmURL, { signal });
   throwIfAborted(signal);
   if (!response.ok) {
     throw new Error(`fetch ${wasmURL}: HTTP ${response.status}`);
   }
+  onPhase?.({ phase: "compiling-wasm" });
   if (typeof compileStreamingFunction === "function") {
     const fallback = response.clone();
     try {
@@ -304,7 +309,7 @@ export class MaltWriterWorker {
     return this.#state.ready.promise;
   }
 
-  async #request(backend, method, args) {
+  async #request(backend, method, args, transfer = []) {
     this.#requireBackend(backend);
     await this.#state.ready.promise;
     if (this.#state.phase !== "ready") {
@@ -317,13 +322,16 @@ export class MaltWriterWorker {
     return new Promise((resolve, reject) => {
       this.#state.pending.set(id, { resolve, reject });
       try {
-        this.#state.worker.postMessage({
-          type: "request",
-          ...this.#target,
-          id,
-          method,
-          args,
-        });
+        this.#state.worker.postMessage(
+          {
+            type: "request",
+            ...this.#target,
+            id,
+            method,
+            args,
+          },
+          transfer,
+        );
       } catch (error) {
         this.#state.pending.delete(id);
         reject(error);
@@ -331,17 +339,27 @@ export class MaltWriterWorker {
     });
   }
 
+  validateAuthenticationBatch(backend, batchJSON) {
+    return this.#request(backend, 'validateAuthenticationBatch', [batchJSON]);
+  }
+  validateAuthenticationReceipt(backend, batchJSON, receiptJSON) {
+    return this.#request(backend, 'validateAuthenticationReceipt', [batchJSON, receiptJSON]);
+  }
   prepareAuthentication(backend, stateJSON) {
-    return this.#request(backend, "prepareAuthentication", [stateJSON]);
+    return this.#request(backend, 'prepareAuthentication', [stateJSON]);
   }
   updateAuthentication(backend, candidateJSON, stateJSON) {
-    return this.#request(backend, "updateAuthentication", [candidateJSON, stateJSON]);
+    return this.#request(backend, 'updateAuthentication', [candidateJSON, stateJSON]);
   }
   createAuthentication(backend, stateJSON) {
     return this.#request(backend, "createAuthentication", [stateJSON]);
   }
   importAuthentication(backend, candidateJSON) {
-    return this.#request(backend, "importAuthentication", [candidateJSON]);
+    const transfer = candidateJSON instanceof Uint8Array &&
+      candidateJSON.buffer instanceof ArrayBuffer && candidateJSON.byteOffset === 0 &&
+      candidateJSON.byteLength > 0 && candidateJSON.byteLength === candidateJSON.buffer.byteLength
+      ? [candidateJSON.buffer] : [];
+    return this.#request(backend, "importAuthentication", [candidateJSON], transfer);
   }
   applyAuthentication(backend, handle, deltaJSON) {
     return this.#request(backend, "applyAuthentication", [handle, deltaJSON]);
@@ -355,36 +373,8 @@ export class MaltWriterWorker {
   closeAuthentication(backend) {
     return this.#request(backend, "closeAuthentication", []);
   }
-  compute(backend, transactionID, updateViewJSON, semanticIntentJSON) {
-    return this.#request(backend, "compute", [transactionID, updateViewJSON, semanticIntentJSON]);
-  }
-  bootstrap(backend) { return this.#request(backend, "bootstrap", []); }
-  load(backend, updateViewJSON) { return this.#request(backend, "load", [updateViewJSON]); }
-  prepare(backend, transactionID, semanticIntentJSON) {
-    return this.#request(backend, "prepare", [transactionID, semanticIntentJSON]);
-  }
-  getPreparedResult(backend, transactionID) {
-    return this.#request(backend, "getPreparedResult", [transactionID]);
-  }
-  validateReceipt(backend, writerResultJSON, materializationReceiptJSON) {
-    return this.#request(backend, "validateReceipt", [writerResultJSON, materializationReceiptJSON]);
-  }
-  acceptReceipt(backend, transactionID, materializationReceiptJSON) {
-    return this.#request(backend, "acceptReceipt", [transactionID, materializationReceiptJSON]);
-  }
-  discard(backend, transactionID) { return this.#request(backend, "discard", [transactionID]); }
-  closeSession(backend) {
-    return this.#request(backend, "closeSession", []).then(() => undefined);
-  }
 
-  terminateBackend(backend) {
-    this.#requireBackend(backend);
-    this.terminate();
-  }
-
-  terminateAll() { this.terminate(); }
-
-  terminate() {
+terminate() {
     this.#stop("terminated", new Error(`${this.backend} writer was terminated`));
   }
 }
@@ -402,6 +392,7 @@ export async function createMaltWriterWorker({
   compile: compileFunction = globalThis.WebAssembly?.compile?.bind(globalThis.WebAssembly),
   workerFactory,
   signal,
+  onPhase,
 } = {}) {
   requireTarget(backend, profile);
   throwIfAborted(signal);
@@ -420,9 +411,11 @@ export async function createMaltWriterWorker({
       signal,
       compileStreamingFunction,
       compileFunction,
+      onPhase,
     );
   }
   throwIfAborted(signal);
+  onPhase?.({ phase: "starting-worker" });
   return new MaltWriterWorker({
     backend,
     profile,

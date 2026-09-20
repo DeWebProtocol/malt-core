@@ -47,6 +47,10 @@ entrypoint must reload before starting another verifier or writer runtime.
 
 ## Provenance
 
+The current schemas are `malt.web-verifier.provenance/v2` and
+`malt.web-writer.provenance/v4`. Both bind the exact authentication/1 corpus;
+retired Resolve/Read, Map-proof, and client-root corpora are not runtime gates.
+
 Each set binds the exact Core repository, Go module path, MALT version and
 commit, Go version and toolchain, build target and flags, and file checksums.
 Writer provenance additionally
@@ -73,5 +77,5 @@ targets, experiments, timestamps, and `umask` therefore cannot change the bytes
 published under a release asset name.
 
 The build emits two digest-named archives, one digest-named
-`malt.wasm-release/v1` manifest, and a top-level `SHA256SUMS`. Release assets
+`malt.wasm-release/v2` manifest, and a top-level `SHA256SUMS`. Release assets
 must not be replaced after publication.

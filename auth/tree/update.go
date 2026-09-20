@@ -28,13 +28,6 @@ type pendingNode struct {
 	cells []commitment.Cell
 }
 
-func cloneVector(cells []commitment.Cell) []commitment.Cell {
-	out := make([]commitment.Cell, len(cells))
-	for i, c := range cells {
-		out[i] = commitment.NewCell(c)
-	}
-	return out
-}
 func (e *Engine) edit(ctx context.Context, root cid.Cid, source materializer.NodeLookup, out materializer.NodeUpdater) (*nodeEdit, maltcid.NodeRef, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
@@ -60,7 +53,7 @@ func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitme
 		return nil, err
 	}
 	if cells, ok := u.loaded[string(key)]; ok {
-		return cloneVector(cells), nil
+		return commitment.CloneCells(cells), nil
 	}
 	cells, err := u.source.GetNode(ctx, copyNodeRef(ref))
 	if err != nil {
@@ -71,11 +64,11 @@ func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitme
 			return nil, err
 		}
 	}
-	u.loaded[string(key)] = cloneVector(cells)
-	return cloneVector(cells), nil
+	u.loaded[string(key)] = commitment.CloneCells(cells)
+	return commitment.CloneCells(cells), nil
 }
 func (u *nodeEdit) PutNode(_ context.Context, ref maltcid.NodeRef, cells []commitment.Cell) error {
-	u.pending = append(u.pending, pendingNode{ref, cloneVector(cells)})
+	u.pending = append(u.pending, pendingNode{ref, commitment.CloneCells(cells)})
 	return nil
 }
 func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {

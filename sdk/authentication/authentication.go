@@ -1,6 +1,6 @@
 // Package authentication is the application-neutral V=0 SDK. Applications
 // select inputs, layouts and exact profiles; persistence and trust stay local
-// to the caller. Map/List APIs elsewhere are compatibility conveniences.
+// to the caller.
 // All operations use an injected engine; this package imports no concrete VC
 // backend. The optional sdk/authentication/verifier package supplies built-ins.
 package authentication
@@ -41,9 +41,6 @@ func ExecuteWithRoots(ctx context.Context, e *engine.Engine, q protocol.Authenti
 	}
 	result := protocol.AuthenticationResult{Profile: q.Profile, Traversal: proof}
 	if !current.Defined() {
-		if q.Profile != protocol.AuthenticationPathProfile {
-			return protocol.AuthenticationResult{}, errors.New("traversal binding absent")
-		}
 		index := uint64(len(proof.Results) - 1)
 		result.AbsentStep = &index
 		return result, nil
@@ -84,7 +81,7 @@ func Verify(e *engine.Engine, q protocol.AuthenticationRequest, result protocol.
 	}
 	root, _ := cid.Decode(q.Root)
 	if result.AbsentStep != nil {
-		if q.Profile != protocol.AuthenticationPathProfile || result.Resolved != "" || result.Binding != nil || result.Range != nil ||
+		if result.Resolved != "" || result.Binding != nil || result.Range != nil ||
 			*result.AbsentStep >= uint64(len(q.Steps)) || uint64(len(result.Traversal.Results)) != *result.AbsentStep+1 {
 			return false, nil
 		}

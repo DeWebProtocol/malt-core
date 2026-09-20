@@ -94,11 +94,6 @@ func (p Path) Segments() []string {
 	return strings.Split(p.String(), "/")
 }
 
-// Depth returns the number of path segments.
-func (p Path) Depth() int {
-	return len(p.Segments())
-}
-
 // HasPrefix reports whether prefix is a full-segment prefix of p.
 func (p Path) HasPrefix(prefix Path) bool {
 	if prefix.IsEmpty() {
@@ -129,18 +124,4 @@ func (p Path) Consume(prefix Path) (Path, bool) {
 	s := p.String()
 	pre := prefix.String()
 	return Path(s[len(pre)+1:]), true
-}
-
-// PrefixesLongestFirst returns all non-empty prefixes ordered from longest to shortest.
-func (p Path) PrefixesLongestFirst() []Path {
-	segments := p.Segments()
-	if len(segments) == 0 {
-		return nil
-	}
-
-	prefixes := make([]Path, 0, len(segments))
-	for i := len(segments); i > 0; i-- {
-		prefixes = append(prefixes, Path(strings.Join(segments[:i], "/")))
-	}
-	return prefixes
 }

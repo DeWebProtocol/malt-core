@@ -1,90 +1,31 @@
-# Language-Neutral Conformance Corpora
+# Authentication conformance
 
-MALT Core publishes checked-in JSON corpora so implementations can test exact
-portable behavior without importing the Go reference generator. Corpus profile
-identifiers version the test envelopes; they do not replace or revise the wire
-profile identifiers carried inside each vector.
+The current language-neutral corpus is `conformance/authentication-v1.json`,
+with schema `malt.conformance.authentication/1`. Its 20 vectors cover both exact
+built-in VC profiles, opaque labels, system payload selectors, literal-label
+separation, native keys, explicit traversal absence, measured ranges,
+Positional out-of-range evidence, wrong prefixes, and wrong Roots.
 
-## Published corpora
-
-| Corpus | Checked-in data | Purpose |
-| --- | --- | --- |
-| `malt.resolve-read.conformance/v3` | `conformance/resolve-read/v3/vectors.json` | Current V0 Resolve/Read acceptance and rejection |
-| `malt.map-proof.conformance/v2` | `conformance/map-proof/v2/vectors.json` | Current V0 KZG and IPA membership/non-membership verification |
-| `malt.client-root.conformance/v4` | `conformance/client-root/v4/vectors.json` | Transaction-ID contract with V0 inputs and outputs |
-| `malt.conformance.authentication/0` | `conformance/authentication-v0.json` | Typed V0 Prefix/Positional verification |
-
-Each versioned directory contains `corpus.schema.json`, `vector.schema.json`, and the
-frozen `vectors.json`. Consumers must reject unknown corpus or enclosed wire
-profiles and should pin the exact corpus digest from the source release or WASM
-provenance.
-
-## Map-proof v2
-
-Each vector binds an ID, backend, category, serialized
-`malt.map-proof/v0alpha1` verification envelope, and expected boolean outcome.
-Both KZG and IPA cover:
-
-- accepted membership and non-membership;
-- cryptographic proof tampering;
-- cross-root relabeling;
-- a caller-selected key mismatch;
-- authenticated target tampering; and
-- strict JSON rejection of unknown fields.
-
-An implementation passes a vector only when local verification of the exact
-serialized request and untrusted result matches `expected.valid`.
-
-## Client-root v4
-
-Each vector binds a backend, transaction identity, complete update view, semantic
-intent, and expected outcome. An accepted vector must reproduce the exact
-serialized client-root bundle, materialization, next view, and sample receipt.
-Rejected vectors cover a stale base, a root-inconsistent complete view, an
-unavailable/wrong backend, and strict JSON rejection.
-
-Historical corpora retain their original bytes in Git history. The current
-loaders reject those corpus versions. The v4 client-root corpus runs through
-`sdk/writer.NewRuntime`, covering current V0 writes for KZG and IPA with
-transaction IDs. Corpus revision `/v4` does not change Root `V=0`.
-`LoadClientRoot`, `ClientRootBytes`, and `ClientRootSchema` select v4.
-
-The receipt is checked only against the exact computed bundle. Neither the
-corpus nor the receipt proves durable persistence, publication, freshness,
-trusted-root promotion, or a portable state transition. Those remain caller or
-local-runtime policy.
-
-## Reproduction and adapters
-
-The Go generators are deterministic and are invoked by:
+Native tests and verifier WASM consume these same checked-in bytes. All-backend
+verification accepts valid vectors and rejects hostile vectors. A KZG-only or
+IPA-only instance also rejects valid evidence for the uninstalled profile.
+Writer WASM checks exact native/WASM Roots, retained branches, hostile inputs,
+batch/receipt binding, and single-Worker lifecycle across KZG and all three IPA
+execution profiles.
 
 ```bash
-go generate ./conformance
-go test ./conformance
+go run -p=6 ./internal/conformancegen/cmd -out conformance/authentication-v1.json
+scripts/test-verifier-wasm-vectors.sh
+scripts/test-writer-wasm.sh
 ```
 
-The browser verifier gate runs current V0 Resolve/Read and Map-proof
-corpora and also exercises typed V0 authentication. The writer gate checks
-backend isolation for native and js/wasm builds, then compares every KZG/IPA
-writer artifact against the v4 client-root corpus. It also checks typed V0
-preparation and the single-Worker session. Release provenance binds the exact
-current corpus digests. Archived client-root files are not current WASM writer
-expectations or a promise of old-wire compatibility.
-TypeScript, Rust, and other adapters should consume these same JSON
-files directly and must not regenerate implementation-specific replacements.
+Run these commands under the workspace's bounded workload scope. Released
+corpus bytes and identifiers are immutable. Historical authentication/0,
+Resolve/Read, Map-proof, and client-root corpora and loaders are retired from
+the current tree and remain in Git history; do not relabel old vectors as
+current evidence. A source change with incompatible query semantics requires a
+new query profile and corpus identifier.
 
-### Backend isolation gate
-
-`scripts/check-writer-backends.sh` preflights Go and POSIX `grep`; it does not
-require ripgrep. Each `go list` must succeed before its output is inspected.
-A matching forbidden backend rejects the build, grep status 1 means no match,
-and every other grep failure rejects the check. The writer smoke invokes this
-gate before starting Node tests or building WASM.
-
-CI also runs `node --test scripts/check-writer-backends.test.mjs` with a
-controlled PATH that excludes `rg`. It checks clean and contaminated dependency
-lists for both backends and targets, missing tools, failed dependency queries
-with partial output, matching-command errors, and propagation to the full
-writer smoke. Successful exit alone is not evidence that the dependency gate
-ran; CI logs must contain both backend success messages and the regression
-suite result.
+Release provenance binds the exact current corpus digest. Source-only
+integration checks do not update a consumer's published release lock or prove
+that distributed assets implement the new API.

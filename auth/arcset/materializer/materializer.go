@@ -62,38 +62,17 @@ type Iterator interface {
 	Iterate(context.Context, string, cid.Cid) arcset.Iterator
 }
 
-// NodeStore is the minimal mutable capability used by the reference map/list
-// commitment implementations for internal node slots.
+// NodeStore combines CID-valued lookup and update capabilities for encoded
+// internal node slots.
 type NodeStore interface {
 	Lookup
 	Updater
 }
 
-// RootedNodeUpdater optionally records which semantic node root owns an
-// unversioned node-cache ArcSet. Reference semantic implementations use it
+// RootedNodeUpdater records which internal node identity owns an
+// unversioned node-cache ArcSet. Encoded node materializers use it
 // when available so bounded in-memory sessions can reclaim unreachable node
 // caches without changing the portable Lookup/Updater contract.
 type RootedNodeUpdater interface {
 	UpdateNode(context.Context, string, cid.Cid, arcset.ArcSet) error
-}
-
-// MutableStore is the capability required by graph mutation/reference writer
-// algorithms. It deliberately does not require iteration.
-type MutableStore interface {
-	NodeStore
-	Snapshotter
-}
-
-// Store is the full compatibility aggregate implemented by the in-memory
-// conformance store and current Gateway ArcTable adapters. New algorithms
-// should accept the narrowest capability above instead of Store.
-type Store interface {
-	MutableStore
-	Iterator
-}
-
-// BranchingStore is an optional capability for materializers that preserve
-// concurrent children of the same parent root.
-type BranchingStore interface {
-	SupportsConcurrentBranches() bool
 }
