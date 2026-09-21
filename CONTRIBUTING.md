@@ -19,10 +19,11 @@ git diff --check
 go test ./...
 go vet ./...
 go build -buildvcs=false ./...
-scripts/build-verifier-wasm.sh dist/verifier
 ```
 
-Run `gofmt` before committing. Prefer behavior-focused and table-driven tests.
+Run these commands under the workspace resource limits and run `gofmt` before
+committing. Prefer behavior-focused and table-driven tests. WASM builds and
+browser integration checks belong to `DeWebProtocol/malt-ts`.
 
 ## Boundary rules
 
