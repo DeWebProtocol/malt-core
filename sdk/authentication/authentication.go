@@ -2,7 +2,7 @@
 // select inputs, layouts and exact profiles; persistence and trust stay local
 // to the caller.
 // All operations use an injected engine; this package imports no concrete VC
-// backend. The optional sdk/authentication/verifier package supplies built-ins.
+// backend. The optional sdk/authentication/builtin package supplies built-ins.
 package authentication
 
 import (
@@ -11,8 +11,8 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/graph/traversal"
 	"github.com/dewebprotocol/malt-core/protocol"
+	"github.com/dewebprotocol/malt-core/traversal"
 	cid "github.com/ipfs/go-cid"
 )
 

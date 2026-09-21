@@ -30,7 +30,7 @@ func GenerateAuthentication() ([]byte, error) {
 	}{Schema: "malt.conformance.authentication/1", Vectors: []vector{}}
 	ctx := context.Background()
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
-		var scheme engine.ProfileVerifier
+		var scheme engine.Profile
 		var err error
 		if profile == maltcid.KZG4096 {
 			scheme, err = kzg.NewScheme()

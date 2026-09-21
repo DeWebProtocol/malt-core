@@ -188,7 +188,7 @@ gate.
 `sdk/authentication` consumes a caller-supplied `auth/engine.Engine` for
 preparation, execution, materialization, and verification. It imports no
 concrete commitment backend. Applications that want the built-in verification
-profiles may opt into `sdk/authentication/verifier.New`; that separate package
+profiles may opt into `sdk/authentication/builtin.NewVerifier`; that separate package
 imports KZG and IPA. Backend-specific writer builds keep their selected backend
 injected and must not import this convenience constructor.
 
@@ -226,7 +226,7 @@ cannot infer re-chunked content or verify its bytes from relation state.
 ## Independent tree and explicit export
 
 `auth/tree` implements single-ArcSet authentication over `auth/coordinate`
-values. The typed `auth/engine` supplies input interpretation; `graph/traversal`
+values. The typed `auth/engine` supplies input interpretation; `traversal`
 composes proofs across Roots. These are separate from application flat/rooted
 organization and from Gateway relation persistence.
 

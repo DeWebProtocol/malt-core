@@ -15,7 +15,7 @@ import (
 
 // These are the tree's shared types, also exposed by the typed-input facade.
 type (
-	ProfileVerifier   = tree.ProfileVerifier
+	Profile           = tree.Profile
 	Registry          = tree.Registry
 	View              = tree.View
 	CoordinateBinding = tree.CoordinateBinding

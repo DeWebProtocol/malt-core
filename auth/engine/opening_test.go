@@ -16,41 +16,41 @@ import (
 )
 
 type openingCounter struct {
-	commitment.IndexCommitment
+	commitment.Backend
 	profile                                  maltcid.ProfileID
 	prepared, opened, verified, provedAtRoot int
 }
 
 func (s *openingCounter) ProfileID() maltcid.ProfileID { return s.profile }
-func (s *openingCounter) PrepareOpeningAtRoot(root commitment.Value, cells []commitment.Cell) (commitment.IndexOpening, error) {
+func (s *openingCounter) PrepareOpening(root commitment.Value, cells []commitment.Cell) (commitment.Opening, error) {
 	s.prepared++
-	opening, err := s.IndexCommitment.(commitment.IndexRootOpener).PrepareOpeningAtRoot(root, cells)
+	opening, err := s.Backend.(commitment.PreparedProver).PrepareOpening(root, cells)
 	if err != nil {
 		return nil, err
 	}
-	return &countedOpening{IndexOpening: opening, owner: s}, nil
+	return &countedOpening{Opening: opening, owner: s}, nil
 }
-func (s *openingCounter) ProveAtRoot(root commitment.Value, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func (s *openingCounter) Prove(root commitment.Value, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	s.provedAtRoot++
-	return s.IndexCommitment.(commitment.IndexRootProver).ProveAtRoot(root, cells, index)
+	return s.Backend.(commitment.Prover).Prove(root, cells, index)
 }
-func (s *openingCounter) BatchProveAtRoot(root commitment.Value, cells []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
+func (s *openingCounter) BatchProve(root commitment.Value, cells []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
 	s.provedAtRoot++
-	return s.IndexCommitment.(commitment.IndexRootProver).BatchProveAtRoot(root, cells, indices)
+	return s.Backend.(commitment.Prover).BatchProve(root, cells, indices)
 }
 func (s *openingCounter) VerifyIndex(root commitment.Value, index uint64, value commitment.Cell, proof []byte) (bool, error) {
 	s.verified++
-	return s.IndexCommitment.VerifyIndex(root, index, value, proof)
+	return s.Backend.VerifyIndex(root, index, value, proof)
 }
 
 type countedOpening struct {
-	commitment.IndexOpening
+	commitment.Opening
 	owner *openingCounter
 }
 
 func (p *countedOpening) Open(index uint64) (commitment.Cell, []byte, error) {
 	p.owner.opened++
-	return p.IndexOpening.Open(index)
+	return p.Opening.Open(index)
 }
 
 type corruptVector struct{ materializer.NodeLookup }
@@ -69,7 +69,7 @@ func TestEngineVerifiesEachGeneratedOpeningOnce(t *testing.T) {
 	for _, profile := range []maltcid.ProfileID{maltcid.IPA256, maltcid.KZG4096} {
 		for _, layout := range []maltcid.Layout{maltcid.Prefix, maltcid.Positional} {
 			t.Run(fmt.Sprintf("profile-%d/layout-%d", profile, layout), func(t *testing.T) {
-				var scheme commitment.IndexCommitment
+				var scheme commitment.Backend
 				var err error
 				if profile == maltcid.IPA256 {
 					scheme, err = ipa.NewCommitterScheme(ipa.ProfileDirect)
@@ -79,7 +79,7 @@ func TestEngineVerifiesEachGeneratedOpeningOnce(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				counter := &openingCounter{IndexCommitment: scheme, profile: profile}
+				counter := &openingCounter{Backend: scheme, profile: profile}
 				registry := engine.NewRegistry()
 				if err := registry.Register(counter); err != nil {
 					t.Fatal(err)

@@ -31,7 +31,7 @@ type Result struct {
 	Proof   Proof   `json:"proof"`
 }
 
-func openVector(s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func openVector(s Profile, ref maltcid.NodeRef, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	root, err := commitment.NewValue(ref.Profile, ref.Commitment)
 	if err != nil {
 		return nil, nil, err
@@ -39,23 +39,23 @@ func openVector(s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell,
 	if len(cells) != s.MaxValues() || index >= uint64(len(cells)) {
 		return nil, nil, errors.New("materialized vector width/index mismatch")
 	}
+	verifier, ok := s.(commitment.Verifier)
+	if !ok {
+		return nil, nil, errors.New("VC profile cannot verify openings")
+	}
 	var value commitment.Cell
 	var proof []byte
-	if opener, ok := s.(commitment.IndexRootOpener); ok {
-		var prepared commitment.IndexOpening
-		prepared, err = opener.PrepareOpeningAtRoot(root, cells)
+	if opener, ok := s.(commitment.PreparedProver); ok {
+		var prepared commitment.Opening
+		prepared, err = opener.PrepareOpening(root, cells)
 		if err == nil {
 			if prepared == nil || !prepared.Root().Equals(root) {
 				return nil, nil, errors.New("opening does not bind the selected commitment")
 			}
 			value, proof, err = prepared.Open(index)
 		}
-	} else if prover, ok := s.(commitment.IndexProver); ok {
-		var computed commitment.Value
-		computed, value, proof, err = prover.Prove(cells, index)
-		if err == nil && !root.Equals(computed) {
-			err = materializer.ErrIncomplete
-		}
+	} else if prover, ok := s.(commitment.Prover); ok {
+		value, proof, err = prover.Prove(root, cells, index)
 	} else {
 		return nil, nil, errors.New("VC profile cannot generate openings")
 	}
@@ -66,7 +66,7 @@ func openVector(s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell,
 	if !value.Equal(cells[index]) {
 		return nil, nil, errors.New("prover returned a different cell")
 	}
-	valid, err := s.VerifyIndex(root, index, commitment.NewCell(value), bytes.Clone(proof))
+	valid, err := verifier.VerifyIndex(root, index, commitment.NewCell(value), bytes.Clone(proof))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -75,12 +75,16 @@ func openVector(s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell,
 	}
 	return commitment.NewCell(value), bytes.Clone(proof), nil
 }
-func verifyOpening(s ProfileVerifier, ref maltcid.NodeRef, index uint64, cell, proof []byte) (bool, error) {
+func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []byte) (bool, error) {
 	root, err := commitment.NewValue(ref.Profile, ref.Commitment)
 	if err != nil {
 		return false, err
 	}
-	return s.VerifyIndex(root, index, commitment.NewCell(cell), bytes.Clone(proof))
+	verifier, ok := s.(commitment.Verifier)
+	if !ok {
+		return false, errors.New("VC profile cannot verify openings")
+	}
+	return verifier.VerifyIndex(root, index, commitment.NewCell(cell), bytes.Clone(proof))
 }
 
 // Prove opens only the supplied coordinate. Storage errors are never converted
@@ -405,7 +409,7 @@ func (e *Engine) ValidateNode(ctx context.Context, ref maltcid.NodeRef, cells []
 	return err
 }
 
-func observedOpenVector(ctx context.Context, s ProfileVerifier, ref maltcid.NodeRef, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func observedOpenVector(ctx context.Context, s Profile, ref maltcid.NodeRef, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	finish := observation.Start(ctx, observation.PhaseOpen)
 	cell, proof, err := openVector(s, ref, cells, index)
 	finish(1, 1, uint64(len(proof)))

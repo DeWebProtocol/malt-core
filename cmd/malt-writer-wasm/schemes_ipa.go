@@ -30,7 +30,7 @@ func newComputer(backend string) (*writerhost.Computer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize IPA %s writer: %w", profile, err)
 	}
-	return writerhost.NewComputer(map[maltcid.BackendKind]commitment.IndexCommitment{
+	return writerhost.NewComputer(map[maltcid.BackendKind]commitment.Backend{
 		maltcid.BackendKindIPA: scheme,
 	})
 }

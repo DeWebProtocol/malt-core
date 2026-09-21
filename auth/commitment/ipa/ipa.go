@@ -35,14 +35,16 @@ const (
 	batchTranscriptLabel  = "malt-ipa-batch"
 )
 
-// Scheme implements an IPA-based index commitment backend.
-type Scheme struct {
-	ipaConfig    *ipa.IPAConfig
-	profile      CommitterProfile
-	verifierOnly bool
+// VerifierScheme exposes verification without commitment or proving capabilities.
+type VerifierScheme struct {
+	ipaConfig *ipa.IPAConfig
 }
 
-var _ commitment.IndexOpener = (*Scheme)(nil)
+// Scheme implements the full IPA commitment backend.
+type Scheme struct {
+	*VerifierScheme
+	profile CommitterProfile
+}
 
 // CommitterProfile selects an IPA fixed-base MSM memory/performance tradeoff.
 // Profiles never change the SRS, commitment bytes, proof bytes, or typed CID.
@@ -67,12 +69,9 @@ func NewScheme() (*Scheme, error) {
 }
 
 // NewVerifierScheme creates an IPA verification scheme without a fixed-base
-// commitment table. Its execution methods fail closed if called.
-func NewVerifierScheme() (*Scheme, error) {
-	return &Scheme{
-		ipaConfig:    ipa.NewIPASettingsForVerifier(),
-		verifierOnly: true,
-	}, nil
+// commitment table. It exposes no execution methods.
+func NewVerifierScheme() (*VerifierScheme, error) {
+	return &VerifierScheme{ipaConfig: ipa.NewIPASettingsForVerifier()}, nil
 }
 
 // NewCommitterScheme creates an IPA scheme using one explicit MSM profile.
@@ -95,15 +94,15 @@ func NewCommitterScheme(profile CommitterProfile) (*Scheme, error) {
 	}
 
 	return &Scheme{
-		ipaConfig: ipaConfig,
-		profile:   profile,
+		VerifierScheme: &VerifierScheme{ipaConfig: ipaConfig},
+		profile:        profile,
 	}, nil
 }
 
 // CommitterProfile reports the selected execution profile. The second return
-// value is false for a verification-only scheme.
+// value is false for a nil scheme.
 func (s *Scheme) CommitterProfile() (CommitterProfile, bool) {
-	if s == nil || s.verifierOnly {
+	if s == nil {
 		return "", false
 	}
 	return s.profile, true
@@ -127,7 +126,7 @@ func ParameterSHA256() string {
 }
 
 // MaxValues returns the maximum number of authenticated slots.
-func (s *Scheme) MaxValues() int {
+func (s *VerifierScheme) MaxValues() int {
 	return MaxValues
 }
 
@@ -136,23 +135,10 @@ func (s *Scheme) Commit(values []commitment.Cell) (commitment.Value, error) {
 	return s.commitValues(values)
 }
 
-// Prove proves the value at a stable index.
-func (s *Scheme) Prove(values []commitment.Cell, index uint64) (commitment.Value, commitment.Cell, []byte, error) {
-	comm, err := s.commitValues(values)
-	if err != nil {
-		return commitment.Undef, nil, nil, err
-	}
-	if index >= uint64(len(values)) {
-		return commitment.Undef, nil, nil, fmt.Errorf("index %d out of range", index)
-	}
-	value, proof, err := s.proveValuesIndex(comm, values, index)
-	return comm, value, proof, err
-}
-
-// ProveAtRoot opens values against a caller-supplied root without recomputing
+// Prove opens values against a caller-supplied root without recomputing
 // the IPA commitment. The generated proof is verified before it is returned so
 // inconsistent client materialization fails closed.
-func (s *Scheme) ProveAtRoot(root commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func (s *Scheme) Prove(root commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	if err := s.requireCommitter(); err != nil {
 		return nil, nil, err
 	}
@@ -190,19 +176,6 @@ type opening struct {
 	point  banderwagon.Element
 }
 
-// PrepareOpening computes a commitment once and returns an opaque witness
-// whose Open method reuses that commitment in the IPA transcript.
-func (s *Scheme) PrepareOpening(values []commitment.Cell) (commitment.IndexOpening, error) {
-	if err := s.requireCommitter(); err != nil {
-		return nil, err
-	}
-	root, err := s.commitValues(values)
-	if err != nil {
-		return nil, err
-	}
-	return s.PrepareOpeningAtRoot(root, values)
-}
-
 func (o *opening) Root() commitment.Value { return o.root }
 
 func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
@@ -222,56 +195,9 @@ func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 	return commitment.NewCell(o.values[index]), encoded, nil
 }
 
-// BatchProve proves multiple stable indices with one batch proof payload.
-func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (commitment.Value, []commitment.Cell, []byte, error) {
-	if err := validateBatchOpening(values, indices); err != nil {
-		return commitment.Undef, nil, nil, err
-	}
-	comm, err := s.commitValues(values)
-	if err != nil {
-		return commitment.Undef, nil, nil, err
-	}
-
-	commBytes, err := comm.CommitmentBytes(maltcid.IPA256)
-	if err != nil {
-		return commitment.Undef, nil, nil, fmt.Errorf("failed to extract commitment: %w", err)
-	}
-
-	var c banderwagon.Element
-	if err := c.SetBytes(commBytes); err != nil {
-		return commitment.Undef, nil, nil, fmt.Errorf("failed to reconstruct commitment: %w", err)
-	}
-
-	vector := valuesToVector(values)
-	commitments := make([]banderwagon.Element, len(indices))
-	cs := make([]*banderwagon.Element, len(indices))
-	fs := make([][]fr.Element, len(indices))
-	zs := make([]uint8, len(indices))
-	proved := make([]commitment.Cell, len(indices))
-	for i, index := range indices {
-		commitments[i] = c
-		cs[i] = &commitments[i]
-		fs[i] = vector
-		zs[i] = uint8(index)
-		proved[i] = commitment.NewCell(values[int(index)])
-	}
-
-	transcript := common.NewTranscript(batchTranscriptLabel)
-	proof, err := multiproof.CreateMultiProof(transcript, s.ipaConfig, cs, fs, zs)
-	if err != nil {
-		return commitment.Undef, nil, nil, fmt.Errorf("failed to create IPA batch proof: %w", err)
-	}
-
-	proofBytes, err := serializeMultiProof(proof)
-	if err != nil {
-		return commitment.Undef, nil, nil, fmt.Errorf("failed to serialize IPA batch proof: %w", err)
-	}
-	return comm, proved, proofBytes, nil
-}
-
-// BatchProveAtRoot opens values against a caller-supplied root without
+// BatchProve opens values against a caller-supplied root without
 // recomputing the IPA commitment.
-func (s *Scheme) BatchProveAtRoot(root commitment.Value, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
+func (s *Scheme) BatchProve(root commitment.Value, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
 	if err := s.requireCommitter(); err != nil {
 		return nil, nil, err
 	}
@@ -362,7 +288,7 @@ func (s *Scheme) proveValuesIndex(comm commitment.Value, values []commitment.Cel
 }
 
 // VerifyIndex verifies a proof for a stable index without requiring cache state.
-func (s *Scheme) VerifyIndex(comm commitment.Value, index uint64, value commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) VerifyIndex(comm commitment.Value, index uint64, value commitment.Cell, proof []byte) (bool, error) {
 	if index >= MaxValues {
 		return false, fmt.Errorf("index %d exceeds max %d", index, MaxValues-1)
 	}
@@ -398,7 +324,7 @@ func (s *Scheme) VerifyIndex(comm commitment.Value, index uint64, value commitme
 }
 
 // BatchVerify verifies a batch proof for an ordered index list.
-func (s *Scheme) BatchVerify(comm commitment.Value, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) BatchVerify(comm commitment.Value, indices []uint64, values []commitment.Cell, proof []byte) (bool, error) {
 	if err := validateBatchVerification(indices, values); err != nil {
 		return false, err
 	}
@@ -476,7 +402,7 @@ func validateBatchVerification(indices []uint64, values []commitment.Cell) error
 }
 
 // VerifyProof verifies a proof carrying its own index metadata.
-func (s *Scheme) VerifyProof(comm commitment.Value, value commitment.Cell, proof []byte) (bool, error) {
+func (s *VerifierScheme) VerifyProof(comm commitment.Value, value commitment.Cell, proof []byte) (bool, error) {
 	commBytes, err := comm.CommitmentBytes(maltcid.IPA256)
 	if err != nil {
 		return false, fmt.Errorf("failed to extract commitment: %w", err)
@@ -556,7 +482,7 @@ func (s *Scheme) serializeProof(proof *ipa.IPAProof, index int) ([]byte, error) 
 }
 
 // deserializeProof deserializes an IPA proof and returns the proof and index.
-func (s *Scheme) deserializeProof(data []byte) (*ipa.IPAProof, uint64, error) {
+func (s *VerifierScheme) deserializeProof(data []byte) (*ipa.IPAProof, uint64, error) {
 	if len(data) != ProofSize {
 		return nil, 0, fmt.Errorf("proof data has wrong size: expected %d, got %d", ProofSize, len(data))
 	}
@@ -636,11 +562,8 @@ func (s *Scheme) commitValues(values []commitment.Cell) (commitment.Value, error
 }
 
 func (s *Scheme) requireCommitter() error {
-	if s == nil || s.ipaConfig == nil {
+	if s == nil || s.VerifierScheme == nil || s.ipaConfig == nil {
 		return fmt.Errorf("IPA scheme is nil")
-	}
-	if s.verifierOnly {
-		return fmt.Errorf("IPA scheme is verification-only")
 	}
 	return nil
 }
@@ -658,16 +581,17 @@ func valuesToVector(values []commitment.Cell) []fr.Element {
 	return vector
 }
 
-// Ensure Scheme implements commitment.IndexCommitment.
-var _ commitment.IndexCommitment = (*Scheme)(nil)
-var _ commitment.IndexVerifier = (*Scheme)(nil)
-var _ commitment.IndexProver = (*Scheme)(nil)
-var _ commitment.IndexRootProver = (*Scheme)(nil)
+// Ensure Scheme implements commitment.Backend.
+var _ commitment.Backend = (*Scheme)(nil)
+var _ commitment.Verifier = (*VerifierScheme)(nil)
+var _ commitment.Verifier = (*Scheme)(nil)
+var _ commitment.Committer = (*Scheme)(nil)
+var _ commitment.Prover = (*Scheme)(nil)
 
 // ProfileID identifies the exact cryptographic parameter and encoding suite.
-func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.IPA256 }
+func (s *VerifierScheme) ProfileID() maltcid.ProfileID { return maltcid.IPA256 }
 
-func (s *Scheme) PrepareOpeningAtRoot(root commitment.Value, values []commitment.Cell) (commitment.IndexOpening, error) {
+func (s *Scheme) PrepareOpening(root commitment.Value, values []commitment.Cell) (commitment.Opening, error) {
 	if err := s.requireCommitter(); err != nil {
 		return nil, err
 	}
@@ -695,4 +619,4 @@ func (o *opening) RetainedBytes() uint64 {
 	return n
 }
 
-var _ commitment.IndexRootOpener = (*Scheme)(nil)
+var _ commitment.PreparedProver = (*Scheme)(nil)

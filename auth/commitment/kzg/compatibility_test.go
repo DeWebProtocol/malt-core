@@ -40,7 +40,11 @@ func TestKZGPreprocessedWriterMatchesGoKZG(t *testing.T) {
 	if err != nil {
 		t.Fatalf("legacy BlobToKZGCommitment: %v", err)
 	}
-	prepared, err := writer.PrepareOpening(values)
+	root, err := writer.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prepared, err := writer.PrepareOpening(root, values)
 	if err != nil {
 		t.Fatalf("PrepareOpening: %v", err)
 	}
@@ -110,7 +114,11 @@ func TestKZGBatchEncodingMatchesLegacyPrimitiveProofs(t *testing.T) {
 		commitment.NewCell([]byte("two")),
 	}
 	indices := []uint64{0, 2}
-	root, proved, batchProof, err := writer.BatchProve(values, indices)
+	root, err := writer.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proved, batchProof, err := writer.BatchProve(root, values, indices)
 	if err != nil {
 		t.Fatalf("BatchProve: %v", err)
 	}

@@ -24,7 +24,13 @@ Start with [authentication inputs and Roots](docs/spec/authentication-inputs.md)
 `auth/input` interprets labels, native keys, indices, and system selectors.
 `auth/engine` combines those layers with an exact commitment profile.
 `sdk/authentication` constructs, queries, verifies, and updates this state;
-`graph/traversal` composes explicit steps across Roots.
+`traversal` composes explicit steps across Roots.
+
+`auth/commitment` separates `Committer`, `Prover`, and `Verifier` capabilities.
+Proof generation takes an existing commitment. The optional
+`sdk/authentication/builtin.NewVerifier` constructor installs built-in verification
+profiles; writers inject the capabilities they need. See the
+[capability migration](docs/changes/authentication-capabilities.md).
 
 The old Map/List adapters, string resolver, Resolve/Read and Map-proof
 contracts, module-root forwarding API, and client-root writer are removed.
@@ -37,10 +43,10 @@ For local verification, construct the request independently of the response:
 ```go
 import (
     "github.com/dewebprotocol/malt-core/sdk/authentication"
-    "github.com/dewebprotocol/malt-core/sdk/authentication/verifier"
+    "github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
 )
 
-engine, err := verifier.New(nil) // built-in KZG and IPA verification profiles
+engine, err := builtin.NewVerifier(nil) // built-in KZG and IPA verification profiles
 if err != nil {
     return err
 }
@@ -66,10 +72,10 @@ retained local state, not a portable state-transition proof.
 | `auth/engine` | Root descriptor, input interpretation, exact backend selection |
 | `auth/commitment` | KZG and IPA primitives |
 | `auth/arcset/materializer` | Narrow injected node lookup/update/snapshot capabilities |
-| `graph/traversal` | Explicit traversal across authenticated Roots |
+| `traversal` | Explicit traversal across authenticated Roots |
 | `sdk/authentication` | Queries, immutable writers, bounded sessions, exact batches |
 | `sdk/authentication/host` | Shared native/WASM serialization and session adapter |
-| `sdk/authentication/verifier` | Opt-in built-in verification backends |
+| `sdk/authentication/builtin` | Opt-in built-in verification backends |
 | `protocol`, `wire/maltcid` | Current strict JSON schemas, node and Root encoding |
 | `auth/observation` | Optional diagnostics; never proof evidence |
 | `cmd/malt-verifier-wasm`, `cmd/malt-writer-wasm` | Portable verification/writer build targets |

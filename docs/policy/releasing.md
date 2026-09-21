@@ -39,7 +39,7 @@ go build -p=6 -buildvcs=false ./...
 Also compile a temporary external Go module against the candidate tag or
 commit. It should import only the intended public packages, at minimum:
 
-- `sdk/authentication` and `sdk/authentication/verifier`;
+- `sdk/authentication` and `sdk/authentication/builtin`;
 - `protocol`, `auth/input`, and `wire/maltcid`;
 - `auth/arcset/materializer` when exercising executor composition.
 

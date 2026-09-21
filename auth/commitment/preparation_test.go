@@ -12,7 +12,7 @@ import (
 func TestPreparedRootOpenings(t *testing.T) {
 	for _, backend := range []string{"kzg", "ipa"} {
 		t.Run(backend, func(t *testing.T) {
-			var scheme commitment.IndexCommitment
+			var scheme commitment.Backend
 			var err error
 			if backend == "kzg" {
 				scheme, err = kzg.NewScheme()
@@ -27,7 +27,7 @@ func TestPreparedRootOpenings(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			prepared, err := scheme.(commitment.IndexRootOpener).PrepareOpeningAtRoot(root, values)
+			prepared, err := scheme.(commitment.PreparedProver).PrepareOpening(root, values)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -52,7 +52,7 @@ func TestPreparedRootOpenings(t *testing.T) {
 				}(i)
 			}
 			wg.Wait()
-			corrupt, err := scheme.(commitment.IndexRootOpener).PrepareOpeningAtRoot(root, values)
+			corrupt, err := scheme.(commitment.PreparedProver).PrepareOpening(root, values)
 			if err != nil {
 				t.Fatal(err)
 			}

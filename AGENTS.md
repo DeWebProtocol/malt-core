@@ -49,12 +49,13 @@ in Git history; do not relabel them or change CIDv1's container version.
 - `auth/input` interprets typed inputs; `auth/coordinate` defines coordinates.
 - `auth/tree` owns coordinate-only authentication, immutable nodes and updates.
 - `auth/engine` binds input rules, layouts and exact profiles to full Roots.
-- `auth/commitment` owns cryptographic primitives; `auth/observation` owns
+- `auth/commitment` owns independent Committer, Prover, and Verifier capabilities;
+  proof generation uses an explicit existing commitment. `auth/observation` owns
   optional diagnostics that never constitute evidence.
-- `graph/traversal` composes explicit typed steps across Roots.
+- `traversal` composes explicit typed steps across Roots.
 - `sdk/authentication` owns local queries, immutable writers, bounded sessions
   and exact candidate batches; its `host` shares native/WASM serialization.
-- `sdk/authentication/verifier` optionally installs built-in verification
+- `sdk/authentication/builtin` optionally installs built-in verification
   profiles. Backend-specific writers inject their own implementation.
 - `protocol` and `wire` own current strict JSON schemas and CID/node encoding.
   Incompatible serialized changes require distinct profile identifiers.

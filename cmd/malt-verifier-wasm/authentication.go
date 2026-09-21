@@ -8,7 +8,7 @@ import (
 
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
-	authverifier "github.com/dewebprotocol/malt-core/sdk/authentication/verifier"
+	authbuiltin "github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
@@ -23,7 +23,7 @@ func registerAuthenticationVerifier(backend string) error {
 	default:
 		return fmt.Errorf("unsupported verifier backend %q", backend)
 	}
-	verifier, initErr := authverifier.New(nil, profiles...)
+	verifier, initErr := authbuiltin.NewVerifier(nil, profiles...)
 	if initErr != nil {
 		return initErr
 	}
