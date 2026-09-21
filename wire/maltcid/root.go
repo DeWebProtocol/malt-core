@@ -54,9 +54,9 @@ func Profile(id ProfileID) (VCProfile, error) {
 // Input-rule implementations are looked up independently by the caller's
 // registry. Parsing a Root never downloads or executes an implementation.
 type RootDescriptor struct {
-	Version   uint8     `json:"version"`
+	Version   uint8     `json:"version" schema:"optional"`
 	Layout    Layout    `json:"layout"`
-	InputRule uint8     `json:"input_rule"`
+	InputRule uint8     `json:"input_rule" schema:"optional"`
 	Profile   ProfileID `json:"vc_profile"`
 }
 

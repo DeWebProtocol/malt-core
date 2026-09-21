@@ -8,7 +8,6 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
-	"github.com/dewebprotocol/malt-core/auth/observation"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -27,53 +26,16 @@ type Proof struct {
 }
 type Result struct {
 	Present bool    `json:"present"`
-	Target  cid.Cid `json:"target"`
+	Target  cid.Cid `json:"target" schema:"optional,nullable"`
 	Proof   Proof   `json:"proof"`
 }
 
 func openVector(s Profile, ref maltcid.NodeRef, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
-	root, err := commitment.NewValue(ref.Profile, ref.Commitment)
+	opening, err := prepareVector(s, ref, cells)
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(cells) != s.MaxValues() || index >= uint64(len(cells)) {
-		return nil, nil, errors.New("materialized vector width/index mismatch")
-	}
-	verifier, ok := s.(commitment.Verifier)
-	if !ok {
-		return nil, nil, errors.New("VC profile cannot verify openings")
-	}
-	var value commitment.Cell
-	var proof []byte
-	if opener, ok := s.(commitment.PreparedProver); ok {
-		var prepared commitment.Opening
-		prepared, err = opener.PrepareOpening(root, cells)
-		if err == nil {
-			if prepared == nil || !prepared.Root().Equals(root) {
-				return nil, nil, errors.New("opening does not bind the selected commitment")
-			}
-			value, proof, err = prepared.Open(index)
-		}
-	} else if prover, ok := s.(commitment.Prover); ok {
-		value, proof, err = prover.Prove(root, cells, index)
-	} else {
-		return nil, nil, errors.New("VC profile cannot generate openings")
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-	if !value.Equal(cells[index]) {
-		return nil, nil, errors.New("prover returned a different cell")
-	}
-	valid, err := verifier.VerifyIndex(root, index, commitment.NewCell(value), bytes.Clone(proof))
-	if err != nil {
-		return nil, nil, err
-	}
-	if !valid {
-		return nil, nil, materializer.ErrIncomplete
-	}
-	return commitment.NewCell(value), bytes.Clone(proof), nil
+	return opening.open(index)
 }
 func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []byte) (bool, error) {
 	root, err := commitment.NewValue(ref.Profile, ref.Commitment)
@@ -90,6 +52,10 @@ func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []b
 // Prove opens only the supplied coordinate. Storage errors are never converted
 // into authenticated absence. The caller derives the coordinate from its input.
 func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Value, source materializer.NodeLookup) (Result, error) {
+	return e.prove(ctx, root, query, newProofWork(source))
+}
+
+func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Value, work *proofWork) (Result, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
 		return Result{}, err
@@ -102,7 +68,7 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Value
 	if err != nil {
 		return Result{}, err
 	}
-	if source == nil {
+	if work.source == nil {
 		return Result{}, errors.New("node lookup is nil")
 	}
 	result := Result{Proof: Proof{Format: ProofFormat, Nodes: []NodeOpening{}}}
@@ -112,20 +78,9 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Value
 		if err := ctx.Err(); err != nil {
 			return Result{}, err
 		}
-		finishMaterialization := observation.Start(ctx, observation.PhaseMaterialization)
-		cells, err := source.GetNode(ctx, copyNodeRef(ref))
-		var cellBytes uint64
-		if observation.Enabled(ctx) {
-			for _, cell := range cells {
-				cellBytes += uint64(len(cell))
-			}
-		}
-		finishMaterialization(1, uint64(len(cells)), cellBytes)
+		node, err := work.load(ctx, ref, p.Slots)
 		if err != nil {
 			return Result{}, err
-		}
-		if len(cells) != p.Slots {
-			return Result{}, materializer.ErrIncomplete
 		}
 		opening := NodeOpening{}
 		var slot uint64
@@ -137,7 +92,7 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Value
 			}
 			slot = uint64(digit)
 		} else {
-			opening.Metadata, opening.MetadataProof, err = observedOpenVector(ctx, s, ref, cells, 0)
+			opening.Metadata, opening.MetadataProof, err = node.open(ctx, s, 0)
 			if err != nil {
 				return Result{}, err
 			}
@@ -161,7 +116,7 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Value
 			}
 			slot = localIndex/span + 1
 		}
-		opening.Cell, opening.Proof, err = observedOpenVector(ctx, s, ref, cells, slot)
+		opening.Cell, opening.Proof, err = node.open(ctx, s, slot)
 		if err != nil {
 			return Result{}, err
 		}
@@ -407,11 +362,4 @@ func (e *Engine) ValidateNode(ctx context.Context, ref maltcid.NodeRef, cells []
 	}
 	_, _, err = openVector(s, ref, cells, 0)
 	return err
-}
-
-func observedOpenVector(ctx context.Context, s Profile, ref maltcid.NodeRef, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
-	finish := observation.Start(ctx, observation.PhaseOpen)
-	cell, proof, err := openVector(s, ref, cells, index)
-	finish(1, 1, uint64(len(proof)))
-	return cell, proof, err
 }

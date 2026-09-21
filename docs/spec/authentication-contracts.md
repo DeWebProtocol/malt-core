@@ -61,9 +61,12 @@ of an arbitrary HTTP response.
 ## Encoding
 
 Decoders reject duplicate keys, non-exact field names, unknown fields, trailing
-JSON, invalid tagged unions, and retired query profiles. Documents are bounded
-at 96 MiB with nesting depth at most 256. Unsigned 64-bit numbers use canonical
-decimal strings. Byte fields use standard base64. CID-valued primitive fields
+JSON, missing required fields, null values where the schema disallows them,
+invalid tagged unions, and retired query profiles. Required arrays must be
+present as arrays even when empty; optional defaults and nullable fields follow
+the published schemas. Documents are bounded at 96 MiB with nesting depth at
+most 256. Unsigned 64-bit numbers use canonical decimal strings. Byte fields
+use standard base64 strings rather than JSON numeric arrays. CID-valued primitive fields
 use IPLD links; request/root summary fields use CID strings as their schemas
 specify. Error text is diagnostic, not a conformance identifier.
 

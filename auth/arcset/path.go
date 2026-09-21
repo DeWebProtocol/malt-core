@@ -8,8 +8,7 @@ import (
 
 var (
 	// ErrEmptyPath is returned when a raw binding path canonicalizes to the
-	// empty path. Empty paths are valid for traversal state, but not for an arc
-	// binding key.
+	// empty path. An arc binding key must be nonempty.
 	ErrEmptyPath = errors.New("path must not be empty")
 
 	// ErrDuplicatePath is returned when two raw paths canonicalize to the same
@@ -40,14 +39,9 @@ func (e *PathError) Unwrap() error {
 	return e.Err
 }
 
-// Path is a canonical arc path used inside MALT core components.
+// Path is a canonical ArcSet materializer key, not a typed query or traversal.
 // The zero value represents an empty path.
 type Path string
-
-// PayloadPath is the standard coordinate used by layouts that bind a semantic
-// object to payload data. Generic maps may omit or delete this coordinate;
-// layouts such as UnixFS define when it is required.
-const PayloadPath Path = "@payload"
 
 // CanonicalizePath normalizes a raw path into a stable arcset form.
 // It removes empty segments and joins the remaining segments with '/'.
@@ -84,44 +78,4 @@ func (p Path) String() string {
 // IsEmpty reports whether the path is empty.
 func (p Path) IsEmpty() bool {
 	return p == ""
-}
-
-// Segments returns the canonical path split into segments.
-func (p Path) Segments() []string {
-	if p.IsEmpty() {
-		return nil
-	}
-	return strings.Split(p.String(), "/")
-}
-
-// HasPrefix reports whether prefix is a full-segment prefix of p.
-func (p Path) HasPrefix(prefix Path) bool {
-	if prefix.IsEmpty() {
-		return true
-	}
-	if p == prefix {
-		return true
-	}
-
-	s := p.String()
-	pre := prefix.String()
-	return strings.HasPrefix(s, pre+"/")
-}
-
-// Consume removes prefix from the front of p when prefix is a full-segment prefix.
-// It returns the remaining canonical path and whether the consumption succeeded.
-func (p Path) Consume(prefix Path) (Path, bool) {
-	if prefix.IsEmpty() {
-		return p, true
-	}
-	if p == prefix {
-		return "", true
-	}
-	if !p.HasPrefix(prefix) {
-		return "", false
-	}
-
-	s := p.String()
-	pre := prefix.String()
-	return Path(s[len(pre)+1:]), true
 }

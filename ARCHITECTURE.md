@@ -48,6 +48,11 @@ a final binding query, or a fixed-chunk Positional byte range. Missing traversal
 steps carry authenticated early termination; the unevaluated suffix is not
 claimed to be absent. See [query contracts](docs/spec/authentication-contracts.md).
 
+Within one binding or range query, the tree loads each touched node once,
+prepares its opening material once when the profile supports preparation, and
+reuses only locally verified index evidence. This work is scoped to that call;
+returned proofs own their buffers, and a later query checks its own materializer.
+
 ## Write flow
 
 `BuildWriter` constructs a new immutable ArcSet. `NewWriter` validates and owns
@@ -79,6 +84,11 @@ adapter projects node references into narrow `Lookup`/`Updater` ArcSet ports;
 `NodeStore` composes those two capabilities where both are needed. Snapshot and
 iteration remain separate capabilities. There is no aggregate compatibility
 `Store`, `MutableStore`, or `BranchingStore` API.
+
+The reference in-memory ArcSet store retains snapshots and node ownership for
+callers that exercise those ports. It has no root-retention or reachability-GC
+policy. SDK sessions retain immutable tree materializations directly and apply
+their own handle and memory limits.
 
 Physical node identity is layout/profile qualified and independent of input
 preimages. Complete outer Roots retain their input rule. Caller-owned stores

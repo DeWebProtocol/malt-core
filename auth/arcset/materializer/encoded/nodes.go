@@ -145,33 +145,6 @@ func Identity(ref maltcid.NodeRef) (cid.Cid, error) {
 	}
 	return carrier(raw), nil
 }
-func RootIdentity(root cid.Cid) (cid.Cid, error) {
-	ref, _, err := maltcid.RootNode(root)
-	if err != nil {
-		return cid.Undef, err
-	}
-	return Identity(ref)
-}
-func References(value cid.Cid) []cid.Cid {
-	raw, err := parseCarrier(value)
-	if err != nil {
-		return nil
-	}
-	ref, target, err := maltcid.CellReference(raw)
-	if err != nil {
-		return nil
-	}
-	if ref != nil {
-		identity, err := Identity(*ref)
-		if err == nil {
-			return []cid.Cid{identity}
-		}
-	}
-	if target.Defined() {
-		return []cid.Cid{target}
-	}
-	return nil
-}
 
 // ParseIdentity decodes an internal-node carrier; application Roots use
 // maltcid.ParseRoot instead.

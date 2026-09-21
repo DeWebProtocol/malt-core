@@ -1,10 +1,6 @@
 package commitment
 
-import (
-	"bytes"
-
-	cid "github.com/ipfs/go-cid"
-)
+import "bytes"
 
 // Cell is the opaque, canonically encoded value authenticated at one index.
 // Semantic layers decide how to encode their state into cells; primitive
@@ -19,14 +15,6 @@ func NewCell(data []byte) Cell {
 	out := make([]byte, len(data))
 	copy(out, data)
 	return Cell(out)
-}
-
-// CellFromCID encodes a CID-valued slot as a commitment cell.
-func CellFromCID(value cid.Cid) Cell {
-	if !value.Defined() {
-		return nil
-	}
-	return NewCell(value.Bytes())
 }
 
 // Bytes returns a cloned byte slice for the cell.

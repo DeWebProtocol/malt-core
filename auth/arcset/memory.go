@@ -103,6 +103,7 @@ func ToPathMap(arcs ArcSet) (map[Path]cid.Cid, error) {
 
 	out := make(map[Path]cid.Cid, arcs.Len())
 	iter := arcs.Iterate()
+	defer iter.Close()
 	for {
 		path, target, ok := iter.Next()
 		if !ok {
