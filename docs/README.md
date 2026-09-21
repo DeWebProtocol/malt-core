@@ -15,7 +15,7 @@ superseded APIs. Historical releases and MIPs retain their original meaning.
 - [Threat model](policy/threat-model.md)
 - [Root version policy](policy/root-versioning.md)
 - [Release process](policy/releasing.md)
-- [WASM provenance and archives](policy/wasm-release-assets.md)
+- [WASM ownership](changes/wasm-ownership.md)
 - [Conformance](spec/conformance-corpora.md)
 - [Evaluation ownership](evaluation.md)
 - [MIP process and registry](mips/README.md)

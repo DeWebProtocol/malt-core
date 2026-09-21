@@ -70,7 +70,7 @@ placeholder evidence or old cache/path helpers remain.
 ## Shared hosts and browser integration
 
 `sdk/authentication/host` owns transport-neutral serialization and bounded
-sessions shared by Core and malt-ts WASM commands. Both commands retain backend
+sessions used by the malt-ts WASM commands. Those commands retain backend
 selection and JS ABI registration. The retained ABI exposes create/import,
 delta apply, complete export, discard and clear; batch and receipt validation
 use the same Core contracts. Workers serialize stateful operations and require

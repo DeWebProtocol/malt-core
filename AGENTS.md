@@ -60,7 +60,9 @@ in Git history; do not relabel them or change CIDv1's container version.
 - `protocol` and `wire` own current strict JSON schemas and CID/node encoding.
   Incompatible serialized changes require distinct profile identifiers.
 - Module-root `malt` is package documentation, not a forwarding facade.
-- WASM commands are build adapters, not network clients or application runtimes.
+- WASM entrypoints, compilation, browser Workers, distribution archives, and
+  native/WASM integration runners belong exclusively to `malt-ts`. Keep the
+  portable Go SDK and target-independent conformance corpus here.
 - Retired semantic Map/List, resolver, execution/mutation, artifact, old SDK,
   and aggregate Store packages/interfaces must not be restored as adapters.
 

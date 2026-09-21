@@ -30,8 +30,6 @@ git diff --check "${MALT_RELEASE_BASE}...HEAD"
 test -z "$(gofmt -l $(rg --files -g '*.go' -g '!vendor/**'))"
 go test -p=6 -parallel=6 ./...
 GOARCH=386 go test -p=6 -parallel=6 ./auth/commitment/kzg ./auth/commitment/ipa
-sh scripts/test-verifier-wasm-vectors.sh
-scripts/test-writer-wasm.sh
 go vet -p=6 ./...
 go build -p=6 -buildvcs=false ./...
 ```
@@ -43,23 +41,15 @@ commit. It should import only the intended public packages, at minimum:
 - `protocol`, `auth/input`, and `wire/maltcid`;
 - `auth/arcset/materializer` when exercising executor composition.
 
-Build and validate the content-addressed browser asset sets using the exact
-release version:
-
-```bash
-scripts/build-wasm-release.sh vX.Y.Z dist/wasm-release
-scripts/check-wasm-release.sh dist/wasm-release
-node scripts/test-wasm-release-adversarial.mjs dist/wasm-release
-```
-
-The output contract is defined in [WASM Release Assets](./wasm-release-assets.md).
-Upload all four emitted files without renaming or replacing them: two
-digest-named archives, the digest-named release manifest, and its
-`SHA256SUMS`.
-
 Review README, architecture, roadmap, schemas, compatibility policy, threat
-model, and release notes. If Web publishes the WASM build, its provenance must
-identify the exact MALT commit, Go toolchain, and SHA-256 checksum.
+model, and release notes. Core releases publish the Go module and its protocol
+and conformance sources. They do not build or upload WASM assets.
+
+WASM compilation, browser conformance, reproducible archives, Worker lifecycle,
+and TypeScript packaging belong to [malt-ts](https://github.com/DeWebProtocol/malt-ts).
+That repository adopts an exact published Core tag and commit, verifies Go
+module checksums, and builds its own ABI and assets. Its package/release process
+is independent of the Core source release.
 
 ## Tag and release
 
@@ -78,6 +68,6 @@ The GitHub release must include:
 - profile/schema compatibility notes;
 - known experimental limits.
 
-Source tags are authoritative. WASM bundles are content-addressed convenience
-assets with exact provenance; native platform binaries remain build-from-source
-until a separate workflow publishes signed artifacts and checksums.
+Source tags and their exact Go module checksums identify the Core dependency.
+Historical Core WASM releases remain available under their original tags; new
+WASM assets are owned and published by malt-ts.

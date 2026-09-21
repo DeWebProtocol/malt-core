@@ -78,25 +78,23 @@ retained local state, not a portable state-transition proof.
 | `sdk/authentication/builtin` | Opt-in built-in verification backends |
 | `protocol`, `wire/maltcid` | Current strict JSON schemas, node and Root encoding |
 | `auth/observation` | Optional diagnostics; never proof evidence |
-| `cmd/malt-verifier-wasm`, `cmd/malt-writer-wasm` | Portable verification/writer build targets |
 
 Gateway owns HTTP, persistence, service policy, and publication. The local MALT
 runtime owns UnixFS, trusted roots, payload binding, and CLI/daemon behavior.
-`malt-ts` owns the supported TypeScript package and browser lifecycle;
+`malt-ts` owns WASM entrypoints, builds, conformance runners, release archives,
+the supported TypeScript package, and browser lifecycle;
 `malt-evaluation` owns reproducible measurement. Core imports none of those
 application layers.
 
 ## Development and releases
 
-Use the repository's pinned Go toolchain. Run tests, vet, builds, and the WASM
-gates under the workspace resource limits in `AGENTS.md`:
+Use the repository's pinned Go toolchain. Run Go validation under the workspace
+resource limits in `AGENTS.md`. Browser/WASM validation runs in `malt-ts`:
 
 ```bash
 go test -p=6 -parallel=6 ./...
 go vet -p=6 ./...
 go build -p=6 -buildvcs=false ./...
-scripts/test-verifier-wasm-vectors.sh
-scripts/test-writer-wasm.sh
 ```
 
 This README describes the checked-out source. Use documentation from the exact

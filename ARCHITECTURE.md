@@ -60,8 +60,9 @@ validated, while unchanged owned nodes need no repeated commitment check.
 `Session` bounds retained branches by handle count and conservative state
 charge. Handles are local capabilities, never Roots, receipts, or trust
 statements. Discard and clear release branches; stale handle IDs are not reused.
-The shared `sdk/authentication/host` adapts this same implementation to native
-and WASM hosts without a second writer state machine.
+The transport-neutral `sdk/authentication/host` exposes serialization and session
+operations. The WASM ABI in `malt-ts` uses this same Go implementation without a
+second writer state machine.
 
 Applications update child ArcSets before rebinding parents and submit an
 ordered `AuthenticationBatch`. The Core verifier validates each candidate and
@@ -93,6 +94,8 @@ import direction and prevent restoration of retired packages.
 
 `sdk/authentication/builtin` constructs verification-only KZG/IPA profiles.
 Backend-specific writers inject their selected implementation without importing
-the other backend. Browser initialization requires the complete current ABI
-and exact backend/profile identity. `malt-ts` owns the stable TypeScript API and
-release-locked browser assets; Core remains normative for their semantics.
+the other backend. `malt-ts` owns all WASM entrypoints, compilation, browser
+initialization, integration runners, release archives, and the stable TypeScript
+API. It builds against an exact published Core source release and consumes the
+portable corpus from `conformance/`; Core remains normative for semantics and
+provides no WASM build or distribution targets.

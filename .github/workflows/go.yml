@@ -70,14 +70,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Test writer backend isolation gate failures
-        run: node --test scripts/check-writer-backends.test.mjs
-
       - name: Download modules
         run: go mod download
 
@@ -86,22 +78,6 @@ jobs:
 
       - name: Run 32-bit commitment tests
         run: GOARCH=386 go test ./auth/commitment/kzg ./auth/commitment/ipa
-
-      - name: Run verifier WASM conformance corpora
-        run: sh scripts/test-verifier-wasm-vectors.sh
-
-      - name: Run writer WASM smoke
-        run: sh scripts/test-writer-wasm.sh
-
-      - name: Build content-addressed WASM release assets
-        shell: bash
-        run: |
-          set -euo pipefail
-          release_dir="${RUNNER_TEMP}/malt-wasm-release"
-          scripts/build-wasm-release.sh \
-            "v0.0.0-ci.${GITHUB_SHA::12}" \
-            "${release_dir}"
-          node scripts/test-wasm-release-adversarial.mjs "${release_dir}"
 
       - name: Run vet
         run: go vet ./...
