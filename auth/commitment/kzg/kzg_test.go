@@ -23,7 +23,11 @@ func TestKZGProveIsStateless(t *testing.T) {
 		t.Fatalf("Commit failed: %v", err)
 	}
 
-	provedRoot, value, proof, err := scheme.Prove(values, 1)
+	provedRoot, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, proof, err := scheme.Prove(provedRoot, values, 1)
 	if err != nil {
 		t.Fatalf("Prove failed: %v", err)
 	}
@@ -52,7 +56,7 @@ func TestKZGProveIsStateless(t *testing.T) {
 	}
 }
 
-func TestKZGProveAtRootRejectsInconsistentMaterialization(t *testing.T) {
+func TestKZGProveRejectsInconsistentMaterialization(t *testing.T) {
 	scheme, err := kzg.NewScheme()
 	if err != nil {
 		t.Fatalf("NewScheme failed: %v", err)
@@ -65,9 +69,9 @@ func TestKZGProveAtRootRejectsInconsistentMaterialization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Commit failed: %v", err)
 	}
-	value, proof, err := scheme.ProveAtRoot(root, values, 1)
+	value, proof, err := scheme.Prove(root, values, 1)
 	if err != nil {
-		t.Fatalf("ProveAtRoot failed: %v", err)
+		t.Fatalf("Prove failed: %v", err)
 	}
 	if !value.Equal(values[1]) {
 		t.Fatalf("unexpected value %x", value)
@@ -78,11 +82,11 @@ func TestKZGProveAtRootRejectsInconsistentMaterialization(t *testing.T) {
 
 	inconsistent := commitment.CloneCells(values)
 	inconsistent[0] = commitment.NewCell([]byte("different slot0"))
-	if _, _, err := scheme.ProveAtRoot(root, inconsistent, 1); err == nil {
-		t.Fatal("ProveAtRoot accepted materialization inconsistent with root")
+	if _, _, err := scheme.Prove(root, inconsistent, 1); err == nil {
+		t.Fatal("Prove accepted materialization inconsistent with root")
 	}
-	if _, _, err := scheme.ProveAtRoot(root, make([]commitment.Cell, kzg.MaxValues+1), 0); err == nil {
-		t.Fatal("ProveAtRoot accepted an oversized materialization")
+	if _, _, err := scheme.Prove(root, make([]commitment.Cell, kzg.MaxValues+1), 0); err == nil {
+		t.Fatal("Prove accepted an oversized materialization")
 	}
 }
 
@@ -99,7 +103,7 @@ func TestKZGPreparedOpeningBindsRootAndClonesWitness(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Commit failed: %v", err)
 	}
-	prepared, err := scheme.PrepareOpening(values)
+	prepared, err := scheme.PrepareOpening(wantRoot, values)
 	if err != nil {
 		t.Fatalf("PrepareOpening failed: %v", err)
 	}
@@ -146,7 +150,11 @@ func TestKZGBatchProveIsStateless(t *testing.T) {
 	}
 
 	indices := []uint64{1, 2}
-	provedRoot, proved, proof, err := scheme.BatchProve(values, indices)
+	provedRoot, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proved, proof, err := scheme.BatchProve(provedRoot, values, indices)
 	if err != nil {
 		t.Fatalf("BatchProve failed: %v", err)
 	}
@@ -176,17 +184,17 @@ func TestKZGBatchProveIsStateless(t *testing.T) {
 		t.Fatal("expected wrong batch value verification to fail")
 	}
 
-	rootBoundValues, rootBoundProof, err := scheme.BatchProveAtRoot(root, values, indices)
+	rootBoundValues, rootBoundProof, err := scheme.BatchProve(root, values, indices)
 	if err != nil {
-		t.Fatalf("BatchProveAtRoot failed: %v", err)
+		t.Fatalf("BatchProve failed: %v", err)
 	}
 	if ok, err := scheme.BatchVerify(root, indices, rootBoundValues, rootBoundProof); err != nil || !ok {
 		t.Fatalf("root-bound BatchVerify = %v, %v; want true, nil", ok, err)
 	}
 	inconsistent := commitment.CloneCells(values)
 	inconsistent[0] = commitment.NewCell([]byte("different slot0"))
-	if _, _, err := scheme.BatchProveAtRoot(root, inconsistent, indices); err == nil {
-		t.Fatal("BatchProveAtRoot accepted materialization inconsistent with root")
+	if _, _, err := scheme.BatchProve(root, inconsistent, indices); err == nil {
+		t.Fatal("BatchProve accepted materialization inconsistent with root")
 	}
 }
 
@@ -206,11 +214,8 @@ func TestKZGBatchOperationsRejectOversizedRequests(t *testing.T) {
 		proved[i] = values[0]
 	}
 
-	if _, _, _, err := scheme.BatchProve(values, indices); err == nil {
+	if _, _, err := scheme.BatchProve(root, values, indices); err == nil {
 		t.Fatal("BatchProve accepted too many indices")
-	}
-	if _, _, err := scheme.BatchProveAtRoot(root, values, indices); err == nil {
-		t.Fatal("BatchProveAtRoot accepted too many indices")
 	}
 	if ok, err := scheme.BatchVerify(root, indices, proved, nil); err == nil || ok {
 		t.Fatalf("BatchVerify(too many indices) = %v, %v; want false, error", ok, err)
@@ -233,7 +238,11 @@ func TestKZGVerifyRejectsMalformedProofMetadata(t *testing.T) {
 		t.Fatalf("NewScheme failed: %v", err)
 	}
 	values := []commitment.Cell{commitment.NewCell([]byte("slot0"))}
-	root, value, proof, err := scheme.Prove(values, 0)
+	root, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, proof, err := scheme.Prove(root, values, 0)
 	if err != nil {
 		t.Fatalf("Prove failed: %v", err)
 	}
@@ -263,7 +272,11 @@ func FuzzKZGVerifyProofDoesNotPanic(f *testing.F) {
 		f.Fatalf("NewScheme failed: %v", err)
 	}
 	values := []commitment.Cell{commitment.NewCell([]byte("slot0"))}
-	root, value, proof, err := scheme.Prove(values, 0)
+	root, err := scheme.Commit(values)
+	if err != nil {
+		f.Fatal(err)
+	}
+	value, proof, err := scheme.Prove(root, values, 0)
 	if err != nil {
 		f.Fatalf("Prove failed: %v", err)
 	}

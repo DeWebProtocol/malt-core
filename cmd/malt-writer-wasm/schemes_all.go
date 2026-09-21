@@ -27,7 +27,7 @@ func startupProfile(backend string) string {
 func newComputer(backend string) (*writerhost.Computer, error) {
 	var (
 		kind   maltcid.BackendKind
-		scheme commitment.IndexCommitment
+		scheme commitment.Backend
 		err    error
 	)
 	switch backend {
@@ -46,7 +46,7 @@ func newComputer(backend string) (*writerhost.Computer, error) {
 	default:
 		return nil, fmt.Errorf("unsupported writer backend %q", backend)
 	}
-	return writerhost.NewComputer(map[maltcid.BackendKind]commitment.IndexCommitment{
+	return writerhost.NewComputer(map[maltcid.BackendKind]commitment.Backend{
 		kind: scheme,
 	})
 }

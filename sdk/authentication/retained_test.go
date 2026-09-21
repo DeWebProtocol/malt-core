@@ -16,17 +16,17 @@ import (
 )
 
 type countedVerifier struct {
-	commitment.IndexCommitment
+	commitment.Backend
 	calls int
 }
 
 func (c *countedVerifier) ProfileID() maltcid.ProfileID { return maltcid.IPA256 }
 func (c *countedVerifier) VerifyIndex(r commitment.Value, i uint64, v commitment.Cell, p []byte) (bool, error) {
 	c.calls++
-	return c.IndexCommitment.VerifyIndex(r, i, v, p)
+	return c.Backend.VerifyIndex(r, i, v, p)
 }
-func (c *countedVerifier) PrepareOpeningAtRoot(r commitment.Value, v []commitment.Cell) (commitment.IndexOpening, error) {
-	return c.IndexCommitment.(commitment.IndexRootOpener).PrepareOpeningAtRoot(r, v)
+func (c *countedVerifier) PrepareOpening(r commitment.Value, v []commitment.Cell) (commitment.Opening, error) {
+	return c.Backend.(commitment.PreparedProver).PrepareOpening(r, v)
 }
 
 func TestRetainedWriterDoesNotRevalidateOwnedNodes(t *testing.T) {
@@ -34,7 +34,7 @@ func TestRetainedWriterDoesNotRevalidateOwnedNodes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	counted := &countedVerifier{IndexCommitment: scheme}
+	counted := &countedVerifier{Backend: scheme}
 	profiles := engine.NewRegistry()
 	if err := profiles.Register(counted); err != nil {
 		t.Fatal(err)

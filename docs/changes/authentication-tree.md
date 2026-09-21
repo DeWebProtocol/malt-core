@@ -10,12 +10,12 @@ The tree owns Prefix and Positional construction, canonical cell encoding,
 affected-path updates, complete bounded snapshots, and binding/range proofs.
 It consumes narrow node capabilities and installed exact VC profiles. It does
 not interpret labels, payload selectors, application graphs, relation versions,
-or storage policy. `graph/traversal` owns explicit typed traversal across Roots,
+or storage policy. `traversal` owns explicit typed traversal across Roots,
 including lazy Root-scoped lookup used by `sdk/authentication`.
 
 ## Source migration
 
-Typed cross-Root proof values now use `graph/traversal.Traversal` instead of
+Typed cross-Root proof values now use `traversal.Traversal` instead of
 `engine.Traversal`. Register exact commitment backends through the registry
 passed to `engine.New`, or through `engine.Tree.Profiles` when configuring an
 existing facade. The former `engine.Profiles` field is no longer a second

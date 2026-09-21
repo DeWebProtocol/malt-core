@@ -9,14 +9,14 @@ executors supply untrusted data; they do not select the client's trust anchor.
 ```text
 auth/input -> auth/coordinate -> auth/tree -> auth/commitment
                     auth/engine binds input interpretation to the Root
-                    graph/traversal composes explicit steps across Roots
+                    traversal composes explicit steps across Roots
                     sdk/authentication supplies queries and retained writers
                     protocol / wire define their serialized contracts
 ```
 
 `auth/tree` owns canonical Prefix/Positional node construction, affected-path
 updates, snapshots, and binding/range evidence. It receives coordinates and
-installed VC profiles; it knows no label grammar, application graph, payload
+installed exact VC profiles and operation-specific capabilities; it knows no label grammar, application graph, payload
 selector, or persistent store policy. `auth/engine` applies the Root's input
 rule before entering the tree. Every traversal hop uses the descriptor of the
 Root reached by the preceding authenticated binding.
@@ -26,6 +26,12 @@ cannot be regrouped, inferred by longest-prefix search, or extended by a
 hidden payload redirect. Application flat/hybrid/rooted organization remains
 outside the tree. A rooted payload read supplies the system payload selector
 at the reached Prefix; a flat relation may already target a payload/manifest.
+
+`commitment.Committer`, `Prover`, and `Verifier` are independent capabilities.
+The profile registry records identity and capacity; individual operations require
+only their relevant capabilities. Both KZG and IPA expose verification-only types
+without execution methods. The SDK stays backend-neutral; `builtin.NewVerifier`
+is an opt-in constructor that imports the built-in verification implementations.
 
 ## Read flow
 
@@ -85,7 +91,7 @@ import direction and prevent restoration of retired packages.
 
 ## Portable boundary
 
-`sdk/authentication/verifier` constructs verification-only KZG/IPA profiles.
+`sdk/authentication/builtin` constructs verification-only KZG/IPA profiles.
 Backend-specific writers inject their selected implementation without importing
 the other backend. Browser initialization requires the complete current ABI
 and exact backend/profile identity. `malt-ts` owns the stable TypeScript API and

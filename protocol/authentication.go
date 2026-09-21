@@ -10,7 +10,7 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/engine"
 	"github.com/dewebprotocol/malt-core/auth/input"
-	"github.com/dewebprotocol/malt-core/graph/traversal"
+	"github.com/dewebprotocol/malt-core/traversal"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )

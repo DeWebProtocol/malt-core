@@ -21,20 +21,20 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// ProfileVerifier binds an implementation to an exact registered VC profile.
+// Profile identifies an installed implementation independently of its capabilities.
 // A KZG/IPA algorithm name or vector capacity alone is not sufficient.
-type ProfileVerifier interface {
-	commitment.IndexVerifier
+type Profile interface {
+	MaxValues() int
 	ProfileID() maltcid.ProfileID
 }
 
 type Registry struct {
 	mu      sync.RWMutex
-	schemes map[maltcid.ProfileID]ProfileVerifier
+	schemes map[maltcid.ProfileID]Profile
 }
 
-func NewRegistry() *Registry { return &Registry{schemes: make(map[maltcid.ProfileID]ProfileVerifier)} }
-func (r *Registry) Register(s ProfileVerifier) error {
+func NewRegistry() *Registry { return &Registry{schemes: make(map[maltcid.ProfileID]Profile)} }
+func (r *Registry) Register(s Profile) error {
 	if r == nil || s == nil || (reflect.ValueOf(s).Kind() == reflect.Ptr && reflect.ValueOf(s).IsNil()) {
 		return errors.New("profile registry and implementation are required")
 	}
@@ -51,12 +51,12 @@ func (r *Registry) Register(s ProfileVerifier) error {
 		return fmt.Errorf("VC profile %d is already registered", p.ID)
 	}
 	if r.schemes == nil {
-		r.schemes = make(map[maltcid.ProfileID]ProfileVerifier)
+		r.schemes = make(map[maltcid.ProfileID]Profile)
 	}
 	r.schemes[p.ID] = s
 	return nil
 }
-func (r *Registry) lookup(id maltcid.ProfileID) (ProfileVerifier, error) {
+func (r *Registry) lookup(id maltcid.ProfileID) (Profile, error) {
 	if r == nil {
 		return nil, errors.New("profile registry is nil")
 	}
@@ -78,7 +78,7 @@ type binding struct {
 	target     cid.Cid
 }
 
-func (e *Engine) config(d maltcid.RootDescriptor) (ProfileVerifier, maltcid.VCProfile, error) {
+func (e *Engine) config(d maltcid.RootDescriptor) (Profile, maltcid.VCProfile, error) {
 	if e == nil {
 		return nil, maltcid.VCProfile{}, errors.New("authentication tree is not configured")
 	}
@@ -125,9 +125,9 @@ func (e *Engine) Commit(ctx context.Context, state View, out materializer.NodeUp
 	if err != nil {
 		return cid.Undef, err
 	}
-	prover, ok := s.(commitment.IndexProver)
+	committer, ok := s.(commitment.Committer)
 	if !ok {
-		return cid.Undef, errors.New("VC profile is verification-only")
+		return cid.Undef, errors.New("VC profile cannot compute commitments")
 	}
 	if out == nil {
 		return cid.Undef, errors.New("node materializer is nil")
@@ -146,7 +146,7 @@ func (e *Engine) Commit(ctx context.Context, state View, out materializer.NodeUp
 		}
 		items[i] = binding{coordinate: k, target: entry.Target}
 	}
-	build := builder{registry: e.Profiles, ctx: ctx, descriptor: state.Descriptor, profile: p, scheme: prover, out: out}
+	build := builder{registry: e.Profiles, ctx: ctx, descriptor: state.Descriptor, profile: p, scheme: committer, out: out}
 	var ref maltcid.NodeRef
 	if state.Descriptor.Layout == maltcid.Prefix {
 		if state.ChunkSize != 0 || state.TotalSize != 0 {
@@ -187,7 +187,7 @@ type builder struct {
 	ctx        context.Context
 	descriptor maltcid.RootDescriptor
 	profile    maltcid.VCProfile
-	scheme     commitment.IndexProver
+	scheme     commitment.Committer
 	out        materializer.NodeUpdater
 }
 

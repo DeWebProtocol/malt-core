@@ -18,7 +18,7 @@ import (
 // the caller; an output failure can leave unreachable immutable nodes.
 type nodeEdit struct {
 	builder
-	verifier ProfileVerifier
+	verifier Profile
 	source   materializer.NodeLookup
 	loaded   map[string][]commitment.Cell
 	pending  []pendingNode
@@ -37,14 +37,14 @@ func (e *Engine) edit(ctx context.Context, root cid.Cid, source materializer.Nod
 	if err != nil {
 		return nil, ref, err
 	}
-	prover, ok := s.(commitment.IndexProver)
+	committer, ok := s.(commitment.Committer)
 	if !ok {
-		return nil, ref, errors.New("VC profile is verification-only")
+		return nil, ref, errors.New("VC profile cannot compute commitments")
 	}
 	if source == nil || out == nil {
 		return nil, ref, errors.New("node lookup and updater are required")
 	}
-	u := &nodeEdit{builder: builder{registry: e.Profiles, ctx: ctx, descriptor: d, profile: p, scheme: prover, out: out}, verifier: s, source: source, loaded: make(map[string][]commitment.Cell)}
+	u := &nodeEdit{builder: builder{registry: e.Profiles, ctx: ctx, descriptor: d, profile: p, scheme: committer, out: out}, verifier: s, source: source, loaded: make(map[string][]commitment.Cell)}
 	return u, ref, nil
 }
 func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitment.Cell, error) {

@@ -3,7 +3,6 @@ package ipa_test
 import (
 	"bytes"
 	"encoding/binary"
-	"strings"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
@@ -38,11 +37,19 @@ func TestIPACommitterProfilesAreWireIdentical(t *testing.T) {
 				t.Fatalf("CommitterProfile = %q, %v; want %q, true", got, ok, profile)
 			}
 
-			root, _, proof, err := scheme.Prove(values, 2)
+			root, err := scheme.Commit(values)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, proof, err := scheme.Prove(root, values, 2)
 			if err != nil {
 				t.Fatalf("Prove failed: %v", err)
 			}
-			batchRoot, _, batchProof, err := scheme.BatchProve(values, indices)
+			batchRoot, err := scheme.Commit(values)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, batchProof, err := scheme.BatchProve(batchRoot, values, indices)
 			if err != nil {
 				t.Fatalf("BatchProve failed: %v", err)
 			}
@@ -70,11 +77,11 @@ func TestIPACommitterProfilesAreWireIdentical(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVerifierScheme failed: %v", err)
 	}
-	if profile, ok := verifier.CommitterProfile(); ok || profile != "" {
-		t.Fatalf("verifier CommitterProfile = %q, %v; want empty, false", profile, ok)
+	if _, ok := any(verifier).(commitment.Committer); ok {
+		t.Fatal("verification-only IPA exposes commitment generation")
 	}
-	if _, err := verifier.Commit(values); err == nil || !strings.Contains(err.Error(), "verification-only") {
-		t.Fatalf("verifier Commit error = %v; want verification-only failure", err)
+	if _, ok := any(verifier).(commitment.Prover); ok {
+		t.Fatal("verification-only IPA exposes proof generation")
 	}
 	if _, err := ipa.NewCommitterScheme("unknown"); err == nil {
 		t.Fatal("NewCommitterScheme accepted an unknown profile")
@@ -104,7 +111,11 @@ func TestIPAProveIsStateless(t *testing.T) {
 		t.Fatalf("Commit failed: %v", err)
 	}
 
-	provedRoot, value, proof, err := scheme.Prove(values, 2)
+	provedRoot, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, proof, err := scheme.Prove(provedRoot, values, 2)
 	if err != nil {
 		t.Fatalf("Prove failed: %v", err)
 	}
@@ -132,7 +143,11 @@ func TestIPAProveIsStateless(t *testing.T) {
 		t.Fatal("expected wrong value verification to fail")
 	}
 
-	_, value0, proof0, err := scheme.Prove(values, 0)
+	rootForProof134, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value0, proof0, err := scheme.Prove(rootForProof134, values, 0)
 	if err != nil {
 		t.Fatalf("Prove(0) failed: %v", err)
 	}
@@ -148,7 +163,11 @@ func TestIPAProveIsStateless(t *testing.T) {
 		t.Fatal("expected index 0 proof to verify")
 	}
 
-	_, value1, proof1, err := scheme.Prove(values, 1)
+	rootForProof150, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value1, proof1, err := scheme.Prove(rootForProof150, values, 1)
 	if err != nil {
 		t.Fatalf("Prove(1) failed: %v", err)
 	}
@@ -173,7 +192,7 @@ func TestIPAProveIsStateless(t *testing.T) {
 	}
 }
 
-func TestIPAProveAtRootRejectsInconsistentMaterialization(t *testing.T) {
+func TestIPAProveRejectsInconsistentMaterialization(t *testing.T) {
 	scheme, err := ipa.NewScheme()
 	if err != nil {
 		t.Fatalf("NewScheme failed: %v", err)
@@ -186,9 +205,9 @@ func TestIPAProveAtRootRejectsInconsistentMaterialization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Commit failed: %v", err)
 	}
-	value, proof, err := scheme.ProveAtRoot(root, values, 1)
+	value, proof, err := scheme.Prove(root, values, 1)
 	if err != nil {
-		t.Fatalf("ProveAtRoot failed: %v", err)
+		t.Fatalf("Prove failed: %v", err)
 	}
 	if !value.Equal(values[1]) {
 		t.Fatalf("unexpected value %x", value)
@@ -199,11 +218,11 @@ func TestIPAProveAtRootRejectsInconsistentMaterialization(t *testing.T) {
 
 	inconsistent := commitment.CloneCells(values)
 	inconsistent[0] = commitment.NewCell([]byte("different slot0"))
-	if _, _, err := scheme.ProveAtRoot(root, inconsistent, 1); err == nil {
-		t.Fatal("ProveAtRoot accepted materialization inconsistent with root")
+	if _, _, err := scheme.Prove(root, inconsistent, 1); err == nil {
+		t.Fatal("Prove accepted materialization inconsistent with root")
 	}
-	if _, _, err := scheme.ProveAtRoot(root, make([]commitment.Cell, ipa.MaxValues+1), 0); err == nil {
-		t.Fatal("ProveAtRoot accepted an oversized materialization")
+	if _, _, err := scheme.Prove(root, make([]commitment.Cell, ipa.MaxValues+1), 0); err == nil {
+		t.Fatal("Prove accepted an oversized materialization")
 	}
 }
 
@@ -220,7 +239,7 @@ func TestIPAPreparedOpeningBindsRootAndClonesWitness(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Commit failed: %v", err)
 	}
-	prepared, err := scheme.PrepareOpening(values)
+	prepared, err := scheme.PrepareOpening(wantRoot, values)
 	if err != nil {
 		t.Fatalf("PrepareOpening failed: %v", err)
 	}
@@ -282,7 +301,11 @@ func TestIPAReplaceIsStateless(t *testing.T) {
 		t.Fatalf("updated root mismatch: %s != %s", recomputedRoot, newRoot)
 	}
 
-	provedRoot, value, proof, err := scheme.Prove(updatedValues, 1)
+	provedRoot, err := scheme.Commit(updatedValues)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, proof, err := scheme.Prove(provedRoot, updatedValues, 1)
 	if err != nil {
 		t.Fatalf("Prove on updated values failed: %v", err)
 	}
@@ -319,7 +342,11 @@ func TestIPABatchProveIsStateless(t *testing.T) {
 	}
 
 	indices := []uint64{0, 2}
-	provedRoot, proved, proof, err := scheme.BatchProve(values, indices)
+	provedRoot, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proved, proof, err := scheme.BatchProve(provedRoot, values, indices)
 	if err != nil {
 		t.Fatalf("BatchProve failed: %v", err)
 	}
@@ -349,17 +376,17 @@ func TestIPABatchProveIsStateless(t *testing.T) {
 		t.Fatal("expected wrong batch value verification to fail")
 	}
 
-	rootBoundValues, rootBoundProof, err := scheme.BatchProveAtRoot(root, values, indices)
+	rootBoundValues, rootBoundProof, err := scheme.BatchProve(root, values, indices)
 	if err != nil {
-		t.Fatalf("BatchProveAtRoot failed: %v", err)
+		t.Fatalf("BatchProve failed: %v", err)
 	}
 	if ok, err := scheme.BatchVerify(root, indices, rootBoundValues, rootBoundProof); err != nil || !ok {
 		t.Fatalf("root-bound BatchVerify = %v, %v; want true, nil", ok, err)
 	}
 	inconsistent := commitment.CloneCells(values)
 	inconsistent[1] = commitment.NewCell([]byte("different slot1"))
-	if _, _, err := scheme.BatchProveAtRoot(root, inconsistent, indices); err == nil {
-		t.Fatal("BatchProveAtRoot accepted materialization inconsistent with root")
+	if _, _, err := scheme.BatchProve(root, inconsistent, indices); err == nil {
+		t.Fatal("BatchProve accepted materialization inconsistent with root")
 	}
 }
 
@@ -379,11 +406,8 @@ func TestIPABatchOperationsRejectOversizedRequests(t *testing.T) {
 		proved[i] = values[0]
 	}
 
-	if _, _, _, err := scheme.BatchProve(values, indices); err == nil {
+	if _, _, err := scheme.BatchProve(root, values, indices); err == nil {
 		t.Fatal("BatchProve accepted too many indices")
-	}
-	if _, _, err := scheme.BatchProveAtRoot(root, values, indices); err == nil {
-		t.Fatal("BatchProveAtRoot accepted too many indices")
 	}
 	if ok, err := scheme.BatchVerify(root, indices, proved, nil); err == nil || ok {
 		t.Fatalf("BatchVerify(too many indices) = %v, %v; want false, error", ok, err)
@@ -416,7 +440,11 @@ func TestIPAVerifyRejectsOutOfRangeStableIndex(t *testing.T) {
 		t.Fatalf("NewScheme failed: %v", err)
 	}
 	values := []commitment.Cell{commitment.NewCell([]byte("slot0"))}
-	root, value, proof, err := scheme.Prove(values, 0)
+	root, err := scheme.Commit(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, proof, err := scheme.Prove(root, values, 0)
 	if err != nil {
 		t.Fatalf("Prove failed: %v", err)
 	}

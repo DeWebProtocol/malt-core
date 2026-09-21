@@ -33,16 +33,16 @@ func TestProductionImportBoundaries(t *testing.T) {
 		forbidden []string
 	}{
 		{name: "coordinate-only authentication tree", dir: filepath.Join(root, "auth", "tree"), recursive: true,
-			forbidden: []string{"auth/input", "auth/engine", "graph", "protocol", "sdk", "mutation", "execution"}},
+			forbidden: []string{"auth/input", "auth/engine", "traversal", "graph", "protocol", "sdk", "mutation", "execution"}},
 		{
 			name:      "authentication kernel",
 			dir:       filepath.Join(root, "auth"),
 			recursive: true,
-			forbidden: []string{"graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
+			forbidden: []string{"traversal", "graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
 		},
 		{
-			name:      "graph ports",
-			dir:       filepath.Join(root, "graph"),
+			name:      "explicit traversal",
+			dir:       filepath.Join(root, "traversal"),
 			recursive: true,
 			forbidden: []string{"runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
 		},
@@ -53,7 +53,7 @@ func TestProductionImportBoundaries(t *testing.T) {
 			name:      "module facade",
 			dir:       root,
 			recursive: false,
-			forbidden: []string{"graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
+			forbidden: []string{"traversal", "graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
 		},
 	}
 
@@ -100,7 +100,7 @@ func TestSDKOnlyRepositoryDoesNotRetainProductResidue(t *testing.T) {
 	}
 	root := filepath.Dir(sourceFile)
 	for _, name := range []string{
-		"config.example.json",
+		"config.example.json", "graph", "sdk/authentication/verifier",
 		"auth/semantic", "auth/proof", "auth/verifier", "sdk/writer", "sdk/verifier", "execution", "mutation", "graph/runtime", "graph/resolver", "graph/writer",
 		"logger",
 		filepath.Join("graph", "querypath"),

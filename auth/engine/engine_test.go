@@ -10,7 +10,7 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
 	"github.com/dewebprotocol/malt-core/auth/engine"
 	"github.com/dewebprotocol/malt-core/auth/input"
-	"github.com/dewebprotocol/malt-core/graph/traversal"
+	"github.com/dewebprotocol/malt-core/traversal"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
@@ -23,7 +23,7 @@ func target(text string) cid.Cid {
 func setup(t *testing.T, id maltcid.ProfileID) (*engine.Engine, *memory.Nodes) {
 	t.Helper()
 	r := engine.NewRegistry()
-	var s engine.ProfileVerifier
+	var s engine.Profile
 	var err error
 	if id == maltcid.IPA256 {
 		s, err = ipa.NewCommitterScheme(ipa.ProfileDirect)

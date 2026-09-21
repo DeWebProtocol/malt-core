@@ -29,7 +29,20 @@ They do not own:
 - head publication or freshness policy
 - payload storage or retrieval
 
-The current public backend interfaces live under `auth/commitment`.
+The public interfaces under `auth/commitment` separate three capabilities:
+
+- `Committer` computes commitments and performs checked index-stable replacement.
+- `Prover` generates single or batch proofs against a supplied commitment; it
+  never recomputes that commitment.
+- `Verifier` checks supplied evidence without loading materialization.
+
+`Backend` composes all three for hosts that need them. `tree.Profile` identifies
+an installed backend by exact profile and capacity, without requiring all three
+capabilities. Construction requires a `Committer`; query execution requires a
+`Prover` and `Verifier`; verification requires only a `Verifier`. Retained owned
+updates need commitment computation, while imports and untrusted materialization
+also require proof generation and verification.
+
 Coordinate-based layouts live in `auth/tree`; `auth/engine` supplies typed
 input interpretation. `sdk/authentication` verifies explicit traversal and
 primitive evidence using exact Root-selected profiles without runtime state.
@@ -54,15 +67,16 @@ zero. The former Map/List and flat binding-CID commitment wrappers are removed. 
 
 ## Root-bound proof generation
 
-The built-in KZG and IPA backends implement `commitment.IndexRootOpener`.
-`PrepareOpeningAtRoot` prepares an immutable witness for a caller-selected
+The built-in KZG and IPA backends implement `commitment.PreparedProver`.
+`PrepareOpening` prepares an immutable witness for a caller-selected
 primitive value without computing its commitment. Preparation does not
 validate untrusted cells. The engine opens the selected coordinate, checks the
 returned root and cell, then calls `VerifyIndex` exactly once before returning
 the proof. A corrupt vector fails verification. Backends without the prepared
-capability use `IndexProver` and compare the computed primitive value.
+capability use `Prover.Prove(root, cells, index)` and verify its result against
+the same selected root. There is no commit-and-prove fallback.
 
-Public `IndexRootProver` methods still verify their own outputs. The engine
+Public `Prover` methods still verify their own outputs. The engine
 uses the prepared capability to avoid repeating that verification. Cache
 ownership, lifetime, serialization, persistence, authorization, publication,
 and trusted-root selection remain caller responsibilities.

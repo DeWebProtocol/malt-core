@@ -9,7 +9,7 @@ import (
 )
 
 func newComputer(backend string) (*Computer, error) {
-	var scheme commitment.IndexCommitment
+	var scheme commitment.Backend
 	var err error
 	switch maltcid.BackendKind(backend) {
 	case maltcid.BackendKindKZG:
@@ -22,5 +22,5 @@ func newComputer(backend string) (*Computer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewComputer(map[maltcid.BackendKind]commitment.IndexCommitment{maltcid.BackendKind(backend): scheme})
+	return NewComputer(map[maltcid.BackendKind]commitment.Backend{maltcid.BackendKind(backend): scheme})
 }

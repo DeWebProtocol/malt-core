@@ -17,13 +17,13 @@ type Computer struct {
 	authSession *authentication.Session
 }
 
-func NewComputer(schemes map[maltcid.BackendKind]commitment.IndexCommitment) (*Computer, error) {
+func NewComputer(schemes map[maltcid.BackendKind]commitment.Backend) (*Computer, error) {
 	if len(schemes) == 0 {
 		return nil, fmt.Errorf("writer backends are required")
 	}
 	profiles := engine.NewRegistry()
 	for kind, scheme := range schemes {
-		profile, ok := scheme.(engine.ProfileVerifier)
+		profile, ok := scheme.(engine.Profile)
 		if !ok {
 			return nil, fmt.Errorf("writer backend must expose an exact VC profile")
 		}

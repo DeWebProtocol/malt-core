@@ -9,7 +9,7 @@ import (
 	"github.com/dewebprotocol/malt-core/internal/conformancegen"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
-	authverifier "github.com/dewebprotocol/malt-core/sdk/authentication/verifier"
+	authbuiltin "github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
 )
 
 func TestAuthenticationV0Corpus(t *testing.T) {
@@ -38,7 +38,7 @@ func TestAuthenticationV0Corpus(t *testing.T) {
 	if corpus.Schema != "malt.conformance.authentication/1" || len(corpus.Vectors) == 0 {
 		t.Fatal("invalid corpus")
 	}
-	verifier, err := authverifier.New(nil)
+	verifier, err := authbuiltin.NewVerifier(nil)
 	if err != nil {
 		t.Fatal(err)
 	}

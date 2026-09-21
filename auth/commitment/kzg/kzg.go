@@ -36,8 +36,6 @@ type Scheme struct {
 	writerKey *kzgWriterKey
 }
 
-var _ commitment.IndexOpener = (*Scheme)(nil)
-
 // NewScheme creates a new KZG commitment scheme.
 func NewScheme() (*Scheme, error) {
 	verifier, err := NewVerifierScheme()
@@ -75,23 +73,10 @@ func (s *Scheme) Commit(values []commitment.Cell) (commitment.Value, error) {
 	return s.commitValues(values)
 }
 
-// Prove proves the value at a stable index.
-func (s *Scheme) Prove(values []commitment.Cell, index uint64) (commitment.Value, commitment.Cell, []byte, error) {
-	comm, err := s.commitValues(values)
-	if err != nil {
-		return commitment.Undef, nil, nil, err
-	}
-	if index >= uint64(len(values)) {
-		return commitment.Undef, nil, nil, fmt.Errorf("index %d out of range", index)
-	}
-	value, proof, err := s.proveValuesIndex(values, index)
-	return comm, value, proof, err
-}
-
-// ProveAtRoot opens values against a caller-supplied root without recomputing
+// Prove opens values against a caller-supplied root without recomputing
 // the KZG commitment. The generated proof is verified before it is returned so
 // inconsistent client materialization fails closed.
-func (s *Scheme) ProveAtRoot(root commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+func (s *Scheme) Prove(root commitment.Value, values []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
 	if _, err := root.CommitmentBytes(maltcid.KZG4096); err != nil {
 		return nil, nil, fmt.Errorf("invalid proof root: %w", err)
 	}
@@ -125,16 +110,6 @@ type opening struct {
 	polynomial []blsfr.Element
 }
 
-// PrepareOpening computes a commitment once and returns an opaque witness
-// whose Open method never calls BlobToKZGCommitment.
-func (s *Scheme) PrepareOpening(values []commitment.Cell) (commitment.IndexOpening, error) {
-	root, err := s.commitValues(values)
-	if err != nil {
-		return nil, err
-	}
-	return s.PrepareOpeningAtRoot(root, values)
-}
-
 func (o *opening) Root() commitment.Value { return o.root }
 
 func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
@@ -160,35 +135,9 @@ func (s *Scheme) proveValuesIndex(values []commitment.Cell, index uint64) (commi
 	return commitment.NewCell(values[index]), serializeProof(proof, claimedValue, index), nil
 }
 
-// BatchProve currently concatenates single-index KZG proofs because the
-// current go-kzg-4844 dependency does not expose batch opening generation.
-// TODO: replace this looped encoding with a real KZG multiproof when the
-// backend supports batch opening generation for our index-commitment setting.
-func (s *Scheme) BatchProve(values []commitment.Cell, indices []uint64) (commitment.Value, []commitment.Cell, []byte, error) {
-	if err := validateBatchOpening(values, indices); err != nil {
-		return commitment.Undef, nil, nil, err
-	}
-	comm, err := s.commitValues(values)
-	if err != nil {
-		return commitment.Undef, nil, nil, err
-	}
-
-	proved := make([]commitment.Cell, len(indices))
-	proofs := make([][]byte, len(indices))
-	for i, index := range indices {
-		value, proof, err := s.proveValuesIndex(values, index)
-		if err != nil {
-			return commitment.Undef, nil, nil, err
-		}
-		proved[i] = value
-		proofs[i] = proof
-	}
-	return comm, proved, serializeBatchProof(proofs), nil
-}
-
-// BatchProveAtRoot opens values against a caller-supplied root without
+// BatchProve opens values against a caller-supplied root without
 // recomputing the KZG commitment.
-func (s *Scheme) BatchProveAtRoot(root commitment.Value, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
+func (s *Scheme) BatchProve(root commitment.Value, values []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
 	if _, err := root.CommitmentBytes(maltcid.KZG4096); err != nil {
 		return nil, nil, fmt.Errorf("invalid proof root: %w", err)
 	}
@@ -427,12 +376,12 @@ func deserializeBatchProof(data []byte) ([][]byte, error) {
 	return proofs, nil
 }
 
-// Ensure Scheme implements commitment.IndexCommitment.
-var _ commitment.IndexCommitment = (*Scheme)(nil)
-var _ commitment.IndexVerifier = (*VerifierScheme)(nil)
-var _ commitment.IndexVerifier = (*Scheme)(nil)
-var _ commitment.IndexProver = (*Scheme)(nil)
-var _ commitment.IndexRootProver = (*Scheme)(nil)
+// Ensure Scheme implements commitment.Backend.
+var _ commitment.Backend = (*Scheme)(nil)
+var _ commitment.Verifier = (*VerifierScheme)(nil)
+var _ commitment.Verifier = (*Scheme)(nil)
+var _ commitment.Committer = (*Scheme)(nil)
+var _ commitment.Prover = (*Scheme)(nil)
 
 // ProfileID identifies the exact cryptographic parameter and encoding suite.
 func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
@@ -440,7 +389,7 @@ func (s *Scheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
 // ProfileID binds the verification-only implementation to the same VC profile.
 func (s *VerifierScheme) ProfileID() maltcid.ProfileID { return maltcid.KZG4096 }
 
-func (s *Scheme) PrepareOpeningAtRoot(root commitment.Value, values []commitment.Cell) (commitment.IndexOpening, error) {
+func (s *Scheme) PrepareOpening(root commitment.Value, values []commitment.Cell) (commitment.Opening, error) {
 	if _, err := root.CommitmentBytes(maltcid.KZG4096); err != nil {
 		return nil, err
 	}
@@ -464,4 +413,4 @@ func (o *opening) RetainedBytes() uint64 {
 	return n
 }
 
-var _ commitment.IndexRootOpener = (*Scheme)(nil)
+var _ commitment.PreparedProver = (*Scheme)(nil)
