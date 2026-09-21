@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	writerhost "github.com/dewebprotocol/malt-core/sdk/writer/host"
+	writerhost "github.com/dewebprotocol/malt-core/sdk/authentication/host"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"

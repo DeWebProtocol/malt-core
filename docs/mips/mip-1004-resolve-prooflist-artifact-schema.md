@@ -48,7 +48,7 @@ bindings from routes or headers.
   new integrations while its released schema remains decodable.
 
 The normative field and verification rules live in
-[`docs/spec/artifacts.md`](../spec/artifacts.md).
+[`docs/spec/artifacts.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/artifacts.md).
 
 ## Compatibility
 

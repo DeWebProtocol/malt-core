@@ -10,11 +10,11 @@ does not use the Merkle-DAG object chain as the application proof path.
 | --- | --- | --- |
 | Authentication granularity | Parent/child links committed at block boundaries | Typed arcs committed independently from payload blocks |
 | Payload storage | Immutable content-addressed objects | Ordinary immutable CAS payloads |
-| Relationship authentication | Links embedded in parent object content | Typed map/list semantics under structure roots |
+| Relationship authentication | Links embedded in parent object content | Typed bindings under Prefix/Positional Roots |
 | Read shape | Traverse linked objects from a root CID | Query `trusted root + typed arc`; layouts may expose paths |
-| Proof material | Traversal objects and sibling or linked evidence | Dedicated `ProofList` evidence |
+| Proof material | Traversal objects and sibling or linked evidence | Dedicated typed authentication evidence evidence |
 | Trusted components | Traversed content-addressed object chain | Portable auth kernel; indexes and gateways remain untrusted |
-| Network reads | Transport linked blocks or gateway responses | Carry operation-specific result/ProofList plus separately fetched CID bytes |
+| Network reads | Transport linked blocks or gateway responses | Carry operation-specific result/evidence plus separately fetched CID bytes |
 | Update cost | Child-reference changes can propagate rootward | Structure roots advance without rewriting unrelated payload objects |
 
 ## Proof Material
@@ -25,17 +25,16 @@ the trusted root to the target. Those intermediate objects are not just
 payload; they are evidence for the traversal.
 
 MALT separates the proof from the payload object chain. The verifier checks a
-`ProofList` against a trusted MALT root, query, and result:
+typed authentication evidence against a trusted MALT root, query, and result:
 
 ```text
-VerifyRead(ReadRequest, ReadResult) -> valid / invalid
-VerifyResolve(ResolveRequest, ResolveResult) -> valid / invalid
+authentication.Verify(engine, callerRequest, untrustedResult) -> valid / invalid
 ```
 
-For flat MALT lookups, proof material for each semantic lookup is fixed-size
-under the selected commitment backend. A response that intentionally combines
+For a binding lookup, proof size depends on authenticated tree depth and the
+selected commitment backend; it is not a universally fixed-size path proof. A response that intentionally combines
 multiple semantic lookups or range segments carries the corresponding proof
-steps, but the ProofList is still dedicated verifier evidence rather than the
+steps, but the authentication evidence is still dedicated verifier evidence rather than the
 Merkle-DAG traversal objects themselves.
 
 ## Direct Root And Typed Query Reads
@@ -47,7 +46,7 @@ fetch enough evidence to verify the traversal.
 MALT's core read contract is root-relative and typed:
 
 ```text
-Read(ReadRequest{Root, Query}) -> ReadResult{Target, ProofList}
+Execute(AuthenticationRequest{Root, Steps, Operation}) -> AuthenticationResult
 ```
 
 The application requests one authenticated relation, and the verifier checks
@@ -60,20 +59,20 @@ generic core.
 Merkle DAGs can be transported over HTTP. The difference is what the client
 must receive to verify the answer.
 
-MALT transports carry operation-specific results and ProofLists. A client may
+MALT transports carry operation-specific results and authentication evidence. A client may
 then fetch authenticated payload CIDs from an HTTP CAS endpoint:
 
 ```text
-POST /v1/resolve -> target CID + ProofList
+typed authentication query -> target CID + authentication evidence
 GET  /v1/cas/{target CID} -> payload bytes
 ```
 
-The client verifies the relation ProofList locally and hashes the payload bytes
+The client verifies the relation evidence locally and hashes the payload bytes
 against the authenticated CID. A gateway, CDN, or cache can serve either
 response without becoming a correctness authority.
 
 The operation contracts are documented in
-[Resolve and read contracts](../spec/resolve-read-contracts.md). HTTP route
+[typed authentication contracts](../spec/authentication-contracts.md). HTTP route
 behavior belongs to the gateway repository.
 
 ## Rewrite Amplification

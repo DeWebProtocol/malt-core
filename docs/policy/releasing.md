@@ -14,33 +14,33 @@ these source and compatibility changes as described in the
 
 ## Validation
 
-Run from the repository root:
+Run from the repository root under the workspace transient CPU scope. Run
+resource-intensive workloads sequentially; the flags below also bound compiler
+and Go test concurrency:
 
-Set `MALT_RELEASE_BASE` to the previous authoritative source tag. For
-v0.0.7, that tag is `v0.0.7-rc.5`.
+Set `MALT_RELEASE_BASE` to the previous authoritative source tag. Select it explicitly for the release being prepared.
 
 ```bash
 set -euo pipefail
-MALT_RELEASE_BASE=v0.0.7-rc.5
+MALT_RELEASE_BASE=<previous-source-tag>
 git fetch --prune --tags origin
 git rev-parse --verify "${MALT_RELEASE_BASE}^{commit}"
 git merge-base --is-ancestor "$MALT_RELEASE_BASE" HEAD
 git diff --check "${MALT_RELEASE_BASE}...HEAD"
-test -z "$(gofmt -l $(find . -name '*.go' -not -path './vendor/*'))"
-go test ./...
-GOARCH=386 go test ./auth/commitment/kzg ./auth/commitment/ipa
+test -z "$(gofmt -l $(rg --files -g '*.go' -g '!vendor/**'))"
+go test -p=6 -parallel=6 ./...
+GOARCH=386 go test -p=6 -parallel=6 ./auth/commitment/kzg ./auth/commitment/ipa
 sh scripts/test-verifier-wasm-vectors.sh
 scripts/test-writer-wasm.sh
-go vet ./...
-go build -buildvcs=false ./...
+go vet -p=6 ./...
+go build -p=6 -buildvcs=false ./...
 ```
 
 Also compile a temporary external Go module against the candidate tag or
 commit. It should import only the intended public packages, at minimum:
 
-- module-root `malt`;
-- `protocol`;
-- `sdk/verifier`;
+- `sdk/authentication` and `sdk/authentication/verifier`;
+- `protocol`, `auth/input`, and `wire/maltcid`;
 - `auth/arcset/materializer` when exercising executor composition.
 
 Build and validate the content-addressed browser asset sets using the exact

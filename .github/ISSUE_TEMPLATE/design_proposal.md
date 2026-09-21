@@ -14,11 +14,11 @@ assignees: ""
 
 ## Affected area
 
-- [ ] list/map semantics
+- [ ] typed input or Prefix/Positional semantics
 - [ ] ProofList or verification
 - [ ] commitment backend
-- [ ] resolve/read/mutation contract or schema
-- [ ] graph resolver/writer ports
+- [ ] authentication query/candidate/batch contract or schema
+- [ ] explicit traversal or immutable writer ports
 - [ ] conformance vectors
 
 Gateway service, native client, UnixFS, and evaluator proposals belong in their

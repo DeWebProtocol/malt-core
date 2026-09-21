@@ -1,23 +1,18 @@
+// Portable Worker RPC for the current MALT authentication host.
+// The SDK supplies authentication algorithms and wire contracts.
 const SUPPORTED_BACKENDS = new Set(["kzg", "ipa"]);
 const IPA_PROFILES = new Set(["direct", "compact", "fast"]);
 const RPC_FUNCTIONS = Object.freeze({
+  validateAuthenticationBatch: "maltValidateAuthenticationBatch",
+  validateAuthenticationReceipt: "maltValidateAuthenticationReceipt",
   closeAuthentication: "maltCloseAuthentication",
   discardAuthentication: "maltDiscardAuthentication",
   exportAuthentication: "maltExportAuthentication",
   applyAuthentication: "maltApplyAuthentication",
   importAuthentication: "maltImportAuthentication",
   createAuthentication: "maltCreateAuthentication",
-  updateAuthentication: "maltUpdateAuthentication",
   prepareAuthentication: "maltPrepareAuthentication",
-  compute: "maltComputeClientRootV1",
-  bootstrap: "maltWriterBootstrapSessionV1",
-  load: "maltWriterLoadSessionV1",
-  prepare: "maltWriterPrepareSessionV1",
-  getPreparedResult: "maltWriterGetPreparedResultV1",
-  validateReceipt: "maltWriterValidateReceiptV1",
-  acceptReceipt: "maltWriterAcceptSessionReceiptV1",
-  discard: "maltWriterDiscardSessionCandidateV1",
-  closeSession: "maltWriterCloseSessionV1",
+  updateAuthentication: "maltUpdateAuthentication",
 });
 const STATEFUL_RPC_METHODS = new Set([
   "createAuthentication",
@@ -26,13 +21,6 @@ const STATEFUL_RPC_METHODS = new Set([
   "exportAuthentication",
   "discardAuthentication",
   "closeAuthentication",
-  "bootstrap",
-  "load",
-  "prepare",
-  "getPreparedResult",
-  "acceptReceipt",
-  "discard",
-  "closeSession",
 ]);
 
 let initialized = false;
@@ -171,6 +159,7 @@ async function handleRequest(message) {
   if (!Array.isArray(args)) {
     throw new Error("request args must be an array");
   }
+  if (typeof globalThis[functionName] !== "function") throw new Error(`loaded Core release does not support ${method}`);
   return globalThis[functionName](...args);
 }
 

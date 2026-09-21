@@ -12,14 +12,6 @@ const (
 	codecMaltRootMax  = 0x30ffff
 )
 
-type SemanticKind string
-
-const (
-	SemanticKindUnknown SemanticKind = "unknown"
-	SemanticKindMap     SemanticKind = "map"
-	SemanticKindList    SemanticKind = "list"
-)
-
 type BackendKind string
 
 const (
@@ -30,28 +22,6 @@ const (
 	IPACommitmentSize              = 32
 )
 
-// NewSemanticRoot constructs a V0 Root for the map/list convenience API.
-// Typed callers should select an explicit descriptor with NewRoot.
-func NewSemanticRoot(kind SemanticKind, backend BackendKind, commitment []byte) (cid.Cid, error) {
-	d := RootDescriptor{Layout: Prefix, InputRule: 1}
-	switch kind {
-	case SemanticKindMap:
-	case SemanticKindList:
-		d.Layout = Positional
-		d.InputRule = 0
-	default:
-		return cid.Undef, fmt.Errorf("unsupported semantic kind %q", kind)
-	}
-	switch backend {
-	case BackendKindKZG:
-		d.Profile = KZG4096
-	case BackendKindIPA:
-		d.Profile = IPA256
-	default:
-		return cid.Undef, fmt.Errorf("unsupported backend %q", backend)
-	}
-	return NewRoot(d, commitment)
-}
 func newMaltCid(codec uint64, commitment []byte) (cid.Cid, error) {
 	digest, err := mh.Encode(commitment, mh.IDENTITY)
 	if err != nil {
@@ -72,16 +42,7 @@ func VersionIDOf(c cid.Cid) uint8 {
 	}
 	return uint8(codec >> 12 & 15)
 }
-func SemanticKindOf(c cid.Cid) SemanticKind {
-	d, _, err := ParseRoot(c)
-	if err != nil {
-		return SemanticKindUnknown
-	}
-	if d.Layout == Prefix {
-		return SemanticKindMap
-	}
-	return SemanticKindList
-}
+
 func BackendKindOf(c cid.Cid) BackendKind {
 	d, _, err := ParseRoot(c)
 	if err != nil {

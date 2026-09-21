@@ -1,84 +1,27 @@
-# MALT Docs
+# MALT Core documentation
 
-This directory is the implementation-bound documentation surface for
-`DeWebProtocol/malt-core`.
+This repository owns current executable authentication semantics, schemas,
+proofs, Root encoding, and conformance. Start with the
+[specification index](spec/README.md), [architecture](../ARCHITECTURE.md), and
+[independent authentication tree](changes/authentication-tree.md).
 
-Use these documents as the source of truth for behavior that must stay aligned
-with code, tests, schemas, and wire formats. Public
-website pages in `DeWebProtocol/malt-web` may summarize this material, but they
-should link back here for protocol, policy, and compatibility details.
+Current queries use `malt.authentication/1`; complete candidates use the
+independent `malt.authentication/0` profile. The
+[typed migration](changes/typed-authentication-only.md) records the removal of
+superseded APIs. Historical releases and MIPs retain their original meaning.
 
-Managed gateway service behavior, including tenancy, identity, authorization,
-root publication, backend orchestration, S3/Filecoin/IPFS deployment policy,
-quota, cache policy, and operations, belongs in `DeWebProtocol/gateway` or
-private deployment overlays. Local runtime, daemon, trust, transport, and
-UnixFS behavior belongs in the MALT runtime repository (currently
-`DeWebProtocol/malt-client`, scheduled to become `DeWebProtocol/malt`); this
-repository contains neither product layer.
-Executable benchmark suites, evaluator plans, comparison adapters, and result
-schemas live in `DeWebProtocol/malt-evaluation`; paper interpretation and
-research narrative remain in `DeWebProtocol/documents`.
+- [Concepts](concepts/README.md)
+- [Compatibility policy](policy/compatibility.md)
+- [Threat model](policy/threat-model.md)
+- [Root version policy](policy/root-versioning.md)
+- [Release process](policy/releasing.md)
+- [WASM provenance and archives](policy/wasm-release-assets.md)
+- [Conformance](spec/conformance-corpora.md)
+- [Evaluation ownership](evaluation.md)
+- [MIP process and registry](mips/README.md)
 
-## Concepts
-
-- [Concepts index](./concepts/README.md)
-- [Data authentication background](./concepts/data-authentication.md)
-- [Merkle DAG vs MALT](./concepts/merkle-dag-vs-malt.md)
-
-## Policy
-
-- [Threat model](./policy/threat-model.md)
-- [Compatibility policy](./policy/compatibility.md)
-- [MALT Root version policy](./policy/root-versioning.md)
-- [Release process](./policy/releasing.md)
-- [v0.0.7 release notes](./releases/v0.0.7.md)
-- [Repository and module migration](./releases/repository-migration.md)
-- [v0.0.6 release notes](./releases/v0.0.6.md)
-- [v0.0.5 release notes](./releases/v0.0.5.md)
-- [v0.0.4 release notes](./releases/v0.0.4.md)
-
-## Evaluation
-
-- [Evaluation ownership and migration](./evaluation.md)
-
-## Specifications
-
-- [Specification index](./spec/README.md)
-- [Resolve and read contracts](./spec/resolve-read-contracts.md)
-- [Client-root contract](./spec/client-root-contract.md)
-- [Language-neutral conformance corpora](./spec/conformance-corpora.md)
-
-## MALT Improvement Proposals
-
-MALT Improvement Proposals live in [docs/mips](./mips/). MIPs are the review
-path for semantic, verifier-facing, schema, and core algorithm
-changes before they become implementation work.
-
-MIPs should define the proposal boundary, motivation, decision, alternatives,
-compatibility impact, security impact, and implementation planning state. Long
-field lists, wire formats, and JSON schemas belong in the reference docs under
-`spec/`, with MIPs linking to them.
-
-The previous `documents/MIPs` mirror in the research-paper workspace was
-removed after migration. New implementation-bound MIP work should happen here.
-
-The current public-core contracts are
-[MIP-1011: Arc Authentication Core Contract](./mips/mip-1011-arc-authentication-core-contract.md),
-[MIP-1012: Segment Path Resolution](./mips/mip-1012-segment-path-resolution.md),
-the final
-[MIP-1013: Client, Gateway, And Core Responsibility Boundary](./mips/mip-1013-client-gateway-core-boundary.md),
-the operation-specific resolve/read profiles introduced by that MIP,
-`malt.map-proof/v0alpha1`, and the experimental
-[client-root contract](./spec/client-root-contract.md). Current Root behavior is
-defined by [authentication inputs and Roots](./spec/authentication-inputs.md).
-[MIP-1004](./mips/mip-1004-resolve-prooflist-artifact-schema.md) records the
-historical v0.0.4 artifact profile, whose API is now
-[retired](./spec/artifacts.md).
-
-## What Goes Where
-
-- `concepts/` for reader-facing background, comparisons, and orientation
-- `policy/` for stability, safety, and release policy
-- `releases/` for source-release notes and validation records
-- `spec/` for formal protocol and schema documents
-- `mips/` for design proposals and process records
+Gateway owns managed services, HTTP, persistence, and publication. The local
+runtime owns UnixFS, transport, accepted roots, payload binding, and CLI/daemon.
+Malt-ts owns the supported TypeScript API and exact release-locked browser
+assets. Malt-evaluation owns executable measurements and result provenance;
+documents owns cross-repository design context, and malt-paper owns manuscripts.

@@ -25,10 +25,7 @@ if [[ ! "${go_directive}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 	exit 1
 fi
 expected_go_version="go${go_directive}"
-expected_resolve_read_corpus_sha256="$(sha256sum "${repo_root}/conformance/resolve-read/v3/vectors.json" | awk '{print $1}')"
-expected_map_proof_corpus_sha256="$(sha256sum "${repo_root}/conformance/map-proof/v2/vectors.json" | awk '{print $1}')"
-expected_client_root_corpus_sha256="$(sha256sum "${repo_root}/conformance/client-root/v4/vectors.json" | awk '{print $1}')"
-expected_authentication_corpus_sha256="$(sha256sum "${repo_root}/conformance/authentication-v0.json" | awk '{print $1}')"
+expected_authentication_corpus_sha256="$(sha256sum "${repo_root}/conformance/authentication-v1.json" | awk '{print $1}')"
 
 mapfile -t entries < <(find "${release_dir}" -mindepth 1 -maxdepth 1 -printf '%f\n' | sort)
 if [[ "${#entries[@]}" -ne 4 || " ${entries[*]} " != *" SHA256SUMS "* ]]; then
@@ -67,10 +64,7 @@ fi
 
 release_fields="$(MANIFEST_PATH="${manifest_path}" RELEASE_DIR="${release_dir}" \
 EXPECTED_GO_VERSION="${expected_go_version}" \
-RESOLVE_READ_CORPUS_SHA256="${expected_resolve_read_corpus_sha256}" \
-MAP_PROOF_CORPUS_SHA256="${expected_map_proof_corpus_sha256}" \
-AUTHENTICATION_CORPUS_SHA256="${expected_authentication_corpus_sha256}" \
-CLIENT_ROOT_CORPUS_SHA256="${expected_client_root_corpus_sha256}" node -e '
+AUTHENTICATION_CORPUS_SHA256="${expected_authentication_corpus_sha256}" node -e '
 	const fs = require("node:fs")
 	const path = require("node:path")
 	const manifestPath = process.env.MANIFEST_PATH
@@ -81,13 +75,10 @@ CLIENT_ROOT_CORPUS_SHA256="${expected_client_root_corpus_sha256}" node -e '
 	const version = /^v[0-9]+\.[0-9]+\.[0-9]+(?:[.-][0-9A-Za-z.-]+)?$/
 	const expectedCodegen = {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"}
 	const expectedCorpora = {
-		resolve_read: {schema: "malt.resolve-read.conformance/v3", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
-		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-		map_proof: {schema: "malt.map-proof.conformance/v2", sha256: process.env.MAP_PROOF_CORPUS_SHA256},
-		client_root: {schema: "malt.client-root.conformance/v4", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		authentication: {schema: "malt.conformance.authentication/1", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 	}
 	const toolchain = /^go version (go[0-9]+\.[0-9]+\.[0-9]+) ([a-z0-9]+)\/([a-z0-9]+)$/.exec(manifest.go_toolchain || "")
-	if (manifest.schema !== "malt.wasm-release/v1" ||
+	if (manifest.schema !== "malt.wasm-release/v2" ||
 		manifest.source_repository !== "https://github.com/DeWebProtocol/malt-core.git" ||
 		manifest.source_module !== "github.com/dewebprotocol/malt-core" ||
 		!version.test(manifest.source_version || "") ||
@@ -181,24 +172,18 @@ writer_root="${temporary}/writer/${writer_digest}"
 
 RELEASE_VERSION="${release_version}" SOURCE_COMMIT="${source_commit}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
-RESOLVE_READ_CORPUS_SHA256="${expected_resolve_read_corpus_sha256}" \
-MAP_PROOF_CORPUS_SHA256="${expected_map_proof_corpus_sha256}" \
 AUTHENTICATION_CORPUS_SHA256="${expected_authentication_corpus_sha256}" \
-CLIENT_ROOT_CORPUS_SHA256="${expected_client_root_corpus_sha256}" \
 VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	const fs = require("node:fs")
 	const path = require("node:path")
 	const expectedEnvironment = {GO111MODULE: "on", GOENV: "off", GOWORK: "off", GOFLAGS: "", GOTOOLCHAIN: "local"}
 	const expectedCodegen = {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"}
-	const expectedFlags = ["-mod=readonly", "-buildvcs=false", "-trimpath"]
+	const expectedFlags = ["-p=6", "-mod=readonly", "-buildvcs=false", "-trimpath"]
 	const verifierCorpora = {
-		resolve_read: {schema: "malt.resolve-read.conformance/v3", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
-		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-		map_proof: {schema: "malt.map-proof.conformance/v2", sha256: process.env.MAP_PROOF_CORPUS_SHA256}
+		authentication: {schema: "malt.conformance.authentication/1", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 	}
 	const writerCorpora = {
-		authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-		client_root: {schema: "malt.client-root.conformance/v4", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+		authentication: {schema: "malt.conformance.authentication/1", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 	}
 	const exactFiles = (directory, expected) => {
 		const entries = fs.readdirSync(directory, {withFileTypes: true})
@@ -245,7 +230,7 @@ VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	exactFiles(process.env.VERIFIER_ROOT, verifierFiles)
 	exactChecksums(process.env.VERIFIER_ROOT, verifierFiles.filter((name) => name !== "SHA256SUMS"))
 	const verifier = JSON.parse(fs.readFileSync(path.join(process.env.VERIFIER_ROOT, "PROVENANCE.json"), "utf8"))
-	validateBase(verifier, "malt.web-verifier.provenance/v1")
+	validateBase(verifier, "malt.web-verifier.provenance/v2")
 	if (JSON.stringify(verifier.conformance_corpora) !== JSON.stringify(verifierCorpora)) {
 		throw new Error("invalid verifier conformance provenance")
 	}
@@ -258,7 +243,7 @@ VERIFIER_ROOT="${verifier_root}" WRITER_ROOT="${writer_root}" node -e '
 	exactFiles(process.env.WRITER_ROOT, writerFiles)
 	exactChecksums(process.env.WRITER_ROOT, writerFiles.filter((name) => name !== "SHA256SUMS"))
 	const writer = JSON.parse(fs.readFileSync(path.join(process.env.WRITER_ROOT, "PROVENANCE.json"), "utf8"))
-	validateBase(writer, "malt.web-writer.provenance/v3")
+	validateBase(writer, "malt.web-writer.provenance/v4")
 	if (JSON.stringify(writer.conformance_corpora) !== JSON.stringify(writerCorpora)) {
 		throw new Error("invalid writer conformance provenance")
 	}

@@ -8,18 +8,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Accept only current self-describing V0 Roots. Remove historical V2/V3
-  constructors, readers, writer replay graphs, and the artifact/v0alpha2 API.
-- Return profile-qualified `commitment.Value` values from primitive backends
-  instead of wrapping them in historical semantic CIDs.
-- Generate openings with `IndexRootOpener` and verify each opening once.
-- Remove deprecated ArcSet constructors, writer aliases/reference helpers,
-  unused historical algorithms, and their process-global freshness registry.
-- Publish distinct current V0 Resolve/Read v3, Map-proof v2, and client-root
-  v4 conformance corpora. Retired corpora remain recoverable in Git history.
+- Make typed authentication the sole current API: independent coordinate-only
+  Prefix/Positional tree, explicit Root/input interpretation and traversal,
+  immutable writers and shared bounded native/WASM sessions.
+- Use authentication/1 queries with authenticated early traversal absence;
+  retain the separate authentication/0 complete candidate profile.
+- Add ordered authentication-batch/0 submission and exact authentication-receipt/0
+  binding without claiming portable transitions, publication, or trusted roots.
+- Require the complete current browser ABI and exact backend/profile identity.
+  Release metadata uses wasm-release/v2, verifier provenance/v2, and writer
+  provenance/v4 with the current authentication/1 corpus.
 
-These are intentional pre-beta source breaks. See
-[pre-beta API cleanup](docs/changes/prebeta-cleanup.md) for replacements.
+### Removed
+
+- Map/List adapters, semantic Root constructors, string resolver, old ProofList
+  and verification packages, module-root forwarding facade, execution/mutation,
+  sdk/writer, sdk/verifier, and aggregate Store compatibility ports.
+- Resolve/Read, Map-proof, artifact and client-root APIs, dedicated schemas,
+  historical corpus loaders, browser exports, and obsolete tests/helpers.
+- Historical V2/V3 Root decoding and implicit format migration. Current Root
+  V=0 and exact profile-qualified commitments follow the pre-production policy.
+
+See [migration details](docs/changes/typed-authentication-only.md). Source
+migration does not publish releases or silently update downstream asset locks.
 
 ## [0.0.7] - 2026-08-17
 

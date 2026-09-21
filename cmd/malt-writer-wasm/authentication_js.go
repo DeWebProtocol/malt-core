@@ -8,7 +8,7 @@ import (
 	"syscall/js"
 
 	"github.com/dewebprotocol/malt-core/protocol"
-	writerhost "github.com/dewebprotocol/malt-core/sdk/writer/host"
+	writerhost "github.com/dewebprotocol/malt-core/sdk/authentication/host"
 )
 
 func registerAuthenticationWriter(writer *writerhost.Computer, initErr error) {
@@ -18,6 +18,8 @@ func registerAuthenticationWriter(writer *writerhost.Computer, initErr error) {
 		run    func(context.Context, [][]byte) ([]byte, error)
 	}
 	operations := []operation{
+		{"maltValidateAuthenticationBatch", []int{protocol.MaxVerificationJSONBytes}, func(ctx context.Context, a [][]byte) ([]byte, error) { return writer.ValidateBatch(ctx, a[0]) }},
+		{"maltValidateAuthenticationReceipt", []int{protocol.MaxVerificationJSONBytes, protocol.MaxVerificationJSONBytes}, func(_ context.Context, a [][]byte) ([]byte, error) { return writerhost.ValidateReceipt(a[0], a[1]) }},
 		{"maltPrepareAuthentication", []int{protocol.MaxVerificationJSONBytes}, func(ctx context.Context, a [][]byte) ([]byte, error) { return writer.PrepareAuthentication(ctx, a[0]) }},
 		{"maltUpdateAuthentication", []int{protocol.MaxVerificationJSONBytes, protocol.MaxVerificationJSONBytes}, func(ctx context.Context, a [][]byte) ([]byte, error) {
 			return writer.UpdateAuthentication(ctx, a[0], a[1])

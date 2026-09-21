@@ -29,14 +29,6 @@ func CellFromCID(value cid.Cid) Cell {
 	return NewCell(value.Bytes())
 }
 
-// AsCID decodes a CID-valued cell. Empty cells decode to cid.Undef.
-func (c Cell) AsCID() (cid.Cid, error) {
-	if len(c) == 0 {
-		return cid.Undef, nil
-	}
-	return cid.Cast(c)
-}
-
 // Bytes returns a cloned byte slice for the cell.
 func (c Cell) Bytes() []byte {
 	return NewCell(c)

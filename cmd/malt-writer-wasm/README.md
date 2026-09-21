@@ -1,128 +1,83 @@
-# Browser Client-Root Writer
+# Browser authentication writer
 
-Build the coordinated browser writer artifact set from the repository root:
+`scripts/build-writer-wasm.sh dist/writer` emits coordinated KZG, IPA direct,
+compact, and fast modules, matching `wasm_exec.js`, and the Worker/controller
+modules. One controller owns exactly one backend/profile runtime. The
+supported TypeScript package and distributed release lock belong to malt-ts.
 
-```bash
-scripts/build-writer-wasm.sh dist/writer
-```
+| IPA execution profile | Retained fixed-base point table |
+| --- | ---: |
+| `direct` | 0 bytes |
+| `compact` | 12,582,912 bytes |
+| `fast` | 350,355,456 bytes |
 
-The build emits four immutable backend/profile WASM modules plus one Worker and
-one single-instance controller:
-
-```text
-malt-writer-kzg.wasm
-malt-writer-ipa-direct.wasm
-malt-writer-ipa-compact.wasm
-malt-writer-ipa-fast.wasm
-malt-writer-worker.mjs
-malt-writer-workers.mjs
-wasm_exec.js
-```
-
-The three IPA modules use the same SRS, transcripts, proof encoding, typed CID,
-and writer wire profiles. They differ only in their fixed-base MSM strategy:
-
-| profile | retained fixed-base table | intended use |
-|---|---:|---|
-| `direct` | 0 bytes | low-memory fallback; generic MSM per commitment |
-| `compact` | 12,582,912 bytes plus table metadata | browser default |
-| `fast` | 350,355,456 bytes plus table metadata | explicit high-memory performance opt-in |
-
-The verifier uses `ipa.NewVerifierScheme()` and does not retain any of these
-tables. The figures above cover the curve-point table only, not the Go/WASM
-runtime, session views, prepared candidates, or transient allocations.
-
-## Single Worker controller
+These profiles produce identical Roots/proofs. Table sizes exclude runtime,
+metadata, retained candidates, and transient allocations. KZG has no IPA
+profile. Runtime selection must match the artifact exactly before ready.
 
 ```js
-import { createMaltWriterWorker } from "./malt-writer-workers.mjs";
-
+import { createMaltWriterWorker } from './malt-writer-workers.mjs'
 const writer = await createMaltWriterWorker({
-  backend: "ipa",
-  profile: "compact",
-  wasmURL: new URL("./malt-writer-ipa-compact.wasm", import.meta.url),
-});
-await writer.ready;
+  backend: 'ipa', profile: 'compact',
+  wasmURL: new URL('./malt-writer-ipa-compact.wasm', import.meta.url),
+})
+await writer.ready
 ```
 
-One controller owns exactly one immutable backend/profile Worker. It never
-starts a peer backend or switches the loaded implementation. Applications may
-terminate it and construct another controller only when no writer session or
-prepared candidate is active. An IPA loader may fall back
-`fast -> compact -> direct`, but must never reinterpret an IPA root as KZG.
+## Current controller API
 
-`writer.fatal` is a once-settling Promise for lifecycle observation. It resolves
-with the fatal `Error` if initialization or the running Worker fails, including
-while no RPC is active, and never rejects. Explicit `terminate()` is a normal
-lifecycle transition and does not resolve `fatal`. Subscribers attached after
-a failure observe the same already-resolved Promise.
-
-An `AbortSignal` releases initialization callers immediately during fetch,
-response decoding, or WebAssembly compilation and prevents a late Worker from
-starting. Browser WebAssembly compilation promises are not themselves
-cancellable, however, so the engine may finish an already-started compilation
-in the background; its late resolution or rejection is observed and discarded.
-
-The controller retains the backend argument in every method so typed-root
-routing remains explicit:
+All methods receive the selected backend as their first argument. JSON and
+handle arguments below are UTF-8 `Uint8Array` values. Returned host results are
+JSON strings; discard and close return the host completion string.
 
 ```text
-compute(backend, transactionIDUTF8, updateViewJSONUTF8, semanticIntentJSONUTF8)
-bootstrap(backend)
-load(backend, updateViewJSONUTF8)
-prepare(backend, transactionIDUTF8, semanticIntentJSONUTF8)
-getPreparedResult(backend, transactionIDUTF8)
-validateReceipt(backend, writerResultJSONUTF8, materializationReceiptJSONUTF8)
-acceptReceipt(backend, transactionIDUTF8, materializationReceiptJSONUTF8)
-discard(backend, transactionIDUTF8)
-closeSession(backend)
+prepareAuthentication(backend, stateJSON) -> complete candidate
+updateAuthentication(backend, candidateJSON, stateJSON) -> complete candidate
+createAuthentication(backend, stateJSON) -> {handle, root}
+importAuthentication(backend, candidateJSON) -> {handle, root}
+applyAuthentication(backend, handle, deltaJSON) -> {handle, root}
+exportAuthentication(backend, handle) -> complete candidate
+discardAuthentication(backend, handle)
+closeAuthentication(backend)
+validateAuthenticationBatch(backend, batchJSON) -> validation result/digest
+validateAuthenticationReceipt(backend, batchJSON, receiptJSON) -> validation result
 terminate()
 ```
 
-All byte arguments are strict `Uint8Array` values. Operation IDs contain at
-most 128 ASCII bytes; JSON inputs use the checked-in client-root wire profiles
-and the protocol 64 MiB document limit.
+Create/import/apply/export/discard/close are serialized in Worker order.
+Import verifies complete external state once; apply retains an independent
+branch and export is explicit. By default at most 64 handles and 64 MiB of
+conservative state charge are retained. Closing clears handles without reusing
+old identifiers. A full-buffer candidate import may transfer its buffer to the
+Worker; callers must not reuse a detached buffer.
 
-## Session and trust behavior
+Batch verification and exact receipt checks use Core's current contracts.
+Applications own receipt-driven graph/session advancement, retries, persistence,
+publication, and accepted-root promotion. Handles and receipts are not portable
+state-transition proofs. No old client-root or UpdateView session API remains.
 
-`bootstrap` creates and retains the canonical empty-map base. `load` verifies a
-complete update view once. `prepare` retains an exact candidate while
-`getPreparedResult` returns `malt.writer-compute-result/v3`. Only an exact
-`malt.materialization-receipt/v2` advances the session through `acceptReceipt`.
+The controller's `fatal` Promise resolves once with fatal runtime failure and
+never rejects. Explicit termination is a normal lifecycle action. AbortSignal
+cancels pending initialization callers; already started browser compilation may
+finish, but late completion cannot start a Worker. Every ready/response/failure
+message must name the exact loaded backend/profile.
 
-At most 64 candidates and 64 MiB of encoded prepared responses are retained.
-Accepting one candidate invalidates its speculative peers. `discard` and
-`closeSession` release unreachable materialized snapshots. The writer computes
-locally; it does not contact a Gateway, publish a root, or promote a candidate
-to trusted state.
+## Direct runtime ABI
 
-The implementation profile is exposed only by the Worker ready/status
-handshake. It is not serialized into a CID, ProofList, client-root bundle,
-UpdateView, receipt digest, or Gateway acceptance input.
-
-## Direct runtime API
-
-Each backend-specific artifact registers:
+Each module must register all ten exports before the Worker becomes ready:
 
 ```text
-globalThis.maltComputeClientRootV1(...)
-globalThis.maltWriterBootstrapSessionV1()
-globalThis.maltWriterLoadSessionV1(...)
-globalThis.maltWriterPrepareSessionV1(...)
-globalThis.maltWriterGetPreparedResultV1(...)
-globalThis.maltWriterValidateReceiptV1(...)
-globalThis.maltWriterAcceptSessionReceiptV1(...)
-globalThis.maltWriterDiscardSessionCandidateV1(...)
-globalThis.maltWriterCloseSessionV1()
+maltPrepareAuthentication, maltUpdateAuthentication
+maltCreateAuthentication, maltImportAuthentication, maltApplyAuthentication
+maltExportAuthentication, maltDiscardAuthentication, maltCloseAuthentication
+maltValidateAuthenticationBatch, maltValidateAuthenticationReceipt
 ```
 
-`maltWriterLoadedBackend` and `maltWriterLoadedProfile` let the Worker reject an
-artifact/selection mismatch before it becomes ready. IPA profiles are fixed at
-link time; JavaScript cannot mutate them.
+Each export returns a Promise and takes bounded UTF-8 `Uint8Array` arguments.
+Current JSON documents have a 96 MiB limit; handles use canonical decimal IDs
+with at most 20 bytes. `maltWriterLoadedBackend` and `maltWriterLoadedProfile`
+are checked at initialization; profile identity is fixed at link time.
 
-Run dependency-isolation checks, controller tests, native fixtures, all four
-real-WASM stateless/session smokes, and the single-Worker smoke with:
-
-```bash
-scripts/test-writer-wasm.sh
-```
+Run `scripts/test-writer-wasm.sh` for backend dependency isolation, controller
+lifecycle, all four real WASM candidate/session/batch tests, and a real Worker.
+Use the workspace resource scope for build/test commands.

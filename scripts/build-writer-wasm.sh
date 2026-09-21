@@ -3,10 +3,10 @@ set -eu
 
 output_dir=${1:-dist/writer}
 mkdir -p "$output_dir"
-GOOS=js GOARCH=wasm go build -buildvcs=false -trimpath -tags=writer_kzg \
+GOOS=js GOARCH=wasm go build -p=6 -buildvcs=false -trimpath -tags=writer_kzg \
   -o "$output_dir/malt-writer-kzg.wasm" ./cmd/malt-writer-wasm
 for profile in direct compact fast; do
-  GOOS=js GOARCH=wasm go build -buildvcs=false -trimpath \
+  GOOS=js GOARCH=wasm go build -p=6 -buildvcs=false -trimpath \
     -tags=writer_ipa,malt_no_default_kzg \
     -ldflags="-X=main.ipaCommitterProfile=$profile" \
     -o "$output_dir/malt-writer-ipa-$profile.wasm" ./cmd/malt-writer-wasm

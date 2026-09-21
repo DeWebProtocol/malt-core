@@ -49,7 +49,7 @@ escaping and conflict rules.
   normal core behavior; a client may add an application-specific preference.
 
 The normative rules and examples live in
-[`docs/spec/segment-paths.md`](../spec/segment-paths.md).
+[`docs/spec/segment-paths.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/segment-paths.md).
 
 ## Rationale
 

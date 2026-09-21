@@ -16,8 +16,8 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// GenerateAuthentication is a separate V=0 corpus. Historical corpora remain
-// generated with their exact original Root and proof formats.
+// GenerateAuthentication emits current query-profile /1 vectors over V=0
+// Roots. Earlier corpus revisions remain immutable in Git history.
 func GenerateAuthentication() ([]byte, error) {
 	type vector struct {
 		ID           string                              `json:"id"`
@@ -27,7 +27,7 @@ func GenerateAuthentication() ([]byte, error) {
 	corpus := struct {
 		Schema  string   `json:"schema"`
 		Vectors []vector `json:"vectors"`
-	}{Schema: "malt.conformance.authentication/0", Vectors: []vector{}}
+	}{Schema: "malt.conformance.authentication/1", Vectors: []vector{}}
 	ctx := context.Background()
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		var scheme engine.ProfileVerifier
@@ -72,7 +72,7 @@ func GenerateAuthentication() ([]byte, error) {
 			value input.Value
 		}{{"opaque-label", input.LabelValue([]byte("a/b"))}, {"system-payload", input.SystemValue(input.Payload)}, {"literal-at-payload-absent", input.LabelValue([]byte("@payload"))}, {"missing", input.LabelValue([]byte("absent"))}} {
 			value := query.value
-			q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationProfile, Root: root.String(), Steps: []input.Value{}, Operation: "binding", Input: &value}
+			q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Steps: []input.Value{}, Operation: "binding", Input: &value}
 			if err := add(query.name, q); err != nil {
 				return nil, err
 			}
@@ -101,7 +101,7 @@ func GenerateAuthentication() ([]byte, error) {
 			return nil, err
 		}
 		key := native.Entries[0].Input
-		if err := add("native-key", protocol.AuthenticationRequest{Profile: protocol.AuthenticationProfile, Root: nativeRoot.String(), Steps: []input.Value{}, Operation: "binding", Input: &key}); err != nil {
+		if err := add("native-key", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: nativeRoot.String(), Steps: []input.Value{}, Operation: "binding", Input: &key}); err != nil {
 			return nil, err
 		}
 		sequence := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: profile}, ChunkSize: 8, TotalSize: 5, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: cid.MustParse("bafkqaaa")}}}
@@ -111,11 +111,11 @@ func GenerateAuthentication() ([]byte, error) {
 		}
 		start := uint64(1)
 		end := uint64(4)
-		if err := add("measured-range", protocol.AuthenticationRequest{Profile: protocol.AuthenticationProfile, Root: listRoot.String(), Steps: []input.Value{}, Operation: "range", Start: &start, End: &end}); err != nil {
+		if err := add("measured-range", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: []input.Value{}, Operation: "range", Start: &start, End: &end}); err != nil {
 			return nil, err
 		}
 		maximum := input.IndexValue(^uint64(0))
-		if err := add("max-index-absence", protocol.AuthenticationRequest{Profile: protocol.AuthenticationProfile, Root: listRoot.String(), Steps: []input.Value{}, Operation: "binding", Input: &maximum}); err != nil {
+		if err := add("max-index-absence", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: []input.Value{}, Operation: "binding", Input: &maximum}); err != nil {
 			return nil, err
 		}
 		// A proof remains bound to the complete caller query, not a server echo.

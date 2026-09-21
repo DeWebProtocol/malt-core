@@ -1,128 +1,52 @@
-# Threat Model
+# Threat model
 
-MALT core protects graph-relation integrity relative to a caller-selected
-root. It does not provide availability, confidentiality, authorization, or
-freshness.
+The trusted inputs are the caller-selected complete Root and intended typed
+query. The executor, materializer, cache, network, response, and payload source
+are untrusted. The local verifier uses installed exact cryptographic profiles
+and deterministic input rules, with no network or storage lookup.
 
-## Trusted inputs
+## Query attacks
 
-- an accepted root selected by client/application policy;
-- verifier code and cryptographic parameters;
-- the exact operation request independently constructed or checked by the
-  client, including the canonical key for a Map-proof request;
-- application policy deciding which root is authorized and current.
+Verification binds profile, complete Root, explicit ordered steps, final
+operation, presence/absence, target, and all primitive openings. Replacing a
+Root, key, selector, index, range, target, metadata value, or traversal prefix
+must fail. A valid proof for a server-selected request does not establish the
+client's intended claim.
 
-## Untrusted components
+Missing traversal evidence authenticates only the first failed step after the
+verified prefix. It cannot claim the remaining suffix was evaluated. Backend
+unavailability, malformed inputs, corrupt storage, and I/O errors must not be
+reported as authenticated absence. No implicit payload redirect or longest-
+prefix regrouping changes the client's query.
 
-- gateways, executors, and remote diagnostic verifiers;
-- ArcTable/materializer implementations and caches;
-- CAS/object-store responses;
-- network transport, serialized results, result presence/target fields, and
-  ProofLists;
-- any root, key, or request envelope selected or echoed by an untrusted service
-  unless independently matched to client policy;
-- service-supplied complete UpdateViews and imported Map materialization before
-  local validation;
-- candidate roots and mutation or materialization receipts returned by a
-  service.
+Strict current JSON decoding rejects unknown/case-mismatched/duplicate fields,
+retired profiles, trailing data, and oversized/deep documents. Each Root must
+name installed exact input and VC profiles; neither byte length nor an
+application default overrides that identity.
 
-These components may affect latency and availability. They must not cause a
-correct local verifier to accept the wrong result for the trusted request.
+## Materialization and writers
 
-## Security properties
+External complete candidates undergo Root-bound validation, including closed
+reachable node sets and original input interpretation. Untrusted node storage
+cannot grant ownership or bypass cryptographic checks. Owned immutable nodes
+may be reused only through the tree's internal construction capability.
+Session limits bound retained candidate count and conservative state charge;
+opaque local handles never authenticate a portable statement.
 
-For a trusted root and request, MALT aims to provide:
+Batches preserve dependency order and exact locally computed candidates.
+Receipts match transaction, base, final Root, complete batch digest, and a
+nonempty declared durability boundary. A receipt is not a signature, portable
+state-transition proof, authorization decision, publication guarantee, or
+trusted-root promotion. Those decisions belong to the service and client.
 
-- typed map/list relation integrity;
-- complete root-to-target resolve binding;
-- primitive map/list read binding;
-- exact keyed Map membership or non-membership binding, including consistency
-  between the presence state, optional target, and proof-step kind;
-- ordered ProofList and commitment-proof verification;
-- rejection of cross-root, cross-key, cross-query, cross-kind, presence-state,
-  target, or reordered evidence;
-- payload CID authentication.
+## Payloads, availability, and freshness
 
-Payload CID authentication does not hash arbitrary returned response bytes.
-The consuming client must compare full bytes to the target CID, or validate
-application-defined range composition against authenticated segment CIDs.
+Relation proofs authenticate CIDs. Clients must hash fetched payload/manifest
+bytes against those CIDs and bind range segments and geometry to authenticated
+metadata. Cryptographically valid old Roots remain valid; freshness and
+accepted/candidate Root policy are external. Authentication does not prove
+remote availability, recoverability, or erasure.
 
-## Non-goals
-
-Core does not guarantee:
-
-- latest-root freshness or rollback prevention;
-- mutation state-transition proofs;
-- multi-writer merge/conflict policy;
-- payload availability, durability, confidentiality, or access control;
-- tenant isolation, quotas, pinning, GC, or deployment security;
-- ArcTable/KV consistency;
-- stable pre-v1 source or wire compatibility;
-- List-index, graph-path, object, payload-byte, or remote-data absence inferred
-  from a Map non-membership proof.
-
-## Attack cases
-
-### Incorrect target or spliced proof
-
-The verifier binds the returned target, ProofList root/query, ordered step
-continuity, operation kind, and caller request. A valid proof for another root,
-query, primitive read, or target must be rejected.
-
-### Map-proof request relabeling
-
-For Map-proof verification, the accepted root and exact canonical key are
-trusted inputs chosen independently by the caller. `present`, the optional
-target, and the ProofList are untrusted. `VerifyMapProof` binds those returned
-values and the cryptographic evidence to the caller's root and key. Relabeling
-valid evidence to another root or key, toggling the presence state, or
-attaching a target to an absence result must be rejected.
-
-Passing a gateway-authored request/result envelope to a local verifier without
-first matching its request to the client's accepted root and intended key does
-not authenticate the relation the client intended to query.
-
-### Fabricated materializer state
-
-Materialized state is a proof-generation input, not a trust root. Corruption
-should prevent proof generation or produce evidence rejected by the portable
-verifier.
-
-### Corrupted CAS bytes
-
-Clients hash fetched bytes against the authenticated CID. Proof verification
-alone is insufficient.
-
-### Replayed root
-
-An old root remains cryptographically valid. Freshness requires an external
-publication, timestamp, consensus, or application policy.
-
-### Path syntax ambiguity
-
-The profiled resolve contract carries segment arrays. Core validates segments
-and uses `/` only for its canonical textual projection. Filesystem, URL,
-JavaScript `.`/`[]`, escaping, and dot-segment rules belong to clients and
-transports.
-
-### Alternative valid derivation
-
-Resolution is existential. If overlapping arcs permit several complete valid
-derivations, the executor may return any one of them. `VerifyResolve` does not
-prove longest-prefix maximality or uniqueness. Applications may impose a
-preference policy; this is not a proof-soundness requirement.
-
-### Candidate mutation root
-
-A mutation receipt is operational evidence, not a transition proof. Clients
-must not automatically promote a gateway-returned root solely because the
-receipt names it.
-
-### Client-root bundle and receipt
-
-The client-root surface included in v0.0.7-rc.1 is experimental. Local
-computation derives an exact candidate from a validated complete view and
-normalized intent, while receipt acceptance may advance only the local writer
-session defined by that contract. A bundle or receipt is not a portable
-state-transition, publication, freshness, authorization, or trust proof and
-does not promote an application's accepted root.
+Application path normalization, UnixFS manifests, encrypted chunk profiles,
+tenancy, permission checks, durable transactions, HTTP, and trusted-root
+storage are outside Core. See [architecture](../../ARCHITECTURE.md).

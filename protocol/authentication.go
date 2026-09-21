@@ -15,6 +15,8 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
+// AuthenticationProfile identifies complete typed candidate state and nodes.
+// Queries use AuthenticationPathProfile.
 const AuthenticationProfile = "malt.authentication/0"
 
 // AuthenticationPathProfile authenticates early traversal absence without
@@ -34,7 +36,7 @@ type AuthenticationRequest struct {
 }
 
 func (q AuthenticationRequest) Validate() error {
-	if q.Profile != AuthenticationProfile && q.Profile != AuthenticationPathProfile {
+	if q.Profile != AuthenticationPathProfile {
 		return errors.New("unsupported authentication profile")
 	}
 	root, err := cid.Decode(q.Root)

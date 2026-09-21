@@ -3,168 +3,98 @@
 [![Go CI](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml/badge.svg)](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**MALT Core is an SDK and protocol implementation for arc-granularity graph data
-authentication.**
-
-MALT keeps payload bytes in content-addressed storage (CAS) and authenticates
-typed relations with vector-commitment backends. A client verifies:
+MALT Core authenticates typed relations under a caller-selected Root. Payload
+bytes stay in ordinary content-addressed storage. This repository owns the
+coordinate-based authentication tree, typed input rules, explicit graph
+traversal, local verification, and immutable candidate writers.
 
 ```text
-trusted root + typed resolve/read request -> result + ProofList
+caller-selected Root + typed query + untrusted result -> local verification
 ```
 
-The repository is deliberately application- and deployment-neutral. It does
-not contain a gateway service, ArcTable implementation, CAS backend, command
-line client, daemon, UnixFS model, or website.
+Start with [authentication inputs and Roots](docs/spec/authentication-inputs.md),
+[query contracts](docs/spec/authentication-contracts.md), and
+[writer batches and receipts](docs/spec/authentication-batches.md).
+[Architecture](ARCHITECTURE.md), [documentation](docs/README.md), and
+[conformance](docs/spec/conformance-corpora.md) describe the implementation.
 
-[Documentation](./docs/README.md) · [Architecture](./ARCHITECTURE.md) ·
-[Resolve/read contracts](./docs/spec/resolve-read-contracts.md) ·
-[Client-root contract](./docs/spec/client-root-contract.md) ·
-[Conformance corpora](./docs/spec/conformance-corpora.md) ·
-[ProofList](./docs/spec/prooflist-format.md) ·
-[Compatibility](./docs/policy/compatibility.md) ·
-[v0.0.7 release](./docs/releases/v0.0.7.md) ·
-[Repository migration](./docs/releases/repository-migration.md) ·
-[Roadmap](./ROADMAP.md)
+## Current source API
 
-`v0.0.7` is the first release from `DeWebProtocol/malt-core` and the first Go
-module release under `github.com/dewebprotocol/malt-core`. The repository and
-module namespace migration does not alter the roots, commitments, proofs,
-schemas, or wire contracts from `v0.0.7-rc.5`. `/v1` profile suffixes do not
-declare MALT or its Go APIs stable at v1.
+`auth/tree` implements Prefix and Positional layouts over coordinates.
+`auth/input` interprets labels, native keys, indices, and system selectors.
+`auth/engine` combines those layers with an exact commitment profile.
+`sdk/authentication` constructs, queries, verifies, and updates this state;
+`graph/traversal` composes explicit steps across Roots.
 
-## Current authentication API
+The old Map/List adapters, string resolver, Resolve/Read and Map-proof
+contracts, module-root forwarding API, and client-root writer are removed.
+There is one typed query profile, `malt.authentication/1`. Complete candidates
+use the separate `malt.authentication/0` profile. Root encoding remains
+self-describing `V=0` under the [Root version policy](docs/policy/root-versioning.md).
 
-New construction uses self-describing `V=0` Roots: input rules derive coordinates,
-Prefix/Positional lays them out, and a multicommitment selects an exact VC
-profile. Start with [`sdk/authentication`](./sdk/authentication) and the
-[Root/input specification](./docs/spec/authentication-inputs.md). Map/List
-remain compatibility conveniences. System bindings belong only to Prefix.
-The Root version stays zero until an explicit production-ready declaration.
-
-The coordinate-only [`auth/tree`](./auth/tree) implements canonical Prefix and
-Positional authentication. The typed engine and graph traversal compose it;
-retained writers apply deltas and export complete state explicitly. See the
-[tree and writer architecture](./docs/changes/authentication-tree.md).
-
-## Boundary
-
-MALT core owns:
-
-- canonical segment and arc semantics;
-- typed map/list roots and CID rules;
-- map/list commitment, proof, and verification algorithms;
-- `malt.resolve/v0alpha1`, `malt.read/v0alpha1`, and
-  `malt.map-proof/v0alpha1` values and JSON Schemas;
-- complete-view client-root values, schemas, and local candidate computation;
-- ProofList generation/verification semantics;
-- frozen language-neutral Resolve/Read, Map-proof, and client-root conformance
-  corpora;
-- portable mutation and receipt values;
-- untrusted resolve/read/apply composition over caller-injected capabilities;
-- native Go and browser/WASM verification and exact client-root computation.
-
-MALT core does not own:
-
-- HTTP routing or service policy;
-- ArcTable, KV, SQL, cache, or durable materialization implementations;
-- CAS access or payload lifecycle;
-- trusted-root storage, freshness, publication, or multi-writer policy;
-- UnixFS, TypeScript object syntax, or another application model;
-- a CLI, client daemon, managed gateway, or website.
-
-Those responsibilities are split across independent repositories:
-
-| Repository | Responsibility |
-| --- | --- |
-| [`DeWebProtocol/malt-client`](https://github.com/DeWebProtocol/malt-client) | CLI/daemon plus separate transport, trusted-root policy, UnixFS, payload binding, and Merkle DAG compatibility layers |
-| [`DeWebProtocol/gateway`](https://github.com/DeWebProtocol/gateway) | Untrusted native/compatibility profiles, runtime composition, ArcTable/KV/CAS backends, scope and publication policy |
-| [`DeWebProtocol/malt-evaluation`](https://github.com/DeWebProtocol/malt-evaluation) | Reproducible evaluator, benchmark suites, comparison adapters, plans, and schemas |
-| [`DeWebProtocol/malt-web`](https://github.com/DeWebProtocol/malt-web) | Public website, tutorials, and browser-local verification tools |
-
-## Core composition
-
-```mermaid
-flowchart LR
-  app["Application client"] --> request["resolve/read request"]
-  request --> gateway["Untrusted executor"]
-  gateway --> result["result + ProofList"]
-  result --> verify["MALT local verifier"]
-  trusted["Client-selected trusted root"] --> verify
-  verify --> decision["accept / reject"]
-
-  gateway --> store["Caller-owned ArcSet materializer"]
-  gateway --> cas["Caller-owned CAS"]
-```
-
-An executor may use an ArcTable to accelerate candidate selection, including
-longest-prefix discovery. The verifier proves the returned derivation; it does
-not prove that the executor selected the unique or longest possible path. This
-is intentional existential resolution semantics.
-
-The core exposes narrow capabilities under `auth/arcset/materializer`:
-read-only lookup, node update, snapshot, and optional iteration. The full
-`Store` aggregate is retained for adapter compatibility, while each algorithm
-accepts only the capability it uses. Implementations and persistence policy
-remain outside this module. The included memory implementation exists for
-conformance tests and examples, not deployment.
-
-## Install
-
-```bash
-go get github.com/dewebprotocol/malt-core@v0.0.7
-```
-
-### Verify a resolve result
+For local verification, construct the request independently of the response:
 
 ```go
-verifier, err := sdkverifier.NewDefault()
+import (
+    "github.com/dewebprotocol/malt-core/sdk/authentication"
+    "github.com/dewebprotocol/malt-core/sdk/authentication/verifier"
+)
+
+engine, err := verifier.New(nil) // built-in KZG and IPA verification profiles
 if err != nil {
     return err
 }
-
-err = verifier.VerifyResolve(ctx, protocol.ResolveVerification{
-    Request: request, // independently constructed by the client
-    Result:  result,  // untrusted gateway response
-})
+valid, err := authentication.Verify(engine, request, result)
+// Accept this query result only when err == nil && valid.
 ```
 
-Verification performs no network, CAS, ArcTable, filesystem, or gateway I/O.
-Applications that consume payload bytes must additionally hash those bytes
-against the authenticated CID. Application-specific range composition belongs
-in the application client.
+Verification performs no network or storage lookup. Applications hash fetched
+payload bytes against the authenticated CID and make their own trust and
+freshness decisions. An exact materialization receipt does not promote a Root.
 
-## Packages
+Writers import a complete candidate once with `NewWriter`, apply typed deltas
+with `Apply`, and export complete state explicitly with `Export`. Unchanged
+immutable nodes are shared without repeated cryptographic validation. This is
+retained local state, not a portable state-transition proof.
 
-| Package | Role |
+## Packages and boundaries
+
+| Package | Responsibility |
 | --- | --- |
-| module root `malt` | Minimal typed resolve/read/map-proof values and verification entry points |
-| `auth/arcset` | Canonical typed arcs, targets, sets, and iteration |
-| `auth/commitment` | KZG/IPA commitment capabilities |
-| `auth/semantic` | Map/list semantic contracts and reference algorithms |
-| `auth/proof` | ProofList/evidence formats |
-| `auth/verifier` | Storage-free ProofList verification |
-| `protocol` | Versioned serialized resolve/read/map-proof and client-root profiles and schemas |
-| `mutation` | Portable mutation, client-root, and receipt values |
-| `execution` | Untrusted resolve/read/apply composition |
-| `graph` | Resolver, semantic mutation, bootstrap, and explicit reference-writer algorithms over injected capabilities |
-| `sdk/verifier` | Client-facing local verification facade |
-| `sdk/writer` | Complete-view verification and exact client-root computation |
-| `cmd/malt-writer-wasm` | Browser exact client-root computation entry point |
-| `auth/observation` | Optional request-scoped execution diagnostics; never proof evidence |
-| `cmd/malt-verifier-wasm` | Browser verifier build entry point |
+| `auth/coordinate`, `auth/input` | Coordinates and deterministic typed input rules |
+| `auth/tree` | Prefix/Positional construction, updates, binding/range proofs |
+| `auth/engine` | Root descriptor, input interpretation, exact backend selection |
+| `auth/commitment` | KZG and IPA primitives |
+| `auth/arcset/materializer` | Narrow injected node lookup/update/snapshot capabilities |
+| `graph/traversal` | Explicit traversal across authenticated Roots |
+| `sdk/authentication` | Queries, immutable writers, bounded sessions, exact batches |
+| `sdk/authentication/host` | Shared native/WASM serialization and session adapter |
+| `sdk/authentication/verifier` | Opt-in built-in verification backends |
+| `protocol`, `wire/maltcid` | Current strict JSON schemas, node and Root encoding |
+| `auth/observation` | Optional diagnostics; never proof evidence |
+| `cmd/malt-verifier-wasm`, `cmd/malt-writer-wasm` | Portable verification/writer build targets |
 
-## Development
+Gateway owns HTTP, persistence, service policy, and publication. The local MALT
+runtime owns UnixFS, trusted roots, payload binding, and CLI/daemon behavior.
+`malt-ts` owns the supported TypeScript package and browser lifecycle;
+`malt-evaluation` owns reproducible measurement. Core imports none of those
+application layers.
+
+## Development and releases
+
+Use the repository's pinned Go toolchain. Run tests, vet, builds, and the WASM
+gates under the workspace resource limits in `AGENTS.md`:
 
 ```bash
-go test ./...
-go vet ./...
-go build -buildvcs=false ./...
-scripts/build-verifier-wasm.sh dist/verifier
-scripts/build-wasm-release.sh vX.Y.Z dist/wasm-release
+go test -p=6 -parallel=6 ./...
+go vet -p=6 ./...
+go build -p=6 -buildvcs=false ./...
+scripts/test-verifier-wasm-vectors.sh
+scripts/test-writer-wasm.sh
 ```
 
-MALT is pre-v1 and experimental. Pin exact releases and reject unknown protocol
-profiles. See [compatibility policy](./docs/policy/compatibility.md).
-
-See [pre-beta API cleanup](docs/changes/prebeta-cleanup.md) for removed experimental interfaces and downstream migration guidance.
+This README describes the checked-out source. Use documentation from the exact
+tag selected by a consumer; do not combine this API with old published WASM
+assets. Source migration, release publication, and downstream adoption are
+separate actions. See [compatibility](docs/policy/compatibility.md) and
+[release policy](docs/policy/releasing.md).

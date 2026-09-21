@@ -30,10 +30,9 @@ They do not own:
 - payload storage or retrieval
 
 The current public backend interfaces live under `auth/commitment`.
-Semantic-facing list and map contracts live under `auth/semantic/list` and
-`auth/semantic/mapping`. Portable ProofList orchestration lives under
-`auth/verifier`; it selects verification-only backends from typed MALT roots
-without consulting runtime state.
+Coordinate-based layouts live in `auth/tree`; `auth/engine` supplies typed
+input interpretation. `sdk/authentication` verifies explicit traversal and
+primitive evidence using exact Root-selected profiles without runtime state.
 
 ## Primitive values and semantic Roots
 
@@ -50,8 +49,7 @@ Each step in a cross-root traversal performs its own profile selection.
 
 Prefix leaves bind a derived key to target CID bytes. Positional leaves bind
 a stable index to a target, with authenticated structural metadata in slot
-zero. The Map/List convenience interfaces project to these current layouts;
-the former flat binding-CID commitment wrappers are removed. See
+zero. The former Map/List and flat binding-CID commitment wrappers are removed. See
 [commitment and proof encoding](./commitment-proof-encoding.md).
 
 ## Root-bound proof generation

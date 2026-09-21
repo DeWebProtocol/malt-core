@@ -73,7 +73,7 @@ func (w *Workspace) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitm
 		k, _ := child.ref.Bytes()
 		w.known[string(k)] = child
 	}
-	return cloneVector(n.cells), nil
+	return commitment.CloneCells(n.cells), nil
 }
 
 // PutNode validates externally supplied vectors. Only this package can use the
@@ -103,7 +103,7 @@ func (w *Workspace) putComputed(ctx context.Context, ref maltcid.NodeRef, cells 
 		}
 		return nil
 	}
-	n := &retainedNode{ref: ref, cells: cloneVector(cells)}
+	n := &retainedNode{ref: ref, cells: commitment.CloneCells(cells)}
 	n.ref.Commitment = append([]byte(nil), ref.Commitment...)
 	for _, cell := range cells {
 		if len(cell) == 0 || cell[0] != childNode {
@@ -172,7 +172,7 @@ func (m *Materialization) CopyTo(ctx context.Context, out materializer.NodeUpdat
 		}
 		ref := n.ref
 		ref.Commitment = append([]byte(nil), ref.Commitment...)
-		return out.PutNode(ctx, ref, cloneVector(n.cells))
+		return out.PutNode(ctx, ref, commitment.CloneCells(n.cells))
 	}
 	return walk(m.node)
 }
@@ -235,7 +235,7 @@ func (s *importNodes) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commi
 		return nil, err
 	}
 	if cells, ok := s.cells[string(key)]; ok {
-		return cloneVector(cells), nil
+		return commitment.CloneCells(cells), nil
 	}
 	if s.source == nil {
 		return nil, errors.New("node lookup is nil")
@@ -244,14 +244,14 @@ func (s *importNodes) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commi
 	if err != nil {
 		return nil, err
 	}
-	s.cells[string(key)] = cloneVector(cells)
-	return cloneVector(cells), nil
+	s.cells[string(key)] = commitment.CloneCells(cells)
+	return commitment.CloneCells(cells), nil
 }
 func putComputed(ctx context.Context, out materializer.NodeUpdater, ref maltcid.NodeRef, cells []commitment.Cell, registry *Registry) error {
 	if w, ok := out.(*Workspace); ok && w.registry == registry && w.engine.Profiles == registry {
 		return w.putComputed(ctx, ref, cells)
 	}
-	return out.PutNode(ctx, copyNodeRef(ref), cloneVector(cells))
+	return out.PutNode(ctx, copyNodeRef(ref), commitment.CloneCells(cells))
 }
 
 // StateCharge is a conservative accounting bound for retained vectors. Shared

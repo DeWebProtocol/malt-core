@@ -12,7 +12,7 @@ import (
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
-func registerAuthenticationVerifier(backend string) {
+func registerAuthenticationVerifier(backend string) error {
 	var profiles []maltcid.ProfileID
 	switch backend {
 	case "all":
@@ -21,15 +21,14 @@ func registerAuthenticationVerifier(backend string) {
 	case "ipa":
 		profiles = []maltcid.ProfileID{maltcid.IPA256}
 	default:
-		return
+		return fmt.Errorf("unsupported verifier backend %q", backend)
 	}
 	verifier, initErr := authverifier.New(nil, profiles...)
+	if initErr != nil {
+		return initErr
+	}
 	f := js.FuncOf(func(_ js.Value, args []js.Value) any {
-		result := protocol.VerificationResult{Profile: protocol.AuthenticationProfile}
-		if initErr != nil {
-			result.Error = fmt.Sprint(initErr)
-			return encodeProtocolResponse(result)
-		}
+		result := protocol.VerificationResult{Profile: protocol.AuthenticationPathProfile}
 		if len(args) != 1 || args[0].Type() != js.TypeString {
 			result.Error = "maltVerifyAuthentication expects one JSON string"
 			return encodeProtocolResponse(result)
@@ -47,4 +46,5 @@ func registerAuthenticationVerifier(backend string) {
 		return encodeProtocolResponse(result)
 	})
 	js.Global().Set("maltVerifyAuthentication", f)
+	return nil
 }

@@ -14,7 +14,7 @@ replaces: none
 ## Abstract
 
 This MIP proposes whether the writer receipt meanings documented in
-[`docs/spec/writer-receipts.md`](../spec/writer-receipts.md) should become a
+[`docs/spec/writer-receipts.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/writer-receipts.md) should become a
 stable API and evaluation accounting contract.
 
 ## Motivation
@@ -26,7 +26,7 @@ for those counts before treating them as evidence.
 ## Specification
 
 The current receipt reference lives in
-[`docs/spec/writer-receipts.md`](../spec/writer-receipts.md). This MIP should
+[`docs/spec/writer-receipts.md`](https://github.com/dewebprotocol/malt-core/blob/a4526f8751db403eaa2e1a7ac6add00b70ff2933/docs/spec/writer-receipts.md). This MIP should
 decide whether to accept that reference as:
 
 - API contract

@@ -153,5 +153,9 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Writer{engine: w.engine, root: root, previous: w.root.String(), metadata: meta, bindings: bindings, nodes: materialized}, nil
+	previous := w.root.String()
+	if root.Equals(w.root) {
+		previous = w.previous
+	}
+	return &Writer{engine: w.engine, root: root, previous: previous, metadata: meta, bindings: bindings, nodes: materialized}, nil
 }

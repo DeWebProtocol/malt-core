@@ -9,19 +9,28 @@ import (
 	mh "github.com/multiformats/go-multihash"
 )
 
-func TestCurrentSemanticRootClassification(t *testing.T) {
-	for _, kind := range []maltcid.SemanticKind{maltcid.SemanticKindMap, maltcid.SemanticKindList} {
-		for _, backend := range []maltcid.BackendKind{maltcid.BackendKindKZG, maltcid.BackendKindIPA} {
-			size := maltcid.KZGCommitmentSize
-			if backend == maltcid.BackendKindIPA {
-				size = maltcid.IPACommitmentSize
-			}
-			root, err := maltcid.NewSemanticRoot(kind, backend, make([]byte, size))
+func TestCurrentRootClassification(t *testing.T) {
+	for _, layout := range []maltcid.Layout{maltcid.Prefix, maltcid.Positional} {
+		for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
+			p, err := maltcid.Profile(profile)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !maltcid.IsMaltCid(root) || maltcid.VersionIDOf(root) != 0 || maltcid.SemanticKindOf(root) != kind || maltcid.BackendKindOf(root) != backend {
-				t.Fatalf("incorrect classification of %s/%s: %s", kind, backend, root)
+			d := maltcid.RootDescriptor{Layout: layout, Profile: profile}
+			if layout == maltcid.Prefix {
+				d.InputRule = 1
+			}
+			size := maltcid.KZGCommitmentSize
+			if profile == maltcid.IPA256 {
+				size = maltcid.IPACommitmentSize
+			}
+			root, err := maltcid.NewRoot(d, make([]byte, size))
+			if err != nil {
+				t.Fatal(err)
+			}
+			decoded, _, err := maltcid.ParseRoot(root)
+			if err != nil || decoded != d || !maltcid.IsMaltCid(root) || maltcid.VersionIDOf(root) != 0 || maltcid.BackendKindOf(root) != p.Algorithm {
+				t.Fatalf("Root descriptor classification: %v", err)
 			}
 		}
 	}
@@ -42,8 +51,8 @@ func TestHistoricalRootsAreRejected(t *testing.T) {
 			if _, _, err := maltcid.ParseRoot(root); err == nil {
 				t.Fatal("historical Root parsed as current")
 			}
-			if maltcid.IsMaltCid(root) || maltcid.SemanticKindOf(root) != maltcid.SemanticKindUnknown || maltcid.BackendKindOf(root) != maltcid.BackendKindUnknown || maltcid.GetMaltCodec(root) != 0 {
-				t.Fatal("historical Root advertised as a supported semantic root")
+			if maltcid.IsMaltCid(root) || maltcid.BackendKindOf(root) != maltcid.BackendKindUnknown || maltcid.GetMaltCodec(root) != 0 {
+				t.Fatal("historical Root advertised as a supported Root")
 			}
 			if _, err := maltcid.ExtractCommitment(root); err == nil {
 				t.Fatal("historical commitment extracted by current parser")

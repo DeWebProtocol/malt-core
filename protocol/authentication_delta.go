@@ -11,6 +11,8 @@ import (
 
 const AuthenticationDeltaProfile = "malt.authentication-delta/0"
 
+const MaxAuthenticationChanges = 1 << 20
+
 // AuthenticationDelta carries typed changes for a retained complete writer.
 // It is neither a base-state witness nor a state-transition proof.
 type AuthenticationDelta struct {
@@ -37,7 +39,7 @@ func (d AuthenticationDelta) CoreChanges() ([]engine.Change, error) {
 	if d.Profile != AuthenticationDeltaProfile || d.Changes == nil {
 		return nil, errors.New("invalid authentication delta profile or changes")
 	}
-	if len(d.Changes) > MaxClientRootEntries {
+	if len(d.Changes) > MaxAuthenticationChanges {
 		return nil, errors.New("too many authentication changes")
 	}
 	changes := make([]engine.Change, len(d.Changes))

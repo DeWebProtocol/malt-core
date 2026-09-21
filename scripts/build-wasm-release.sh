@@ -58,10 +58,7 @@ release_root="${temporary}/release"
 mkdir -p "${build_source}" "${verifier_staging}" "${writer_staging}" "${release_root}"
 git -C "${repo_root}" archive --format=tar "${source_commit}" | tar -x -C "${build_source}"
 
-resolve_read_corpus_sha256="$(sha256sum "${build_source}/conformance/resolve-read/v3/vectors.json" | awk '{print $1}')"
-map_proof_corpus_sha256="$(sha256sum "${build_source}/conformance/map-proof/v2/vectors.json" | awk '{print $1}')"
-client_root_corpus_sha256="$(sha256sum "${build_source}/conformance/client-root/v4/vectors.json" | awk '{print $1}')"
-authentication_corpus_sha256="$(sha256sum "${build_source}/conformance/authentication-v0.json" | awk '{print $1}')"
+authentication_corpus_sha256="$(sha256sum "${build_source}/conformance/authentication-v1.json" | awk '{print $1}')"
 
 go_directive="$(awk '$1 == "go" { print $2; exit }' "${build_source}/go.mod")"
 if [[ ! "${go_directive}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -103,19 +100,19 @@ go_toolchain="$(
 )"
 ipa_parameters_json="$(
 	cd "${build_source}"
-	"${go_command[@]}" run -mod=readonly ./cmd/malt-ipa-parameters
+	"${go_command[@]}" run -p=6 -mod=readonly ./cmd/malt-ipa-parameters
 )"
 
 (
 	cd "${build_source}"
 	"${go_command[@]}" mod verify
-	"${wasm_go_command[@]}" build -mod=readonly -buildvcs=false -trimpath \
+	"${wasm_go_command[@]}" build -p=6 -mod=readonly -buildvcs=false -trimpath \
 		-o "${verifier_staging}/malt-verifier.wasm" ./cmd/malt-verifier-wasm
-	"${wasm_go_command[@]}" build -mod=readonly -buildvcs=false -trimpath \
+	"${wasm_go_command[@]}" build -p=6 -mod=readonly -buildvcs=false -trimpath \
 		-tags=writer_kzg \
 		-o "${writer_staging}/malt-writer-kzg.wasm" ./cmd/malt-writer-wasm
 	for profile in direct compact fast; do
-		"${wasm_go_command[@]}" build -mod=readonly -buildvcs=false -trimpath \
+		"${wasm_go_command[@]}" build -p=6 -mod=readonly -buildvcs=false -trimpath \
 			-tags=writer_ipa,malt_no_default_kzg \
 			-ldflags="-X=main.ipaCommitterProfile=${profile}" \
 			-o "${writer_staging}/malt-writer-ipa-${profile}.wasm" ./cmd/malt-writer-wasm
@@ -129,13 +126,11 @@ cp "${build_source}/cmd/malt-writer-wasm/browser/malt-writer-workers.mjs" "${wri
 
 MALT_VERSION="${release_version}" MALT_COMMIT="${source_commit}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
-RESOLVE_READ_CORPUS_SHA256="${resolve_read_corpus_sha256}" \
-MAP_PROOF_CORPUS_SHA256="${map_proof_corpus_sha256}" \
 AUTHENTICATION_CORPUS_SHA256="${authentication_corpus_sha256}" \
 PROVENANCE_PATH="${verifier_staging}/PROVENANCE.json" node -e '
 	const fs = require("node:fs")
 	const provenance = {
-		schema: "malt.web-verifier.provenance/v1",
+		schema: "malt.web-verifier.provenance/v2",
 		source_repository: "https://github.com/DeWebProtocol/malt-core.git",
 		source_module: "github.com/dewebprotocol/malt-core",
 		source_version: process.env.MALT_VERSION,
@@ -144,11 +139,9 @@ PROVENANCE_PATH="${verifier_staging}/PROVENANCE.json" node -e '
 		go_toolchain: process.env.GO_TOOLCHAIN,
 		target: "js/wasm",
 		conformance_corpora: {
-			resolve_read: {schema: "malt.resolve-read.conformance/v3", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
-			authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-			map_proof: {schema: "malt.map-proof.conformance/v2", sha256: process.env.MAP_PROOF_CORPUS_SHA256}
+			authentication: {schema: "malt.conformance.authentication/1", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 		},
-		build_flags: ["-mod=readonly", "-buildvcs=false", "-trimpath"],
+		build_flags: ["-p=6", "-mod=readonly", "-buildvcs=false", "-trimpath"],
 		build_environment: {GO111MODULE: "on", GOENV: "off", GOWORK: "off", GOFLAGS: "", GOTOOLCHAIN: "local"},
 		codegen_environment: {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"}
 	}
@@ -159,12 +152,11 @@ MALT_VERSION="${release_version}" MALT_COMMIT="${source_commit}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
 IPA_PARAMETERS_JSON="${ipa_parameters_json}" \
 AUTHENTICATION_CORPUS_SHA256="${authentication_corpus_sha256}" \
-CLIENT_ROOT_CORPUS_SHA256="${client_root_corpus_sha256}" \
 PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 	const fs = require("node:fs")
 	const parameters = JSON.parse(process.env.IPA_PARAMETERS_JSON)
 	const provenance = {
-		schema: "malt.web-writer.provenance/v3",
+		schema: "malt.web-writer.provenance/v4",
 		source_repository: "https://github.com/DeWebProtocol/malt-core.git",
 		source_module: "github.com/dewebprotocol/malt-core",
 		source_version: process.env.MALT_VERSION,
@@ -173,11 +165,10 @@ PROVENANCE_PATH="${writer_staging}/PROVENANCE.json" node -e '
 		go_toolchain: process.env.GO_TOOLCHAIN,
 		target: "js/wasm",
 		conformance_corpora: {
-			authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-			client_root: {schema: "malt.client-root.conformance/v4", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+			authentication: {schema: "malt.conformance.authentication/1", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 		},
 		parameters,
-		build_flags: ["-mod=readonly", "-buildvcs=false", "-trimpath"],
+		build_flags: ["-p=6", "-mod=readonly", "-buildvcs=false", "-trimpath"],
 		artifacts: {
 			kzg: {file: "malt-writer-kzg.wasm", build_tags: ["writer_kzg"]},
 			ipa: {
@@ -234,10 +225,7 @@ mv "${temporary}/writer.tar.gz" "${temporary}/${writer_archive}"
 
 MALT_VERSION="${release_version}" MALT_COMMIT="${source_commit}" SOURCE_EPOCH="${source_epoch}" \
 GO_VERSION="${go_version}" GO_TOOLCHAIN="${go_toolchain}" \
-RESOLVE_READ_CORPUS_SHA256="${resolve_read_corpus_sha256}" \
-MAP_PROOF_CORPUS_SHA256="${map_proof_corpus_sha256}" \
 AUTHENTICATION_CORPUS_SHA256="${authentication_corpus_sha256}" \
-CLIENT_ROOT_CORPUS_SHA256="${client_root_corpus_sha256}" \
 VERIFIER_DIGEST="${verifier_digest}" VERIFIER_ARCHIVE="${verifier_archive}" \
 VERIFIER_ARCHIVE_SHA256="${verifier_archive_sha256}" \
 WRITER_DIGEST="${writer_digest}" WRITER_ARCHIVE="${writer_archive}" \
@@ -251,7 +239,7 @@ MANIFEST_PATH="${temporary}/WASM-RELEASE.json" node -e '
 		archive_sha256: process.env[`${kind}_ARCHIVE_SHA256`]
 	})
 	const manifest = {
-		schema: "malt.wasm-release/v1",
+		schema: "malt.wasm-release/v2",
 		source_repository: "https://github.com/DeWebProtocol/malt-core.git",
 		source_module: "github.com/dewebprotocol/malt-core",
 		source_version: process.env.MALT_VERSION,
@@ -262,10 +250,7 @@ MANIFEST_PATH="${temporary}/WASM-RELEASE.json" node -e '
 		target: "js/wasm",
 		archive_format: "ustar+gzip",
 		conformance_corpora: {
-			resolve_read: {schema: "malt.resolve-read.conformance/v3", sha256: process.env.RESOLVE_READ_CORPUS_SHA256},
-			authentication: {schema: "malt.conformance.authentication/0", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
-			map_proof: {schema: "malt.map-proof.conformance/v2", sha256: process.env.MAP_PROOF_CORPUS_SHA256},
-			client_root: {schema: "malt.client-root.conformance/v4", sha256: process.env.CLIENT_ROOT_CORPUS_SHA256}
+			authentication: {schema: "malt.conformance.authentication/1", sha256: process.env.AUTHENTICATION_CORPUS_SHA256},
 		},
 		codegen_environment: {CGO_ENABLED: "0", GOEXPERIMENT: "none", GOWASM: "", GOFIPS140: "off"},
 		components: {verifier: component("VERIFIER"), writer: component("WRITER")}

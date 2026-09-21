@@ -62,26 +62,22 @@ can still expose its own manifest through a system binding. Positional and
 native-key profiles do not gain system payload support, and the literal label
 `"@payload"` remains distinct from the system selector.
 
-The old string resolver's implicit terminal redirect and `VerifyTranscript`
-entry point are removed. Its current `ResolveKey` port continues to serve
-explicit relation queries; typed payload composition uses the caller-bound
-portable verifier. Unimplemented implicit/HAMT evidence and unused ProofList
-kinds, commitment path extraction/cache constants, and obsolete node-geometry
-algorithms are removed. The width adapter remains because Gateway uses it.
+The old string resolver, ResolveKey port, transcript verifier, Map/List
+adapters, old ProofList families and node-width adapter are removed. Current
+callers use typed queries and Root descriptors directly. No implicit/HAMT
+placeholder evidence or old cache/path helpers remain.
 
 ## Shared hosts and browser integration
 
-`sdk/writer/host` owns transport-neutral serialization and bounded session,
-checkpoint, candidate and receipt coordination previously duplicated in Core
-and malt-ts WASM commands. Both commands retain backend selection and JS ABI
-registration. The retained authentication ABI exposes create/import, delta
-apply, complete export, discard and clear; the browser Worker serializes these
-stateful operations. A ready Worker must provide the complete current ABI.
+`sdk/authentication/host` owns transport-neutral serialization and bounded
+sessions shared by Core and malt-ts WASM commands. Both commands retain backend
+selection and JS ABI registration. The retained ABI exposes create/import,
+delta apply, complete export, discard and clear; batch and receipt validation
+use the same Core contracts. Workers serialize stateful operations and require
+the complete current ABI before becoming ready.
 
-Root V=0, canonical tree nodes, and existing binding/resolve/read proof profiles
-are unchanged. `malt.authentication-delta/0` is a new explicit retained-writer
-input contract, documented in `protocol/schemas/authentication-delta.schema.json`.
-The frozen authentication corpus remains unchanged. Native and WASM regression
-coverage compares incremental Roots with fresh construction, verifies exported
-candidates independently, rejects mutated materializers and omitted terminal
-proof steps, and checks session bounds and handle lifetime.
+Root V=0 and canonical tree node encoding remain unchanged. Queries use
+`malt.authentication/1`; deltas use `malt.authentication-delta/0`. Native and
+WASM tests compare incremental Roots with independent construction, verify
+exported candidates, reject hostile materialization and omitted steps, and
+check session bounds and stale-handle rejection.
