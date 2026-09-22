@@ -70,7 +70,7 @@ type Entry struct {
 // ChunkSize/TotalSize are zero for Prefix and for plain Positional state.
 type State struct {
 	Descriptor maltcid.RootDescriptor `json:"descriptor"`
-	Entries    []Entry                `json:"entries"`
+	Entries    []Entry                `json:"entries" schema:"optional,nullable"`
 	ChunkSize  uint64                 `json:"chunk_size,omitempty,string"`
 	TotalSize  uint64                 `json:"total_size,omitempty,string"`
 }

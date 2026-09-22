@@ -69,10 +69,9 @@ type NodeStore interface {
 	Updater
 }
 
-// RootedNodeUpdater records which internal node identity owns an
-// unversioned node-cache ArcSet. Encoded node materializers use it
-// when available so bounded in-memory sessions can reclaim unreachable node
-// caches without changing the portable Lookup/Updater contract.
+// RootedNodeUpdater records which internal node identity owns an unversioned
+// node ArcSet. Encoded adapters expose it to caller-owned storage for ownership
+// checks and accounting; SDK sessions manage retained tree state independently.
 type RootedNodeUpdater interface {
 	UpdateNode(context.Context, string, cid.Cid, arcset.ArcSet) error
 }

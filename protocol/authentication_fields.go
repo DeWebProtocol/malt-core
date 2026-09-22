@@ -4,32 +4,42 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/dewebprotocol/malt-core/auth/input"
-	cid "github.com/ipfs/go-cid"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/dewebprotocol/malt-core/auth/input"
+	cid "github.com/ipfs/go-cid"
 )
 
 // encoding/json matches struct fields case-insensitively and treats null as
 // absent for pointers. This profile requires exact names and present values.
 // Duplicate keys and nesting are bounded before this walk; cryptographic and
 // operation-specific checks run after it.
+// Non-omitempty fields are required unless schema:"optional" declares the
+// schema's default. Null values and null array items require explicit tags.
+// Schema conformance tests keep these annotations aligned with the wire contract
+// without changing Go's JSON output or adding a runtime schema interpreter.
 func exactAuthenticationFields(raw []byte, t reflect.Type) error {
+	return authenticationFields(raw, t, false, false)
+}
+
+func authenticationFields(raw []byte, t reflect.Type, nullable, nullableItems bool) error {
+	if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		if nullable {
+			return nil
+		}
+		return fmt.Errorf("null authentication field")
+	}
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
-		if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
-			return fmt.Errorf("explicit null optional field")
-		}
 	}
-	if t == reflect.TypeOf(input.Value{}) {
+	if t == reflect.TypeFor[input.Value]() {
 		var value input.Value
 		return json.Unmarshal(raw, &value)
 	}
-	if t == reflect.TypeOf(cid.Cid{}) {
-		if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
-			return nil
-		}
+	if t == reflect.TypeFor[cid.Cid]() {
 		var obj map[string]json.RawMessage
 		if err := json.Unmarshal(raw, &obj); err != nil {
 			return err
@@ -40,9 +50,6 @@ func exactAuthenticationFields(raw []byte, t reflect.Type) error {
 		var value string
 		return json.Unmarshal(obj["/"], &value)
 	}
-	if t.Kind() != reflect.Slice && bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
-		return fmt.Errorf("null authentication field")
-	}
 	switch t.Kind() {
 	case reflect.Struct:
 		var obj map[string]json.RawMessage
@@ -52,9 +59,14 @@ func exactAuthenticationFields(raw []byte, t reflect.Type) error {
 		fields := map[string]reflect.StructField{}
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
-			tag := strings.Split(field.Tag.Get("json"), ",")[0]
-			if tag != "" && tag != "-" {
-				fields[tag] = field
+			jsonOptions := strings.Split(field.Tag.Get("json"), ",")
+			name := jsonOptions[0]
+			if name != "" && name != "-" {
+				fields[name] = field
+				if !slices.Contains(jsonOptions[1:], "omitempty") &&
+					!slices.Contains(strings.Split(field.Tag.Get("schema"), ","), "optional") && obj[name] == nil {
+					return fmt.Errorf("missing authentication field %q", name)
+				}
 			}
 		}
 		for name, value := range obj {
@@ -62,13 +74,8 @@ func exactAuthenticationFields(raw []byte, t reflect.Type) error {
 			if !ok {
 				return fmt.Errorf("unknown authentication field %q", name)
 			}
-			if bytes.Equal(bytes.TrimSpace(value), []byte("null")) && field.Type.Kind() != reflect.Slice && field.Type != reflect.TypeOf(cid.Cid{}) {
-				return fmt.Errorf("null authentication field %q", name)
-			}
-			if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.Uint8 && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
-				return fmt.Errorf("null byte field %q", name)
-			}
-			if strings.Contains(","+field.Tag.Get("json")+",", ",string,") {
+			options := strings.Split(field.Tag.Get("schema"), ",")
+			if slices.Contains(strings.Split(field.Tag.Get("json"), ",")[1:], "string") {
 				var text string
 				if err := json.Unmarshal(value, &text); err != nil {
 					return err
@@ -77,12 +84,16 @@ func exactAuthenticationFields(raw []byte, t reflect.Type) error {
 				if err != nil || strconv.FormatUint(n, 10) != text {
 					return fmt.Errorf("noncanonical uint64 field %q", name)
 				}
-			} else if err := exactAuthenticationFields(value, field.Type); err != nil {
+			} else if err := authenticationFields(value, field.Type, slices.Contains(options, "nullable"), slices.Contains(options, "nullable-items")); err != nil {
 				return fmt.Errorf("%s: %w", name, err)
 			}
 		}
 	case reflect.Slice:
 		if t.Elem().Kind() == reflect.Uint8 {
+			var text string
+			if err := json.Unmarshal(raw, &text); err != nil {
+				return err
+			}
 			return nil
 		}
 		var values []json.RawMessage
@@ -90,7 +101,7 @@ func exactAuthenticationFields(raw []byte, t reflect.Type) error {
 			return err
 		}
 		for _, value := range values {
-			if err := exactAuthenticationFields(value, t.Elem()); err != nil {
+			if err := authenticationFields(value, t.Elem(), nullableItems, false); err != nil {
 				return err
 			}
 		}

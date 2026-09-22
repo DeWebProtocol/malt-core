@@ -103,8 +103,8 @@ func TestEngineVerifiesEachGeneratedOpeningOnce(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if counter.prepared != wantOpenings || counter.opened != wantOpenings || counter.verified != wantOpenings || counter.provedAtRoot != 0 {
-					t.Fatalf("preparations/openings/verifications/root proofs = %d/%d/%d/%d, want %d/%d/%d/0", counter.prepared, counter.opened, counter.verified, counter.provedAtRoot, wantOpenings, wantOpenings, wantOpenings)
+				if counter.prepared != 1 || counter.opened != wantOpenings || counter.verified != wantOpenings || counter.provedAtRoot != 0 {
+					t.Fatalf("preparations/openings/verifications/root proofs = %d/%d/%d/%d, want %d/%d/%d/0", counter.prepared, counter.opened, counter.verified, counter.provedAtRoot, 1, wantOpenings, wantOpenings)
 				}
 				if valid, err := e.Verify(root, query, result); err != nil || !valid {
 					t.Fatalf("portable verification: %v", err)

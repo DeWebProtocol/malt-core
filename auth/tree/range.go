@@ -22,6 +22,10 @@ type RangeResult struct {
 // ReadMetadata uses the always-out-of-range uint64 maximum index to obtain a
 // root metadata opening. Metadata stays structural: there is no system arc.
 func (e *Engine) ReadMetadata(ctx context.Context, root cid.Cid, source materializer.NodeLookup) (Metadata, Result, error) {
+	return e.readMetadata(ctx, root, newProofWork(source))
+}
+
+func (e *Engine) readMetadata(ctx context.Context, root cid.Cid, work *proofWork) (Metadata, Result, error) {
 	d, _, err := maltcid.ParseRoot(root)
 	if err != nil {
 		return Metadata{}, Result{}, err
@@ -29,7 +33,7 @@ func (e *Engine) ReadMetadata(ctx context.Context, root cid.Cid, source material
 	if d.Layout != maltcid.Positional {
 		return Metadata{}, Result{}, errors.New("metadata requires Positional")
 	}
-	result, err := e.Prove(ctx, root, coordinate.At(math.MaxUint64), source)
+	result, err := e.prove(ctx, root, coordinate.At(math.MaxUint64), work)
 	if err != nil {
 		return Metadata{}, Result{}, err
 	}
@@ -55,7 +59,8 @@ func rangeBounds(meta Metadata, start uint64, end *uint64) (uint64, uint64, erro
 	return first, count, nil
 }
 func (e *Engine) ProveRange(ctx context.Context, root cid.Cid, start uint64, end *uint64, source materializer.NodeLookup) (RangeResult, error) {
-	meta, evidence, err := e.ReadMetadata(ctx, root, source)
+	work := newProofWork(source)
+	meta, evidence, err := e.readMetadata(ctx, root, work)
 	if err != nil {
 		return RangeResult{}, err
 	}
@@ -65,7 +70,7 @@ func (e *Engine) ProveRange(ctx context.Context, root cid.Cid, start uint64, end
 	}
 	result := RangeResult{Metadata: meta, MetadataEvidence: evidence, Segments: []Result{}}
 	for offset := uint64(0); offset < count; offset++ {
-		segment, err := e.Prove(ctx, root, coordinate.At(first+offset), source)
+		segment, err := e.prove(ctx, root, coordinate.At(first+offset), work)
 		if err != nil {
 			return RangeResult{}, err
 		}

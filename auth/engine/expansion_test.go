@@ -67,7 +67,7 @@ func TestSnapshotRejectsHugeLogicalExpansionAtRoot(t *testing.T) {
 	}
 }
 
-func TestRetainNestedRootWithSharedAAIndependentNodes(t *testing.T) {
+func TestEncodedSharedAAIndependentNodes(t *testing.T) {
 	e, _ := setup(t, maltcid.IPA256)
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "retention"}
@@ -85,18 +85,13 @@ func TestRetainNestedRootWithSharedAAIndependentNodes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parent, err := e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: input.LabelValue([]byte("child")), Target: child}}}, nodes)
+	_, err = e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: input.LabelValue([]byte("child")), Target: child}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, err = e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: value, Target: target("discarded")}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
-	}
-	before := store.EntryCount()
-	store.RetainRoots(map[string][]cid.Cid{"retention": {parent}})
-	if store.EntryCount() >= before {
-		t.Fatal("unreachable node was retained")
 	}
 	for _, q := range []struct {
 		root  cid.Cid
@@ -107,12 +102,12 @@ func TestRetainNestedRootWithSharedAAIndependentNodes(t *testing.T) {
 			t.Fatal(err)
 		}
 		if ok, err := e.Verify(q.root, q.input, result); err != nil || !ok {
-			t.Fatal("retained shared node", err)
+			t.Fatal("shared node", err)
 		}
 	}
 }
 
-func TestRetainPositionalParentPointingToPrefixChild(t *testing.T) {
+func TestEncodedPositionalParentPointingToPrefixChild(t *testing.T) {
 	e, _ := setup(t, maltcid.IPA256)
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "mixed"}
@@ -122,11 +117,10 @@ func TestRetainPositionalParentPointingToPrefixChild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parent, err := e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: child}}}, nodes)
+	_, err = e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: child}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	store.RetainRoots(map[string][]cid.Cid{"mixed": {parent}})
 	result, err := e.Prove(t.Context(), child, value, nodes)
 	if err != nil {
 		t.Fatal("Positional parent lost its Prefix child", err)

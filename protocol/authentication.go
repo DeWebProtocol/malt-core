@@ -28,7 +28,7 @@ const AuthenticationPathProfile = "malt.authentication/1"
 type AuthenticationRequest struct {
 	Profile   string        `json:"profile"`
 	Root      string        `json:"root"`
-	Steps     []input.Value `json:"steps"`
+	Steps     []input.Value `json:"steps" schema:"optional,nullable"`
 	Operation string        `json:"operation"`
 	Input     *input.Value  `json:"input,omitempty"`
 	Start     *uint64       `json:"start,omitempty,string"`
@@ -102,7 +102,7 @@ type AuthenticationCandidate struct {
 }
 type AuthenticationNode struct {
 	Reference []byte   `json:"reference"`
-	Cells     [][]byte `json:"cells"`
+	Cells     [][]byte `json:"cells" schema:"nullable-items"`
 }
 
 func DecodeAuthenticationRequest(data []byte) (AuthenticationRequest, error) {
