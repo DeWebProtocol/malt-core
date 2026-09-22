@@ -3,6 +3,7 @@ package engine_test
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -127,5 +128,70 @@ func TestEncodedPositionalParentPointingToPrefixChild(t *testing.T) {
 	}
 	if ok, err := e.Verify(child, value, result); err != nil || !ok {
 		t.Fatal("child proof", err)
+	}
+}
+
+func TestSnapshotChecksEverySharedOccurrence(t *testing.T) {
+	for _, positional := range []bool{true, false} {
+		t.Run(fmt.Sprint(positional), func(t *testing.T) {
+			e, nodes := setup(t, maltcid.IPA256)
+			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
+			if positional {
+				state.Descriptor.Layout = maltcid.Positional
+				state.ChunkSize, state.TotalSize = 8, 510*8
+				for i := uint64(0); i < 510; i++ {
+					state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(i), Target: target("same")})
+				}
+			} else {
+				for _, key := range [][32]byte{{1, 1}, {1, 2}} {
+					state.Entries = append(state.Entries, engine.Entry{Input: input.KeyValue(key), Target: target("same")})
+				}
+			}
+			root, err := e.Build(t.Context(), state, nodes)
+			if err != nil {
+				t.Fatal(err)
+			}
+			borrowed := &rangeNodes{NodeLookup: nodes, reads: make(map[string]int)}
+			if _, err := e.SnapshotBounded(t.Context(), root, borrowed, uint64(len(state.Entries))); err != nil {
+				t.Fatal("snapshot did not own source vectors", err)
+			}
+			ref, _, _ := maltcid.RootNode(root)
+			cells, err := nodes.GetNode(t.Context(), ref)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := "routing prefix"
+			if positional {
+				// Both children name the same physical full leaf. Its second logical
+				// occurrence must be rejected when the parent declares a partial tail.
+				binary.BigEndian.PutUint64(cells[0][25:], state.TotalSize-1)
+				want = "metadata"
+			} else {
+				// The second occurrence of this child is under the wrong Prefix route.
+				cells[2] = append(commitment.Cell(nil), cells[1]...)
+			}
+			scheme, err := ipa.NewCommitterScheme(ipa.ProfileDirect)
+			if err != nil {
+				t.Fatal(err)
+			}
+			committed, err := scheme.Commit(cells)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ref.Commitment, err = committed.CommitmentBytes(maltcid.IPA256)
+			if err != nil {
+				t.Fatal(err)
+			}
+			root, err = maltcid.NewRoot(state.Descriptor, ref.Commitment)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := nodes.PutNode(t.Context(), ref, cells); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := e.Snapshot(t.Context(), root, nodes); err == nil || !strings.Contains(err.Error(), want) {
+				t.Fatalf("shared occurrence accepted: %v", err)
+			}
+		})
 	}
 }

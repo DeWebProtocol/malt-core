@@ -34,6 +34,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 		return View{}, errors.New("node lookup is nil")
 	}
 	view := View{Descriptor: d}
+	work := newProofWork(source)
 	visiting := make(map[string]bool)
 	var walk func(maltcid.NodeRef, int, *Metadata, []int) error
 	walk = func(node maltcid.NodeRef, depth int, expected *Metadata, path []int) error {
@@ -52,18 +53,19 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 		}
 		visiting[string(key)] = true
 		defer delete(visiting, string(key))
-		cells, err := source.GetNode(ctx, copyNodeRef(node))
+		physical, err := work.load(ctx, node, p.Slots)
 		if err != nil {
 			return err
 		}
-		if len(cells) != p.Slots {
-			return materializer.ErrIncomplete
-		}
-		// Opening a full supplied vector at its claimed commitment validates the
-		// materialization without asking the service to compute a new Root.
-		if _, _, err := openVector(s, node, cells, 0); err != nil {
+		// Verify each physical vector once, but check metadata, routing and
+		// logical expansion for every occurrence of a shared subtree.
+		if _, _, err := physical.open(ctx, s, 0); err != nil {
 			return err
 		}
+		// Snapshot only opens index zero. Its verified evidence is sufficient
+		// for repeats; release the prepared polynomial and its vector copy.
+		physical.opening = nil
+		cells := physical.cells
 		var meta Metadata
 		start := 0
 		if d.Layout == maltcid.Positional {

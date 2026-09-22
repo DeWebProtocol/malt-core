@@ -156,7 +156,7 @@ func Export(ctx context.Context, e *engine.Engine, root cid.Cid, state engine.St
 	if err := e.ValidateState(ctx, root, state, collector); err != nil {
 		return protocol.AuthenticationCandidate{}, err
 	}
-	candidate := protocol.AuthenticationCandidate{Profile: protocol.AuthenticationProfile, Root: root.String(), State: state, Nodes: []protocol.AuthenticationNode{}}
+	candidate := protocol.AuthenticationCandidate{Profile: protocol.AuthenticationProfile, Root: root.String(), State: cloneState(state), Nodes: []protocol.AuthenticationNode{}}
 	keys := make([]string, 0, len(collector.nodes))
 	for key := range collector.nodes {
 		keys = append(keys, key)

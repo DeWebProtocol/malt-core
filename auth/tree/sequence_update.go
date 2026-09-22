@@ -7,7 +7,6 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -31,6 +30,13 @@ func (u *nodeEdit) sequence(ref maltcid.NodeRef, expected *Metadata) ([]commitme
 // requires the new total size and a previously full final chunk. A plain
 // sequence requires nil totalSize. It returns the new candidate and index.
 func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
+	return e.AppendBatch(ctx, root, []cid.Cid{target}, totalSize, source, out)
+}
+
+// AppendBatch adds a nonempty contiguous suffix, committing each changed or
+// new node once. It has the same measurement requirements as Append and returns
+// the first appended index. Unchanged subtrees retain their references.
+func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Cid, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
 	u, ref, err := e.edit(ctx, root, source, out)
 	if err != nil {
 		return cid.Undef, 0, err
@@ -39,11 +45,21 @@ func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, total
 	if err != nil {
 		return cid.Undef, 0, err
 	}
-	if !target.Defined() || meta.Count == math.MaxUint64 {
-		return cid.Undef, 0, errors.New("undefined target or sequence length overflow")
+	if len(targets) == 0 || uint64(len(targets)) > math.MaxUint64-meta.Count {
+		return cid.Undef, 0, errors.New("empty append batch or sequence length overflow")
+	}
+	items := make([]binding, len(targets))
+	for i, target := range targets {
+		if err := ctx.Err(); err != nil {
+			return cid.Undef, 0, err
+		}
+		if !target.Defined() {
+			return cid.Undef, 0, errors.New("undefined append target")
+		}
+		items[i] = binding{target: target}
 	}
 	next := meta
-	next.Count++
+	next.Count += uint64(len(items))
 	if meta.ChunkSize == 0 {
 		if totalSize != nil {
 			return cid.Undef, 0, ErrNotMeasured
@@ -66,58 +82,79 @@ func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, total
 	}
 	b := u.builder
 	b.out = u
-	ref, err = u.appendNode(&b, ref, meta, next, target)
+	ref, err = u.appendNode(&b, ref, meta, next, items)
 	if err != nil {
 		return cid.Undef, 0, err
 	}
 	root, err = u.finish(ref)
 	return root, meta.Count, err
 }
-func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next Metadata, target cid.Cid) (maltcid.NodeRef, error) {
-	cells, _, err := u.sequence(ref, &old)
-	if err != nil {
-		return maltcid.NodeRef{}, err
+func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next Metadata, items []binding) (maltcid.NodeRef, error) {
+	if old == next {
+		return ref, nil
 	}
-	if next.Height > old.Height {
-		cells = make([]commitment.Cell, u.profile.Slots)
-		cells[1], err = childCell(ref)
+	if old.Count == 0 {
+		return b.positional(items, next)
+	}
+	var cells []commitment.Cell
+	var err error
+	if next.Height == old.Height {
+		cells, _, err = u.sequence(ref, &old)
 		if err != nil {
 			return maltcid.NodeRef{}, err
 		}
+	} else {
+		// A batch may grow several levels. Recurse into the first child with
+		// the old root until its existing height is reached.
+		cells = make([]commitment.Cell, u.profile.Slots)
 	}
 	cells[0] = next.cell()
+	if next.Height == 0 {
+		for i, item := range items {
+			slot := int(old.Count) + i + 1
+			if len(cells[slot]) != 0 {
+				return maltcid.NodeRef{}, errors.New("nonempty Positional append slot")
+			}
+			cells[slot] = append(commitment.Cell{positionalLeaf}, item.target.Bytes()...)
+		}
+		return b.commit(cells)
+	}
 	span, err := subtreeSpan(next.Height, uint64(u.profile.Slots-1))
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	index := next.Count - 1
-	slot := int(index/span) + 1
-	if next.Height == 0 {
-		if len(cells[slot]) != 0 {
-			return maltcid.NodeRef{}, errors.New("nonempty Positional append slot")
+	for slot := 1; slot < len(cells); slot++ {
+		if uint64(slot-1) > next.Count/span || uint64(slot-1)*span >= next.Count {
+			break
 		}
-		cells[slot] = append(commitment.Cell{positionalLeaf}, target.Bytes()...)
-	} else {
-		childMeta, _, err := childMetadata(next, index, u.profile.Slots)
+		start := uint64(slot-1) * span
+		childMeta, _, err := childMetadata(next, start, u.profile.Slots)
 		if err != nil {
 			return maltcid.NodeRef{}, err
 		}
 		var child maltcid.NodeRef
-		if len(cells[slot]) == 0 {
-			if childMeta.Count != 1 {
-				return maltcid.NodeRef{}, errors.New("missing prior Positional child")
+		if start >= old.Count {
+			if len(cells[slot]) != 0 {
+				return maltcid.NodeRef{}, errors.New("nonempty Positional append slot")
 			}
-			child, err = b.positional([]binding{{coordinate: coordinate.Value{Kind: coordinate.Index}, target: target}}, childMeta)
+			child, err = b.positional(items[:childMeta.Count], childMeta)
+			items = items[childMeta.Count:]
 		} else {
-			child, err = parseChild(cells[slot], ref)
-			if err != nil {
-				return maltcid.NodeRef{}, err
+			oldChild := old
+			child = ref
+			if next.Height == old.Height {
+				child, err = parseChild(cells[slot], ref)
+				if err != nil {
+					return maltcid.NodeRef{}, err
+				}
+				oldChild, _, err = childMetadata(old, start, u.profile.Slots)
+				if err != nil {
+					return maltcid.NodeRef{}, err
+				}
 			}
-			oldChild, _, childErr := childMetadata(old, index-1, u.profile.Slots)
-			if childErr != nil {
-				return maltcid.NodeRef{}, childErr
-			}
-			child, err = u.appendNode(b, child, oldChild, childMeta, target)
+			added := childMeta.Count - oldChild.Count
+			child, err = u.appendNode(b, child, oldChild, childMeta, items[:added])
+			items = items[added:]
 		}
 		if err != nil {
 			return maltcid.NodeRef{}, err

@@ -54,6 +54,14 @@ func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, total
 	}
 	return e.Tree.Append(ctx, root, target, totalSize, source, out)
 }
+
+// AppendBatch appends a contiguous suffix in one tree edit and returns its first index.
+func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Cid, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
+	if err := e.CheckRoot(root); err != nil {
+		return cid.Undef, 0, err
+	}
+	return e.Tree.AppendBatch(ctx, root, targets, totalSize, source, out)
+}
 func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	if err := e.CheckRoot(root); err != nil {
 		return cid.Undef, err
