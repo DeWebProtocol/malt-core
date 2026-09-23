@@ -6,6 +6,7 @@ This folder collects implementation-bound policy and release documents.
 - [Compatibility policy](./compatibility.md)
 - [Release process](./releasing.md)
 - [WASM ownership](../changes/wasm-ownership.md)
+- [v0.0.9 release notes](../releases/v0.0.9.md)
 - [v0.0.7 release notes and checklist](../releases/v0.0.7.md)
 - [v0.0.6 release notes and checklist](../releases/v0.0.6.md)
 - [v0.0.5 release notes and checklist](../releases/v0.0.5.md)

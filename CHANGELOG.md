@@ -6,31 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-09-23
+
 ### Changed
 
-- Make typed authentication the sole current API: independent coordinate-only
-  Prefix/Positional tree, explicit Root/input interpretation and traversal,
-  immutable writers and shared bounded native/WASM sessions.
-- Use authentication/1 queries with authenticated early traversal absence;
-  retain the separate authentication/0 complete candidate profile.
-- Add ordered authentication-batch/0 submission and exact authentication-receipt/0
-  binding without claiming portable transitions, publication, or trusted roots.
-- Require the complete current browser ABI and exact backend/profile identity.
-  Release metadata uses wasm-release/v2, verifier provenance/v2, and writer
-  provenance/v4 with the current authentication/1 corpus.
+- Require Go 1.26.0 or later, up from Go 1.25.7 in `v0.0.8`.
+
+- Make typed authentication the sole current API: coordinate-only
+  Prefix/Positional trees, explicit input interpretation and traversal,
+  immutable writers, and bounded native/WASM host sessions.
+- Use `malt.authentication/1` queries with authenticated early traversal
+  absence; keep the distinct `malt.authentication/0` complete candidate profile.
+- Add ordered `malt.authentication-batch/0` submission and exact
+  `malt.authentication-receipt/0` binding without claiming portable transitions,
+  publication, or trusted roots.
+- Replace CID-valued commitment and combined/index backend APIs with
+  `commitment.Value` and independent `Committer`/`Prover`/`Verifier` capabilities.
+  Proof generation and opening preparation require an existing commitment.
+- Separate lookup/update/snapshot capabilities and opt-in built-in verification
+  profiles. Core remains independent of persistent storage and service policy.
+- Reuse request-local verified node/opening work for queries and complete
+  snapshots, and batch positional append work by affected subtree.
+- Move WASM entrypoints, builds, browser conformance runners, and release assets
+  to `malt-ts`, which binds an exact published Core release.
+
+### Fixed
+
+- Give exported candidates owned input buffers; preserve candidate lineage for
+  no-op updates and reject invalid shared-node metadata at every occurrence.
+- Close ArcSet iterators on success and error, and reject required-field,
+  nullability, and byte/array-shape violations in authentication JSON.
 
 ### Removed
 
-- Map/List adapters, semantic Root constructors, string resolver, old ProofList
-  and verification packages, module-root forwarding facade, execution/mutation,
-  sdk/writer, sdk/verifier, and aggregate Store compatibility ports.
-- Resolve/Read, Map-proof, artifact and client-root APIs, dedicated schemas,
-  historical corpus loaders, browser exports, and obsolete tests/helpers.
-- Historical V2/V3 Root decoding and implicit format migration. Current Root
-  V=0 and exact profile-qualified commitments follow the pre-production policy.
+- Semantic Map/List adapters and Root constructors, string resolution, legacy
+  ProofList/Resolve/Read and verification APIs, execution/mutation, old Writer
+  and Verifier SDKs, the module-root facade, and aggregate Store compatibility.
+- Retired schemas, conformance loaders, browser exports, unused pre-beta
+  helpers, and the reference store's unused reachability GC/reverse index.
+- Historical V2/V3 Root decoding and implicit format migration.
 
-See [migration details](docs/changes/typed-authentication-only.md). Source
-migration does not publish releases or silently update downstream asset locks.
+### Compatibility
+
+- This is a pre-beta source and wire break relative to `v0.0.8`. Current Roots
+  remain self-describing `V=0`; old Roots and callers require explicit migration.
+- Relative to `v0.0.9-rc.7`, the candidate fixes preserve current profile/schema
+  identifiers and valid wire encodings. Complete exports no longer alias input
+  state, and batch append/snapshot work avoids redundant cryptographic work.
+- A non-prerelease package tag does not declare production readiness or change
+  the Root version policy. Historical releases remain immutable.
+
+See [v0.0.9 release notes](docs/releases/v0.0.9.md) and
+[migration details](docs/changes/typed-authentication-only.md).
 
 ## [0.0.7] - 2026-08-17
 
@@ -416,7 +443,8 @@ for the trusted CLI/daemon and UnixFS application, and
 - KZG verification rejects out-of-range proof indices and non-canonical proof
   lengths instead of allowing malformed input to panic or reuse a commitment.
 
-[Unreleased]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.9...HEAD
+[0.0.9]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.8...v0.0.9
 [0.0.7]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.5...v0.0.7
 [0.0.7-rc.5]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.4...v0.0.7-rc.5
 [0.0.7-rc.4]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.3...v0.0.7-rc.4
