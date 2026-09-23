@@ -51,11 +51,11 @@ func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []b
 
 // Prove opens only the supplied coordinate. Storage errors are never converted
 // into authenticated absence. The caller derives the coordinate from its input.
-func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Value, source materializer.NodeLookup) (Result, error) {
+func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Coordinate, source materializer.NodeLookup) (Result, error) {
 	return e.prove(ctx, root, query, newProofWork(source))
 }
 
-func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Value, work *proofWork) (Result, error) {
+func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coordinate, work *proofWork) (Result, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
 		return Result{}, err
@@ -167,7 +167,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Value
 
 // Verify binds evidence to the caller's full Root and authentication coordinate.
 // It consumes no node materializer; callers must derive their own coordinates.
-func (e *Engine) Verify(root cid.Cid, query coordinate.Value, result Result) (bool, error) {
+func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result) (bool, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
 		return false, err

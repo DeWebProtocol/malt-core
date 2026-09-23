@@ -7,8 +7,8 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -24,23 +24,23 @@ func pathEngine(t *testing.T) *engine.Engine {
 	if err := profiles.Register(scheme); err != nil {
 		t.Fatal(err)
 	}
-	return engine.New(input.DefaultRegistry(), profiles)
+	return engine.New(profiles)
 }
 
 func TestPathAbsenceBindsPrefixAndRejectsFailures(t *testing.T) {
 	ctx := context.Background()
 	e := pathEngine(t)
 	nodes := memory.NewNodes()
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	child, err := e.Build(ctx, engine.State{Descriptor: d}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	root, err := e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: input.LabelValue([]byte("child")), Target: child}}}, nodes)
+	root, err := e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Label: []byte("child"), Target: child}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: []input.Value{input.LabelValue([]byte("child")), input.LabelValue([]byte("missing")), input.LabelValue([]byte("suffix"))}}
+	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: [][]byte{[]byte("child"), []byte("missing"), []byte("suffix")}}
 	result, err := authentication.Execute(ctx, e, q, nodes)
 	if err != nil {
 		t.Fatal(err)
@@ -60,8 +60,8 @@ func TestPathAbsenceBindsPrefixAndRejectsFailures(t *testing.T) {
 		t.Fatalf("roundtrip: %v %v", ok, err)
 	}
 	altered := q
-	altered.Steps = append([]input.Value(nil), q.Steps...)
-	altered.Steps[0] = input.LabelValue([]byte("other"))
+	altered.Steps = append([][]byte(nil), q.Steps...)
+	altered.Steps[0] = []byte("other")
 	if ok, _ := authentication.Verify(e, altered, result); ok {
 		t.Fatal("wrong prefix verified")
 	}

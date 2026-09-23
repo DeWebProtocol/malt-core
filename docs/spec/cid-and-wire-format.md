@@ -3,7 +3,7 @@
 Current MALT Roots use CIDv1 with codec
 `0x300000 | (V << 12) | (L << 8) | AA`, abbreviated `0x30VLAA`.
 `V=0` is required throughout pre-production. `L` selects Prefix or Positional;
-`AA` selects the typed input rule. The codec integer is a minimal unsigned
+`AA` selects the application label rule. The codec integer is a minimal unsigned
 varint, not a fixed four-byte prefix.
 
 The identity multihash carries a multicommitment:
@@ -20,7 +20,7 @@ constructors and V2/V3 decoding are removed.
 Only the MALT subrange `0x300000–0x30ffff` is considered for Root parsing.
 Readers reject unsupported versions/layouts/profiles, invalid combinations,
 nonminimal varints, non-identity hash wrappers, wrong commitment widths, and
-trailing bytes. Execution additionally requires the exact input rule and
+trailing bytes. Execution additionally requires the exact derivation profile and
 verification/commitment implementation to be installed.
 
 Internal authentication references are `MN || 0x00 || byte(L) ||
@@ -33,6 +33,6 @@ Payload CIDs retain their ordinary CAS meaning. Clients hash fetched bytes
 against the authenticated target CID. Replacing an old Root prefix does not
 migrate old authentication state; reconstruct the state and dependent parents.
 
-See [input rules and exact profiles](authentication-inputs.md),
+See [derivation profiles and exact profiles](authentication-inputs.md),
 [proof encoding](commitment-proof-encoding.md), and
 [Root version policy](../policy/root-versioning.md).

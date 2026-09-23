@@ -10,7 +10,7 @@
   ],
   "properties": {
     "profile": {
-      "const": "malt.authentication-delta/0"
+      "const": "malt.authentication-delta/1"
     },
     "changes": {
       "type": "array",
@@ -18,11 +18,11 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "input"
+          "label"
         ],
         "properties": {
-          "input": {
-            "$ref": "authentication.schema.json#/$defs/input"
+          "label": {
+            "$ref": "authentication.schema.json#/$defs/label"
           },
           "before": {
             "type": "string",

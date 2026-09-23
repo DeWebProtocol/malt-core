@@ -5,12 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
-	"sort"
 )
 
 // Change supplies an expected old target. Undefined Before means insert and
@@ -18,12 +17,12 @@ import (
 // new vectors are materialized. It still produces a candidate, not a portable
 // proof that the state transition was authorized.
 type Change struct {
-	Input  input.Value
+	Label  []byte
 	Before cid.Cid
 	After  cid.Cid
 }
 
-// ValidateState binds retained application inputs to a materialized Root using
+// ValidateState binds retained application labels to a materialized Root using
 // its exact AA. A store cannot substitute a key index for the original labels.
 func (e *Engine) ValidateState(ctx context.Context, root cid.Cid, state State, source materializer.NodeLookup) error {
 	d, _, err := maltcid.ParseRoot(root)
@@ -44,7 +43,7 @@ func (e *Engine) ValidateState(ctx context.Context, root cid.Cid, state State, s
 	return matchView(expected, actual)
 }
 
-// MatchView compares retained inputs with an already authenticated coordinate view.
+// MatchView compares retained labels with an already authenticated coordinate view.
 // It does not authenticate the supplied view; use ValidateState for untrusted nodes.
 func (e *Engine) MatchView(state State, actual View) error {
 	expected, err := e.Interpret(state)

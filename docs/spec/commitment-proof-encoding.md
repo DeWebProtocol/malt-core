@@ -1,7 +1,7 @@
 # Commitment And Proof Encoding
 
 This document describes current V0 primitive and semantic evidence exercised
-by authentication/1 conformance. It complements
+by authentication/2 conformance. It complements
 [self-describing Roots](./authentication-inputs.md) and
 [typed query contracts](./authentication-contracts.md). Historical V2/V3 Root readers and
 semantic proof envelopes are retired; their original source and corpus bytes
@@ -20,7 +20,7 @@ bytes, not its text form. An undefined slot is the empty cell.
 Primitive `commitment.Value` objects contain a profile-qualified
 multicommitment. Semantic Roots are CIDv1 values with a `0x30VLAA` codec and
 an identity multihash over that multicommitment. The codec selects version,
-layout, and input rule; the multicommitment selects the exact VC profile:
+layout, and derivation profile; the multicommitment selects the exact VC profile:
 
 | Backend | Commitment bytes | Maximum primitive vector length |
 | --- | ---: | ---: |

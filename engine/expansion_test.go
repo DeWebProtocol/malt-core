@@ -12,8 +12,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -49,7 +50,7 @@ func TestSnapshotRejectsHugeLogicalExpansionAtRoot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d := maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}
 	root, err := maltcid.NewRoot(d, c)
 	if err != nil {
 		t.Fatal(err)
@@ -73,31 +74,31 @@ func TestEncodedSharedAAIndependentNodes(t *testing.T) {
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "retention"}
 	ctx := context.Background()
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}
-	value := input.LabelValue([]byte("one"))
-	child, err := e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: value, Target: target("payload")}}}, nodes)
+	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	value := []byte("one")
+	child, err := e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Label: value, Target: target("payload")}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	coordinate, _ := e.Rules.Derive(input.BytesSHA256, value)
+	derived, _ := derivation.Derive(derivation.SHA256, value)
 	nativeD := d
-	nativeD.InputRule = 0
-	nativeChild, err := e.Build(ctx, engine.State{Descriptor: nativeD, Entries: []engine.Entry{{Input: input.KeyValue(coordinate.Key), Target: target("payload")}}}, nodes)
+	nativeD.DerivationProfile = uint8(derivation.Direct)
+	nativeChild, err := e.Build(ctx, engine.State{Descriptor: nativeD, Entries: []engine.Entry{{Label: coordinate.EncodeKey(derived.Key), Target: target("payload")}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: input.LabelValue([]byte("child")), Target: child}}}, nodes)
+	_, err = e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Label: []byte("child"), Target: child}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: value, Target: target("discarded")}}}, nodes)
+	_, err = e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Label: value, Target: target("discarded")}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, q := range []struct {
 		root  cid.Cid
-		input input.Value
-	}{{child, value}, {nativeChild, input.KeyValue(coordinate.Key)}} {
+		input []byte
+	}{{child, value}, {nativeChild, coordinate.EncodeKey(derived.Key)}} {
 		result, err := e.Prove(ctx, q.root, q.input, nodes)
 		if err != nil {
 			t.Fatal(err)
@@ -112,13 +113,13 @@ func TestEncodedPositionalParentPointingToPrefixChild(t *testing.T) {
 	e, _ := setup(t, maltcid.IPA256)
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "mixed"}
-	value := input.LabelValue([]byte("child-label"))
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}
-	child, err := e.Build(t.Context(), engine.State{Descriptor: d, Entries: []engine.Entry{{Input: value, Target: target("payload")}}}, nodes)
+	value := []byte("child-label")
+	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	child, err := e.Build(t.Context(), engine.State{Descriptor: d, Entries: []engine.Entry{{Label: value, Target: target("payload")}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: child}}}, nodes)
+	_, err = e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: child}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,16 +136,16 @@ func TestSnapshotChecksEverySharedOccurrence(t *testing.T) {
 	for _, positional := range []bool{true, false} {
 		t.Run(fmt.Sprint(positional), func(t *testing.T) {
 			e, nodes := setup(t, maltcid.IPA256)
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
 			if positional {
 				state.Descriptor.Layout = maltcid.Positional
 				state.ChunkSize, state.TotalSize = 8, 510*8
 				for i := uint64(0); i < 510; i++ {
-					state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(i), Target: target("same")})
+					state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: target("same")})
 				}
 			} else {
 				for _, key := range [][32]byte{{1, 1}, {1, 2}} {
-					state.Entries = append(state.Entries, engine.Entry{Input: input.KeyValue(key), Target: target("same")})
+					state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeKey(key), Target: target("same")})
 				}
 			}
 			root, err := e.Build(t.Context(), state, nodes)

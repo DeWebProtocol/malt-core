@@ -2,19 +2,21 @@ package engine_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
-	"testing"
 )
 
 func TestAppendBatchGrowsMultipleLevels(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
 	value := target("batch")
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: value}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: value}}}
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)
@@ -23,7 +25,7 @@ func TestAppendBatchGrowsMultipleLevels(t *testing.T) {
 	targets := make([]cid.Cid, 255*255)
 	for i := range targets {
 		targets[i] = value
-		state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(uint64(i + 1)), Target: value})
+		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i + 1)), Target: value})
 	}
 	next, first, err := e.AppendBatch(t.Context(), root, targets, nil, nodes, nodes)
 	if err != nil {
@@ -46,7 +48,7 @@ func TestAppendBatchGrowsMultipleLevels(t *testing.T) {
 
 func TestAppendBatchRejectsInvalidSuffixWithoutWrites(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 8, TotalSize: 8, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: target("before")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 8, TotalSize: 8, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: target("before")}}}
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)

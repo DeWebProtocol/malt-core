@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
@@ -45,7 +46,7 @@ func TestValueBindsProfileAndDetachesBytes(t *testing.T) {
 		if _, err := commitment.NewValue(profile, raw[:len(raw)-1]); err == nil {
 			t.Fatal("accepted the wrong commitment width")
 		}
-		root, err := maltcid.NewRoot(maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: profile}, again)
+		root, err := maltcid.NewRoot(maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, again)
 		if err != nil {
 			t.Fatal(err)
 		}

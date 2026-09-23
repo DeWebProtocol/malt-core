@@ -8,8 +8,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
@@ -39,14 +40,14 @@ func TestRetainedWriterDoesNotRevalidateOwnedNodes(t *testing.T) {
 	if err := profiles.Register(counted); err != nil {
 		t.Fatal(err)
 	}
-	e := engine.New(input.DefaultRegistry(), profiles)
+	e := engine.New(profiles)
 	target := cid.MustParse("bafkqaaa")
 	other := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
 	for _, n := range []int{1, 256, 511} {
 		t.Run(fmt.Sprint(n), func(t *testing.T) {
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
 			for i := 0; i < n; i++ {
-				state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(uint64(i)), Target: target})
+				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target})
 			}
 			candidate, err := authentication.Prepare(t.Context(), e, state)
 			if err != nil {
@@ -68,7 +69,7 @@ func TestRetainedWriterDoesNotRevalidateOwnedNodes(t *testing.T) {
 			if !unchanged.Root().Equals(w.Root()) || counted.calls != 0 {
 				t.Fatalf("no-op revalidated %d nodes", counted.calls)
 			}
-			next, err := w.Apply(t.Context(), authentication.Delta{Changes: []engine.Change{{Input: input.IndexValue(0), Before: target, After: other}}})
+			next, err := w.Apply(t.Context(), authentication.Delta{Changes: []engine.Change{{Label: coordinate.EncodeIndex(0), Before: target, After: other}}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -106,22 +107,22 @@ func TestDeltaRejectsWrongBeforeAndPreservesBranches(t *testing.T) {
 	e := pathEngine(t)
 	value := cid.MustParse("bafkqaaa")
 	other := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.LabelValue([]byte("base")), Target: value}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("base"), Target: value}}}
 	w, err := authentication.BuildWriter(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
 	}
-	bad := authentication.Delta{Changes: []engine.Change{{Input: state.Entries[0].Input, Before: other, After: value}}}
+	bad := authentication.Delta{Changes: []engine.Change{{Label: state.Entries[0].Label, Before: other, After: value}}}
 	if _, err := w.Apply(t.Context(), bad); err == nil {
 		t.Fatal("wrong before accepted")
 	}
-	insertion := engine.Change{Input: input.LabelValue([]byte("branch")), After: other}
+	insertion := engine.Change{Label: []byte("branch"), After: other}
 	a, err := w.Apply(t.Context(), authentication.Delta{Changes: []engine.Change{insertion}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	insertion.Input.Data[0] = 'x'
-	b, err := w.Apply(t.Context(), authentication.Delta{Changes: []engine.Change{{Input: state.Entries[0].Input, Before: value}}})
+	insertion.Label[0] = 'x'
+	b, err := w.Apply(t.Context(), authentication.Delta{Changes: []engine.Change{{Label: state.Entries[0].Label, Before: value}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +144,7 @@ func TestDeltaRejectsWrongBeforeAndPreservesBranches(t *testing.T) {
 
 func TestRetainedSessionBoundsAndHandleLifetime(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
 	s, err := authentication.NewSession(e, authentication.SessionLimits{MaxCandidates: 2})
 	if err != nil {
 		t.Fatal(err)
@@ -187,7 +188,7 @@ func TestRetainedSessionBoundsAndHandleLifetime(t *testing.T) {
 
 func TestRetainedPrefixMixedDeltasMatchRebuild(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
 	w, err := authentication.BuildWriter(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
@@ -209,7 +210,7 @@ func TestRetainedPrefixMixedDeltasMatchRebuild(t *testing.T) {
 			if before.Equals(after) {
 				continue
 			}
-			delta.Changes = append(delta.Changes, engine.Change{Input: input.LabelValue([]byte(label)), Before: before, After: after})
+			delta.Changes = append(delta.Changes, engine.Change{Label: []byte(label), Before: before, After: after})
 			if after.Defined() {
 				want[label] = after
 			} else {
@@ -223,7 +224,7 @@ func TestRetainedPrefixMixedDeltasMatchRebuild(t *testing.T) {
 		}
 		state.Entries = nil
 		for label, target := range want {
-			state.Entries = append(state.Entries, engine.Entry{Input: input.LabelValue([]byte(label)), Target: target})
+			state.Entries = append(state.Entries, engine.Entry{Label: []byte(label), Target: target})
 		}
 		fresh, err := authentication.BuildWriter(t.Context(), e, state)
 		if err != nil || !fresh.Root().Equals(w.Root()) {
@@ -248,7 +249,7 @@ func (s rewritingExportSource) GetNode(ctx context.Context, ref maltcid.NodeRef)
 func TestExportIsolatesCollectorReferenceFromSource(t *testing.T) {
 	e := pathEngine(t)
 	nodes := memory.NewNodes()
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: cid.MustParse("bafkqaaa")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -9,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dewebprotocol/malt-core/auth/input"
 	cid "github.com/ipfs/go-cid"
 )
 
@@ -34,10 +34,6 @@ func authenticationFields(raw []byte, t reflect.Type, nullable, nullableItems bo
 	}
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
-	}
-	if t == reflect.TypeFor[input.Value]() {
-		var value input.Value
-		return json.Unmarshal(raw, &value)
 	}
 	if t == reflect.TypeFor[cid.Cid]() {
 		var obj map[string]json.RawMessage
@@ -93,6 +89,10 @@ func authenticationFields(raw []byte, t reflect.Type, nullable, nullableItems bo
 			var text string
 			if err := json.Unmarshal(raw, &text); err != nil {
 				return err
+			}
+			decoded, err := base64.StdEncoding.Strict().DecodeString(text)
+			if err != nil || base64.StdEncoding.EncodeToString(decoded) != text {
+				return fmt.Errorf("noncanonical base64 bytes")
 			}
 			return nil
 		}

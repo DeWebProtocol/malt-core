@@ -1,15 +1,16 @@
 package authentication_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	authbuiltin "github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
@@ -18,7 +19,7 @@ import (
 	mh "github.com/multiformats/go-multihash"
 )
 
-func TestCandidateRoundTripCustomAAAndIndependentVerification(t *testing.T) {
+func TestCandidateRoundTripOpaqueLabelsAndIndependentVerification(t *testing.T) {
 	ctx := context.Background()
 	scheme, err := ipa.NewCommitterScheme(ipa.ProfileDirect)
 	if err != nil {
@@ -28,18 +29,11 @@ func TestCandidateRoundTripCustomAAAndIndependentVerification(t *testing.T) {
 	if err := profiles.Register(scheme); err != nil {
 		t.Fatal(err)
 	}
-	rules := input.DefaultRegistry()
-	// This rule deliberately gives slash no meaning and delegates only hashing.
-	if err := rules.Register(128, input.RuleFunc(func(v input.Value) (input.Coordinate, error) {
-		return input.DefaultRegistry().Derive(input.BytesSHA256, v)
-	})); err != nil {
-		t.Fatal(err)
-	}
-	e := engine.New(rules, profiles)
+	e := engine.New(profiles)
 	sum, _ := mh.Sum([]byte("payload"), mh.SHA2_256, -1)
 	target := cid.NewCidV1(cid.Raw, sum)
-	selector := input.LabelValue([]byte{'a', '/', 0xff})
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 128, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: selector, Target: target}}}
+	selector := []byte{'a', '/', 0xff}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: selector, Target: target}}}
 	candidate, err := authentication.Prepare(ctx, e, state)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +50,7 @@ func TestCandidateRoundTripCustomAAAndIndependentVerification(t *testing.T) {
 	if err := authentication.Materialize(ctx, e, candidate, nodes); err != nil {
 		t.Fatal(err)
 	}
-	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: candidate.Root, Steps: []input.Value{}, Operation: "binding", Input: &selector}
+	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: candidate.Root, Steps: [][]byte{}, Operation: "binding", Label: &selector}
 	result, err := authentication.Execute(ctx, e, q, nodes)
 	if err != nil {
 		t.Fatal(err)
@@ -69,20 +63,22 @@ func TestCandidateRoundTripCustomAAAndIndependentVerification(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifier, err := authbuiltin.NewVerifier(rules, maltcid.IPA256)
+	verifier, err := authbuiltin.NewVerifier(maltcid.IPA256)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if ok, err := authentication.Verify(verifier, decoded.Request, decoded.Result); err != nil || !ok {
 		t.Fatalf("verify %v %v", ok, err)
 	}
-	other, err := authbuiltin.NewVerifier(nil, maltcid.IPA256)
-	if err != nil {
-		t.Fatal(err)
+	d, commitment, _ := maltcid.ParseRoot(cid.MustParse(q.Root))
+	d.DerivationProfile = 128
+	unknown, _ := maltcid.NewRoot(d, commitment)
+	unknownQuery := q
+	unknownQuery.Root = unknown.String()
+	if ok, _ := authentication.Verify(verifier, unknownQuery, result); ok {
+		t.Fatal("unknown derivation verified")
 	}
-	if ok, _ := authentication.Verify(other, q, result); ok {
-		t.Fatal("unknown AA verified")
-	}
+
 	result.Binding.Target = cid.Undef
 	if ok, _ := authentication.Verify(verifier, q, result); ok {
 		t.Fatal("tampered target verified")
@@ -96,24 +92,24 @@ func TestCandidateRoundTripCustomAAAndIndependentVerification(t *testing.T) {
 
 func TestTypedWireRejectsAmbiguousInputs(t *testing.T) {
 	for _, raw := range []string{`{"kind":"index","number":1}`, `{"kind":"index","number":"01"}`, `{"kind":"label","data":"YQ==","number":"0"}`, `{"kind":"key","data":"YQ=="}`, `{"kind":"label","data":null}`} {
-		var v input.Value
+		var v []byte
 		if err := json.Unmarshal([]byte(raw), &v); err == nil {
 			t.Fatalf("accepted %s", raw)
 		}
 	}
-	index := input.IndexValue(^uint64(0))
+	index := coordinate.EncodeIndex(^uint64(0))
 	data, err := json.Marshal(index)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(data), `"18446744073709551615"`) {
+	if string(data) != `"//////////8="` {
 		t.Fatalf("uint64 lost precision %s", data)
 	}
-	var round input.Value
-	if err := json.Unmarshal(data, &round); err != nil || round.Number != index.Number {
+	var round []byte
+	if err := json.Unmarshal(data, &round); err != nil || !bytes.Equal(round, index) {
 		t.Fatal(err)
 	}
-	if _, err := protocol.DecodeAuthenticationRequest([]byte(`{"profile":"malt.authentication/1","profile":"malt.authentication/1"}`)); err == nil {
+	if _, err := protocol.DecodeAuthenticationRequest([]byte(`{"profile":"malt.authentication/3","profile":"malt.authentication/3"}`)); err == nil {
 		t.Fatal("duplicate field accepted")
 	}
 }

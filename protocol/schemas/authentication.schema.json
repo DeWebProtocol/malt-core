@@ -2,77 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://malt.dev/schemas/authentication.schema.json",
   "$defs": {
-    "input": {
-      "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "const": "key"
-            },
-            "data": {
-              "type": "string",
-              "contentEncoding": "base64"
-            }
-          },
-          "required": [
-            "kind",
-            "data"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "const": "label"
-            },
-            "data": {
-              "type": "string",
-              "contentEncoding": "base64"
-            }
-          },
-          "required": [
-            "kind",
-            "data"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "const": "index"
-            },
-            "number": {
-              "type": "string",
-              "pattern": "^(0|[1-9][0-9]{0,19})$"
-            }
-          },
-          "required": [
-            "kind",
-            "number"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "const": "system"
-            },
-            "number": {
-              "type": "string",
-              "pattern": "^(0|[1-9][0-9]{0,19})$"
-            }
-          },
-          "required": [
-            "kind",
-            "number"
-          ]
-        }
-      ]
+    "label": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
     },
     "descriptor": {
       "type": "object",
@@ -88,11 +21,10 @@
             2
           ]
         },
-        "input_rule": {
+        "derivation_profile": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 255,
-          "default": 0
+          "maximum": 255
         },
         "vc_profile": {
           "enum": [
@@ -103,7 +35,8 @@
       },
       "required": [
         "layout",
-        "vc_profile"
+        "vc_profile",
+        "derivation_profile"
       ]
     },
     "opening": {
@@ -258,7 +191,7 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/1"
+          "const": "malt.authentication/3"
         },
         "root": {
           "type": "string",
@@ -271,7 +204,7 @@
           ],
           "maxItems": 256,
           "items": {
-            "$ref": "#/$defs/input"
+            "$ref": "#/$defs/label"
           }
         },
         "operation": {
@@ -281,8 +214,8 @@
             "range"
           ]
         },
-        "input": {
-          "$ref": "#/$defs/input"
+        "label": {
+          "$ref": "#/$defs/label"
         },
         "start": {
           "type": "string",
@@ -309,7 +242,7 @@
           },
           "then": {
             "required": [
-              "input"
+              "label"
             ],
             "not": {
               "anyOf": [
@@ -341,7 +274,7 @@
             ],
             "not": {
               "required": [
-                "input"
+                "label"
               ]
             }
           }
@@ -359,7 +292,7 @@
               "anyOf": [
                 {
                   "required": [
-                    "input"
+                    "label"
                   ]
                 },
                 {
@@ -383,7 +316,7 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/1"
+          "const": "malt.authentication/3"
         },
         "resolved": {
           "type": "string"
@@ -417,7 +350,7 @@
           "then": {
             "properties": {
               "profile": {
-                "const": "malt.authentication/1"
+                "const": "malt.authentication/3"
               },
               "resolved": {
                 "const": ""
@@ -464,8 +397,8 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "input": {
-                "$ref": "#/$defs/input"
+              "label": {
+                "$ref": "#/$defs/label"
               },
               "target": {
                 "type": "object",
@@ -482,7 +415,7 @@
               }
             },
             "required": [
-              "input",
+              "label",
               "target"
             ]
           }
@@ -505,7 +438,7 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/0"
+          "const": "malt.authentication/2"
         },
         "root": {
           "type": "string",

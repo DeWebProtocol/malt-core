@@ -1,5 +1,9 @@
 # Independent authentication tree and retained writers
 
+Historical implementation note. The current coordinate derivation boundary and
+label contracts supersede its input/system-selector API; see
+[the current specification](../spec/authentication-inputs.md).
+
 Typed authentication now has one coordinate-only tree implementation in
 `auth/tree`. `auth/input` derives coordinates defined by `auth/coordinate`;
 `auth/engine` binds that interpretation to the full Root descriptor. The engine

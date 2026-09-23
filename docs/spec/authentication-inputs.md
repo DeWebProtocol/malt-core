@@ -8,21 +8,22 @@ It is independent of CIDv1, package versions and operation-profile suffixes.
 ## Pipeline and API ownership
 
 ```text
-typed input --AA rule--> authentication coordinate
+application label --coordinate derivation--> authentication coordinate
 coordinate bindings --layout + exact VC profile--> commitment
 Root descriptor + commitment --> CIDv1 Root
 ```
 
-`auth/input.Registry` owns deterministic input interpretation. `auth/engine`
+`derivation.Derive` owns deterministic coordinate derivation. `engine`
 exposes `Interpret`, `Commit`, `Build`, binding proofs, explicit traversal,
 ranges and incremental updates. `sdk/authentication` composes these operations
 with candidate preparation, materialization and independent verification.
 The engine consumes narrow `materializer.NodeLookup`/`NodeUpdater` capabilities;
 it contains no persistent ArcTable, CAS, HTTP, application path or trust policy.
 
-Prefix/AA=1 authenticates opaque labels; Positional/AA=0 authenticates dense
-indices. A label with a slash is one input. There is no Map/List adapter or
-string-path resolver; applications supply explicit typed traversal steps.
+Prefix accepts SHA256 (AA=4) or Direct (AA=3) 32-byte coordinates;
+Positional uses Direct (AA=3) uint64 coordinates. AA is the Root byte carrying
+the coordinate derivation profile ID. A slash has no special meaning in a
+label; applications supply explicit label traversal steps.
 
 ## Root and multicommitment
 
@@ -37,15 +38,15 @@ Root = CIDv1(codec, identity_multihash(multicommitment))
 
 The length must equal the exact registered profile's length. Unknown profiles,
 nonminimal varints, trailing bytes, other hash containers, unsupported versions
-and invalid layout/rule combinations are rejected. `wire/maltcid.ParseRoot`
-decodes the descriptor; an engine additionally requires the selected AA rule
-and profile implementation to be installed. Parsing an unknown AA is not
+are rejected by the wire parser. `wire/maltcid.ParseRoot`
+decodes the descriptor; an engine additionally requires a supported derivation/layout combination
+and an installed commitment profile. Parsing an unknown AA is not
 permission to execute it. No fallback derivation or backend inference is used.
 
 | L | Layout | Permitted inputs |
 | --- | --- | --- |
 | 1 | Prefix | AA-derived 32-byte keys |
-| 2 | Positional | AA=0, unsigned 64-bit indices |
+| 2 | Positional | AA=3, unsigned 64-bit indices |
 
 | Profile | Algorithm and parameters | Commitment bytes | VC slots |
 | --- | --- | ---: | ---: |
@@ -67,48 +68,46 @@ Use `RootVersion`, `NewRoot`, and `ParseRoot` for current construction.
 Historical version constants and constructors are removed. A codec alone
 cannot identify a V0 Root's VC profile.
 
-## AA registry and typed inputs
+## Coordinate derivation profiles
 
-Inputs form a tagged union: `index`, `key`, `label`, or `system`. Index and
-selector numbers use canonical decimal strings in JSON, avoiding JavaScript
-precision loss. Key/label bytes use standard base64. Exactly the active union
-field is present; numbers, padded decimal strings, unknown fields and mixed
-union alternatives are rejected. Native keys are exactly 32 bytes.
+Application labels are opaque byte strings. Go APIs use `[]byte`; JSON uses a
+canonical padded standard-base64 string. There is no tagged input union. Empty
+labels are valid for SHA256; JSON null and missing labels are rejected. In Go,
+use an allocated empty slice for an empty label, not nil.
 
-| AA | Rule | Accepted inputs |
+`auth/coordinate.Coordinate` is a Key (`[32]byte`) or Index (`uint64`), with only
+the selected field active. `derivation.Derive(profile, label)` returns this type.
+It is a shared pure function outside `auth`; no mutable rule registry exists.
+
+| AA | Profile | Behavior |
 | --- | --- | --- |
-| 0 | Direct | index to Positional coordinate; key to Prefix coordinate |
-| 1 | BytesSHA256 | arbitrary label bytes or a registered system selector |
-| 2 | UnixFSNameSHA256 | one valid UTF-8 name or a registered system selector |
+| 3 | Direct | Parse exactly 32 key bytes or 8 unsigned big-endian index bytes |
+| 4 | SHA256 | Derive a 32-byte key from arbitrary label bytes |
 
-AA=1 does not split slashes, normalize Unicode, fold case, reject empty labels
-or interpret application names. Its derivation is:
+Direct preserves canonical encoding: `Encode(Derive(Direct, label)) == label`.
+Use `coordinate.EncodeIndex` and `coordinate.EncodeKey` to submit precomputed
+coordinates as labels. Text numbers, padded keys, and truncated indices are not
+coerced. The selected layout must accept the resulting coordinate kind.
+SHA256 uses this exact framing:
 
 ```text
-D = UTF8("malt:selector:sha256:0") || 0x00
-label key  = SHA256(D || 0x00 || uvarint(byte_length) || label_bytes)
-system key = SHA256(D || 0x01 || uvarint(selector_number))
+D = UTF8("malt:coordinate:sha256:0") || 0x00
+coordinate = SHA256(D || uvarint(byte_length) || label_bytes)
 ```
 
-All varints are minimal. Selector 1 denotes payload; other system selectors
-are currently rejected. Explicit label bytes `@payload` and selector 1 are
-different inputs with different derivations. No string facade coerces labels
-to system selectors. Native keys are supplied as bytes.
+The varint is minimal. No UTF-8 validation, path splitting, Unicode
+normalization, case folding, system selector, or payload redirection occurs.
+`@payload` is an ordinary label; application binding conventions define reserved
+names and namespace isolation. Under Direct, any application payload label must
+itself be a canonical coordinate encoding. Private preprocessing is performed
+before submission and may require application-specific payload discovery.
 
-AA=2 uses the same hash framing after validating one nonempty UTF-8 name,
-excluding `/`, NUL, `.` and `..`. It specifies a MALT input profile useful to
-a UnixFS adapter, not a universal filesystem/path standard. Application rules
-such as reserved names, full paths and portable filename policy stay in `malt`.
-Applications may canonicalize before submission or register a rule that fixes
-canonicalization; MALT has no global label grammar.
-
-IDs 0–2 cannot be replaced through registry registration. Extension IDs 3–255
-are available only after explicit registration of their immutable rule. A
-public allocation must include a Core PR with the exact accepted byte grammar,
-derivation, namespace behavior, output width, rejection cases and conformance
-vectors. Private deployments must coordinate IDs and implementations among all
-writers, services and verifiers; a numeric ID does not download executable code.
-Two different meanings must never share an ID. A registry rejects duplicates.
+IDs 0–2 retain their retired typed-input meanings in Git history and are not
+accepted by the current engine. New profiles require immutable specifications,
+implementation and conformance vectors; unsupported IDs fail closed. The Root
+codec parses profile IDs structurally without importing derivation. `engine`
+checks supported profiles and layout compatibility even for empty state and
+empty traversal. `auth/tree` handles only coordinates, layout and commitments.
 
 ## Layout and internal node identity
 
@@ -116,19 +115,18 @@ Prefix routes over all 256 key bits (12 bits per KZG level, 8 per IPA level;
 the final KZG digit is zero-padded). Terminal cells bind the full key and target
 CID. An empty slot or a different full key proves absence. Native keys are not
 rehash inputs. Collisions and duplicate coordinates are rejected. Cell encodings
-are defined in `wire/maltcid/node_cells.go` and `auth/engine`; changing them must
+are defined in `wire/maltcid/node_cells.go` and `auth/tree`; changing them must
 not silently reuse an existing descriptor's interpretation.
 
 Positional consumes dense indices `[0,count)`. Slot 0 contains structural
 height/count/chunk-size/total-size metadata; the remaining `slots-1` cells are
 entries or child references. Metadata is authenticated, including absence
-beyond count and fixed-chunk range boundaries. **Positional has no system
-bindings**. To associate payload/metadata content with a sequence, a containing
+beyond count and fixed-chunk range boundaries. Positional labels use canonical index bytes. To associate payload/metadata content with a sequence, a containing
 Prefix binds the sequence Root and the content CID as separate targets.
 
 Internal references are `"MN" || 0x00 || byte(L) || multicommitment`.
 They identify authentication nodes, not application vertices, and omit AA.
-The root descriptor supplies input interpretation; an internal node is
+The root descriptor supplies coordinate derivation; an internal node is
 interpreted with its layout and exact VC profile. Application-valued targets
 retain complete Roots/CIDs, including the target Root's AA. Each explicit
 traversal step uses the AA of the Root reached by the preceding verified step.
@@ -141,11 +139,14 @@ Caches validate the node identity, full vector and exact profile before reuse.
 ## State, writes and proofs
 
 The authenticated view contains coordinates, not original label preimages.
-`engine.State` retains typed inputs for interpretation; applications or
-Gateway-owned relation records preserve them for enumeration and future writes.
+`engine.State` retains application labels for interpretation; applications or
+Gateway-owned ArcTable records preserve label–target bindings for enumeration
+and future writes. Deltas, tombstones, checkpoints and lineage recovery operate
+on labels. Coordinates and authentication nodes are rebuildable indexes:
+recover labels, derive coordinates, materialize the tree, and check the exact Root.
 `ValidateState` derives coordinates again and checks them against root-bound
-materialization. Canonicalization aliases authenticate the same key; they do
-not prove an exact original spelling. Duplicate derived keys in one state fail.
+materialization. Proofs authenticate derived coordinates and targets; retaining labels does not
+turn a hash into a proof of a unique preimage. Duplicate derived keys in one state fail.
 
 `PrefixApply` and Positional replacement/append/truncation reuse unchanged
 subtrees. Updates check expected bindings before exposing a result Root. I/O
@@ -154,16 +155,16 @@ Candidate preparation and materialization do not publish or trust a Root and
 do not prove a transition from a previous Root. A candidate's optional
 `previous` field is storage lineage only.
 
-The current query (`malt.authentication/1`) and candidate (`malt.authentication/0`)
+The current query (`malt.authentication/3`) and candidate (`malt.authentication/2`)
 JSON contracts live in `protocol/authentication.go`
 and `protocol/schemas/authentication*.schema.json`. Queries select a Root,
-explicit typed traversal steps, and resolve/binding/range operation. Range
+explicit label traversal steps, and resolve/binding/range operation. Range
 endpoints and structural uint64 metadata use decimal strings. Results contain
 root-bound traversal and primitive evidence. A verifier uses the caller's
 request, never a server-rewritten root or key, and performs no network lookup.
 Unknown AA/profile combinations fail even for an empty traversal.
 
-Candidates include original inputs and the complete reachable node vectors.
+Candidates include original labels and the complete reachable node vectors.
 Validation rejects conflicting, missing and unreachable records before
 materialization, and bounds logical expansion by the supplied binding count.
 Service code should use `SnapshotBounded` when reconstructing untrusted state;
@@ -176,7 +177,7 @@ writer does not migrate historical update views. Recreate old experimental
 state and dependent parents with the current implementation. Replacing a Root
 prefix alone is not a migration; payload CIDs remain reusable.
 
-`conformance/authentication-v1.json` is generated from current queries over
+`conformance/authentication-v2.json` is generated from current queries over
 V=0 Roots. Historical authentication/0 vectors remain only in Git history and are not
 accepted by the current verifier. See [conformance corpora](./conformance-corpora.md). Measurements
 must identify their exact Core revision, profile, and corpus. Browser release
@@ -185,7 +186,7 @@ gate.
 
 ## SDK backend selection
 
-`sdk/authentication` consumes a caller-supplied `auth/engine.Engine` for
+`sdk/authentication` consumes a caller-supplied `engine.Engine` for
 preparation, execution, materialization, and verification. It imports no
 concrete commitment backend. Applications that want the built-in verification
 profiles may opt into `sdk/authentication/builtin.NewVerifier`; that separate package
@@ -194,14 +195,14 @@ injected and must not import this convenience constructor.
 
 ## Rooted paths and retained writers
 
-`malt.authentication/1` supports authenticated early path termination. A missing
+`malt.authentication/3` supports authenticated early path termination. A missing
 traversal selector returns `absent_step` as a zero-based decimal string, an
 empty `resolved`, and exactly the successful prefix proofs followed by the
 missing binding proof. It carries neither a primitive binding nor a range
 result. Verification binds that prefix to the caller's Root and steps; it does
 not claim to have evaluated the suffix. I/O, recovery, unsupported-input and
-cancellation errors never become absence. The former `/0` query profile is
-rejected. Complete candidates use the independent `/0` candidate profile.
+cancellation errors never become absence. Historical query and candidate profiles are rejected. Complete candidates use
+the independent `/2` candidate profile.
 
 `ExecuteWithRoots` accepts a Root-scoped node lookup. A service can reconstruct
 one ArcSet before serving its proof and defer other Roots until traversal
@@ -226,11 +227,11 @@ cannot infer re-chunked content or verify its bytes from relation state.
 ## Independent tree and explicit export
 
 `auth/tree` implements single-ArcSet authentication over `auth/coordinate`
-values. The typed `auth/engine` supplies input interpretation; `traversal`
+values. The typed `engine` supplies coordinate derivation; `traversal`
 composes proofs across Roots. These are separate from application flat/rooted
 organization and from Gateway relation persistence.
 
-For a retained writer, `Apply(ctx, Delta)` accepts expected-before typed changes.
+For a retained writer, `Apply(ctx, Delta)` accepts expected-before label changes.
 Prefix supports insert/replace/delete. Positional changes replace existing
 positions or supply appended bindings; `Count` controls suffix length, and
 measured length changes require `TotalSize`. Changing chunk geometry uses full
@@ -244,7 +245,7 @@ owns its immutable vectors; unchanged subtrees can be shared across independent
 branches without revalidating them or retaining obsolete ancestors. External
 materializations still undergo complete Root-bound validation.
 
-The corresponding JSON delta profile is `malt.authentication-delta/0`; the
+The corresponding JSON delta profile is `malt.authentication-delta/1`; the
 [schema](../../protocol/schemas/authentication-delta.schema.json) requires typed
 changes, optional decimal-string count/total size, and exact field names. It is
 an instruction for retained complete state, not an authenticated-update witness.

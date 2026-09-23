@@ -7,8 +7,8 @@ executors supply untrusted data; they do not select the client's trust anchor.
 ## Layering
 
 ```text
-auth/input -> auth/coordinate -> auth/tree -> auth/commitment
-                    auth/engine binds input interpretation to the Root
+derivation -> auth/coordinate -> auth/tree -> auth/commitment
+                    engine binds coordinate derivation to the Root
                     traversal composes explicit steps across Roots
                     sdk/authentication supplies queries and retained writers
                     protocol / wire define their serialized contracts
@@ -17,15 +17,14 @@ auth/input -> auth/coordinate -> auth/tree -> auth/commitment
 `auth/tree` owns canonical Prefix/Positional node construction, affected-path
 updates, snapshots, and binding/range evidence. It receives coordinates and
 installed exact VC profiles and operation-specific capabilities; it knows no label grammar, application graph, payload
-selector, or persistent store policy. `auth/engine` applies the Root's input
-rule before entering the tree. Every traversal hop uses the descriptor of the
+selector, or persistent store policy. `engine` applies the Root's coordinate derivation
+profile before entering the tree. Every traversal hop uses the descriptor of the
 Root reached by the preceding authenticated binding.
 
-A slash inside a label is data. Traversal steps are explicit typed inputs and
+A slash inside a label is data. Traversal steps are explicit application labels and
 cannot be regrouped, inferred by longest-prefix search, or extended by a
 hidden payload redirect. Application flat/hybrid/rooted organization remains
-outside the tree. A rooted payload read supplies the system payload selector
-at the reached Prefix; a flat relation may already target a payload/manifest.
+outside the tree. Applications choose any payload label explicitly and own reserved-name policy.
 
 `commitment.Committer`, `Prover`, and `Verifier` are independent capabilities.
 The profile registry records identity and capacity; individual operations require
@@ -43,7 +42,7 @@ is an opt-in constructor that imports the built-in verification implementations.
 4. A consuming application binds any returned bytes to their authenticated
    CIDs and applies its own trust/freshness policy.
 
-The query profile is `malt.authentication/1`. It supports explicit resolution,
+The query profile is `malt.authentication/3`. It supports explicit resolution,
 a final binding query, or a fixed-chunk Positional byte range. Missing traversal
 steps carry authenticated early termination; the unevaluated suffix is not
 claimed to be absent. See [query contracts](docs/spec/authentication-contracts.md).
@@ -91,7 +90,7 @@ policy. SDK sessions retain immutable tree materializations directly and apply
 their own handle and memory limits.
 
 Physical node identity is layout/profile qualified and independent of input
-preimages. Complete outer Roots retain their input rule. Caller-owned stores
+preimages. Complete outer Roots retain their derivation profile. Caller-owned stores
 may share identical immutable vectors but must not conflate query semantics or
 use commitment equality as interchangeable Root identity.
 

@@ -43,20 +43,20 @@ capabilities. Construction requires a `Committer`; query execution requires a
 updates need commitment computation, while imports and untrusted materialization
 also require proof generation and verification.
 
-Coordinate-based layouts live in `auth/tree`; `auth/engine` supplies typed
-input interpretation. `sdk/authentication` verifies explicit traversal and
+Coordinate-based layouts live in `auth/tree`; `engine` supplies typed
+coordinate derivation. `sdk/authentication` verifies explicit traversal and
 primitive evidence using exact Root-selected profiles without runtime state.
 
 ## Primitive values and semantic Roots
 
 `commitment.Value` is an immutable primitive commitment carrying an exact VC
-profile and commitment bytes. It has no semantic layout, input rule, or CID
+profile and commitment bytes. It has no semantic layout, derivation profile, or CID
 codec. Constructors reject unsupported profiles and incorrect widths.
 `CommitmentBytes(profile)` checks the selected profile before returning bytes.
 
-`auth/engine` constructs a semantic Root only after selecting a descriptor.
+`engine` constructs a semantic Root only after selecting a descriptor.
 Current [self-describing V0 Roots](./authentication-inputs.md) bind the layout,
-input rule, and profile-qualified commitment. Existing-root operations select
+derivation profile, and profile-qualified commitment. Existing-root operations select
 the profile from that Root. A process default applies only to new construction.
 Each step in a cross-root traversal performs its own profile selection.
 

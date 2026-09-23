@@ -5,8 +5,8 @@ proofs, Root encoding, and conformance. Start with the
 [specification index](spec/README.md), [architecture](../ARCHITECTURE.md), and
 [independent authentication tree](changes/authentication-tree.md).
 
-Current queries use `malt.authentication/1`; complete candidates use the
-independent `malt.authentication/0` profile. The
+Current queries use `malt.authentication/3`; complete candidates use the
+independent `malt.authentication/2` profile. The
 [typed migration](changes/typed-authentication-only.md) records the removal of
 superseded APIs. Historical releases and MIPs retain their original meaning.
 

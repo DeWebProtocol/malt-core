@@ -1,9 +1,8 @@
 # Authentication conformance
 
-The current language-neutral corpus is `conformance/authentication-v1.json`,
-with schema `malt.conformance.authentication/1`. Its 20 vectors cover both exact
-built-in VC profiles, opaque labels, system payload selectors, literal-label
-separation, native keys, explicit traversal absence, measured ranges,
+The current language-neutral corpus is `conformance/authentication-v2.json`,
+with schema `malt.conformance.authentication/2`. Its 20 vectors cover both exact
+built-in VC profiles, opaque labels, ordinary application payload labels, native keys, explicit traversal absence, measured ranges,
 Positional out-of-range evidence, wrong prefixes, and wrong Roots.
 
 Core native tests and the malt-ts WASM runners consume these same checked-in
@@ -15,7 +14,7 @@ batch/receipt binding, and single-Worker lifecycle across KZG and all three IPA
 execution profiles.
 
 ```bash
-go run -p=6 ./internal/conformancegen/cmd -out conformance/authentication-v1.json
+go run -p=6 ./internal/conformancegen/cmd -out conformance/authentication-v2.json
 go test -p=6 -parallel=6 ./conformance
 ```
 

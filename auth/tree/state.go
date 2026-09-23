@@ -108,7 +108,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 					if err != nil {
 						return err
 					}
-					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.Value{Kind: coordinate.Index, Index: uint64(len(view.Bindings))}, Target: target})
+					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.Coordinate{Kind: coordinate.Index, Index: uint64(len(view.Bindings))}, Target: target})
 				} else {
 					child, err := parseChild(cell, node)
 					if err != nil {
@@ -141,7 +141,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 					if uint64(len(view.Bindings)) >= maxBindings {
 						return fmt.Errorf("snapshot exceeds binding bound %d", maxBindings)
 					}
-					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.Value{Kind: coordinate.Key, Key: key}, Target: target})
+					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.Coordinate{Kind: coordinate.Key, Key: key}, Target: target})
 				} else {
 					child, err := parseChild(cell, node)
 					if err != nil {
@@ -171,7 +171,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 // Change supplies an expected old target at a derived authentication coordinate.
 // Undefined Before means insert; undefined After means delete.
 type Change struct {
-	Coordinate coordinate.Value
+	Coordinate coordinate.Coordinate
 	Before     cid.Cid
 	After      cid.Cid
 }

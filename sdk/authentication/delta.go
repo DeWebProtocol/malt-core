@@ -7,7 +7,7 @@ import (
 	"math"
 
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
-	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -62,13 +62,13 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 	if positional && count < oldCount {
 		bindings = bindingBefore(bindings, bindingKey(coordinate.At(count)))
 	}
-	seen := make(map[coordinate.Value]bool, len(delta.Changes))
+	seen := make(map[coordinate.Coordinate]bool, len(delta.Changes))
 	replacements := make([]engine.Change, 0, len(delta.Changes))
 	for _, change := range delta.Changes {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		view, err := w.engine.Interpret(engine.State{Descriptor: meta.Descriptor, Entries: []engine.Entry{{Input: change.Input, Target: change.After}}})
+		view, err := w.engine.Interpret(engine.State{Descriptor: meta.Descriptor, Entries: []engine.Entry{{Label: change.Label, Target: change.After}}})
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +89,7 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 			return nil, errors.New("Positional changes require targets within the new count; use Count to truncate")
 		}
 		if change.After.Defined() {
-			bindings = bindingSet(bindings, c, engine.Entry{Input: change.Input, Target: change.After})
+			bindings = bindingSet(bindings, c, engine.Entry{Label: change.Label, Target: change.After})
 		} else {
 			bindings = bindingDelete(bindings, key)
 		}

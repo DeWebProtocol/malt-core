@@ -6,8 +6,7 @@ import (
 	"fmt"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
@@ -38,7 +37,7 @@ func NewComputer(schemes map[maltcid.BackendKind]commitment.Backend) (*Computer,
 			return nil, fmt.Errorf("writer backend key differs from its profile")
 		}
 	}
-	e := engine.New(input.DefaultRegistry(), profiles)
+	e := engine.New(profiles)
 	session, err := authentication.NewSession(e, authentication.SessionLimits{})
 	if err != nil {
 		return nil, err

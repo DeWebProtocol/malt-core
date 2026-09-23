@@ -8,8 +8,7 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/traversal"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
@@ -17,22 +16,21 @@ import (
 
 // AuthenticationProfile identifies complete typed candidate state and nodes.
 // Queries use AuthenticationPathProfile.
-const AuthenticationProfile = "malt.authentication/0"
+const AuthenticationProfile = "malt.authentication/2"
 
-// AuthenticationPathProfile authenticates early traversal absence without
-// changing Root encoding or the complete candidate profile.
-const AuthenticationPathProfile = "malt.authentication/1"
+// AuthenticationPathProfile uses opaque labels and authenticates early traversal absence.
+const AuthenticationPathProfile = "malt.authentication/3"
 
 // AuthenticationRequest uses explicit steps. Every visited Root chooses its
-// own AA; the protocol assigns no path separator or application normalization.
+// own derivation profile; the protocol assigns no path separator or application normalization.
 type AuthenticationRequest struct {
-	Profile   string        `json:"profile"`
-	Root      string        `json:"root"`
-	Steps     []input.Value `json:"steps" schema:"optional,nullable"`
-	Operation string        `json:"operation"`
-	Input     *input.Value  `json:"input,omitempty"`
-	Start     *uint64       `json:"start,omitempty,string"`
-	End       *uint64       `json:"end,omitempty,string"`
+	Profile   string   `json:"profile"`
+	Root      string   `json:"root"`
+	Steps     [][]byte `json:"steps" schema:"optional,nullable"`
+	Operation string   `json:"operation"`
+	Label     *[]byte  `json:"label,omitempty"`
+	Start     *uint64  `json:"start,omitempty,string"`
+	End       *uint64  `json:"end,omitempty,string"`
 }
 
 func (q AuthenticationRequest) Validate() error {
@@ -50,22 +48,25 @@ func (q AuthenticationRequest) Validate() error {
 		return errors.New("too many traversal steps")
 	}
 	for _, step := range q.Steps {
-		if err := step.Validate(); err != nil {
-			return err
+		if step == nil {
+			return errors.New("label is required")
 		}
 	}
 	switch q.Operation {
 	case "resolve":
-		if q.Input != nil || q.Start != nil || q.End != nil {
+		if q.Label != nil || q.Start != nil || q.End != nil {
 			return errors.New("resolve carries a primitive query")
 		}
 	case "binding":
-		if q.Input == nil || q.Start != nil || q.End != nil {
-			return errors.New("binding requires only input")
+		if q.Label == nil || q.Start != nil || q.End != nil {
+			return errors.New("binding requires only label")
 		}
-		return q.Input.Validate()
+		if *q.Label == nil {
+			return errors.New("label is required")
+		}
+		return nil
 	case "range":
-		if q.Input != nil || q.Start == nil {
+		if q.Label != nil || q.Start == nil {
 			return errors.New("range requires start and optional end")
 		}
 		if q.End != nil && *q.End < *q.Start {
@@ -90,7 +91,7 @@ type AuthenticationVerification struct {
 	Result  AuthenticationResult  `json:"result"`
 }
 
-// AuthenticationCandidate contains a client-computed Root and complete input
+// AuthenticationCandidate contains a client-computed Root and complete label
 // view/materialization. It proves bindings, not update authorization, content
 // availability, publication, freshness, or client acceptance.
 type AuthenticationCandidate struct {
@@ -216,8 +217,8 @@ func (c AuthenticationCandidate) Validate() error {
 		}
 	}
 	for _, entry := range c.State.Entries {
-		if err := entry.Input.Validate(); err != nil {
-			return err
+		if entry.Label == nil {
+			return errors.New("label is required")
 		}
 		if !entry.Target.Defined() {
 			return errors.New("undefined candidate target")
@@ -235,8 +236,8 @@ func DecodeAuthenticationState(data []byte) (engine.State, error) {
 		return state, err
 	}
 	for _, entry := range state.Entries {
-		if err := entry.Input.Validate(); err != nil {
-			return state, err
+		if entry.Label == nil {
+			return state, errors.New("label is required")
 		}
 		if !entry.Target.Defined() {
 			return state, errors.New("undefined state target")

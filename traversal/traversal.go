@@ -7,8 +7,7 @@ import (
 	"fmt"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/engine"
 	cid "github.com/ipfs/go-cid"
 )
 
@@ -18,7 +17,7 @@ type Traversal struct {
 
 // Resolve interprets each explicit step using the AA of the Root reached at
 // that step. No string separators or longest-path-prefix policy are involved.
-func Resolve(ctx context.Context, e *engine.Engine, root cid.Cid, steps []input.Value, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
+func Resolve(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]byte, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
 	target, proof, err := ResolvePath(ctx, e, root, steps, source)
 	if err == nil && !target.Defined() {
 		return cid.Undef, Traversal{}, fmt.Errorf("step %d: binding absent", len(proof.Results)-1)
@@ -28,7 +27,7 @@ func Resolve(ctx context.Context, e *engine.Engine, root cid.Cid, steps []input.
 
 // ResolvePath returns an undefined target and a terminal absence proof when a
 // selector is absent. Missing materialization and execution failures are errors.
-func ResolvePath(ctx context.Context, e *engine.Engine, root cid.Cid, steps []input.Value, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
+func ResolvePath(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]byte, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
 	return ResolvePathWithRoots(ctx, e, root, steps, func(context.Context, cid.Cid) (materializer.NodeLookup, error) { return source, nil })
 }
 
@@ -38,7 +37,7 @@ type RootLookup func(context.Context, cid.Cid) (materializer.NodeLookup, error)
 
 // ResolvePathWithRoots lazily obtains nodes for each reached Root. No lookup
 // occurs for an unvisited suffix after authenticated absence.
-func ResolvePathWithRoots(ctx context.Context, e *engine.Engine, root cid.Cid, steps []input.Value, lookup RootLookup) (cid.Cid, Traversal, error) {
+func ResolvePathWithRoots(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]byte, lookup RootLookup) (cid.Cid, Traversal, error) {
 	if lookup == nil {
 		return cid.Undef, Traversal{}, errors.New("Root lookup is nil")
 	}
@@ -65,7 +64,7 @@ func ResolvePathWithRoots(ctx context.Context, e *engine.Engine, root cid.Cid, s
 	return current, out, nil
 }
 
-func Verify(e *engine.Engine, root cid.Cid, steps []input.Value, target cid.Cid, proof Traversal) (bool, error) {
+func Verify(e *engine.Engine, root cid.Cid, steps [][]byte, target cid.Cid, proof Traversal) (bool, error) {
 	if !target.Defined() {
 		return false, nil
 	}
@@ -74,7 +73,7 @@ func Verify(e *engine.Engine, root cid.Cid, steps []input.Value, target cid.Cid,
 
 // VerifyPath binds every supplied step to the selected Root. An undefined
 // target is valid only for a proven absent selector at the terminal proof step.
-func VerifyPath(e *engine.Engine, root cid.Cid, steps []input.Value, target cid.Cid, proof Traversal) (bool, error) {
+func VerifyPath(e *engine.Engine, root cid.Cid, steps [][]byte, target cid.Cid, proof Traversal) (bool, error) {
 	if len(proof.Results) > len(steps) {
 		return false, nil
 	}

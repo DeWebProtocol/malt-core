@@ -50,14 +50,13 @@ func Profile(id ProfileID) (VCProfile, error) {
 	}
 }
 
-// RootDescriptor selects input interpretation, layout and exact VC profile.
-// Input-rule implementations are looked up independently by the caller's
-// registry. Parsing a Root never downloads or executes an implementation.
+// RootDescriptor records derivation, layout and exact VC profile. Parsing checks
+// structural encoding; the outer engine checks derivation support and compatibility.
 type RootDescriptor struct {
-	Version   uint8     `json:"version" schema:"optional"`
-	Layout    Layout    `json:"layout"`
-	InputRule uint8     `json:"input_rule" schema:"optional"`
-	Profile   ProfileID `json:"vc_profile"`
+	Version           uint8     `json:"version" schema:"optional"`
+	Layout            Layout    `json:"layout"`
+	DerivationProfile uint8     `json:"derivation_profile"`
+	Profile           ProfileID `json:"vc_profile"`
 }
 
 func (d RootDescriptor) Validate() error {
@@ -66,9 +65,6 @@ func (d RootDescriptor) Validate() error {
 	}
 	if d.Layout != Prefix && d.Layout != Positional {
 		return fmt.Errorf("unsupported layout %d", d.Layout)
-	}
-	if d.Layout == Positional && d.InputRule != 0 {
-		return fmt.Errorf("Positional requires direct input")
 	}
 	_, err := Profile(d.Profile)
 	return err
@@ -125,7 +121,7 @@ func NewRoot(d RootDescriptor, commitment []byte) (cid.Cid, error) {
 	if err != nil {
 		return cid.Undef, err
 	}
-	return newMaltCid(uint64(codecMaltRootBase)|uint64(d.Version)<<12|uint64(d.Layout)<<8|uint64(d.InputRule), mc)
+	return newMaltCid(uint64(codecMaltRootBase)|uint64(d.Version)<<12|uint64(d.Layout)<<8|uint64(d.DerivationProfile), mc)
 }
 
 func ParseRoot(root cid.Cid) (RootDescriptor, []byte, error) {
@@ -136,7 +132,7 @@ func ParseRoot(root cid.Cid) (RootDescriptor, []byte, error) {
 	if codec < codecMaltRootBase || codec > codecMaltRootMax {
 		return RootDescriptor{}, nil, fmt.Errorf("not a MALT Root codec")
 	}
-	d := RootDescriptor{Version: uint8((codec >> 12) & 15), Layout: Layout((codec >> 8) & 15), InputRule: uint8(codec)}
+	d := RootDescriptor{Version: uint8((codec >> 12) & 15), Layout: Layout((codec >> 8) & 15), DerivationProfile: uint8(codec)}
 	if d.Version != RootVersion {
 		return RootDescriptor{}, nil, fmt.Errorf("unsupported Root version %d", d.Version)
 	}

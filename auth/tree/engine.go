@@ -74,7 +74,7 @@ type Engine struct{ Profiles *Registry }
 func New(profiles *Registry) *Engine { return &Engine{Profiles: profiles} }
 
 type binding struct {
-	coordinate coordinate.Value
+	coordinate coordinate.Coordinate
 	target     cid.Cid
 }
 
@@ -98,9 +98,9 @@ func (e *Engine) CheckDescriptor(d maltcid.RootDescriptor) error {
 	_, _, err := e.config(d)
 	return err
 }
-func checkCoordinate(d maltcid.RootDescriptor, k coordinate.Value) (coordinate.Value, error) {
+func checkCoordinate(d maltcid.RootDescriptor, k coordinate.Coordinate) (coordinate.Coordinate, error) {
 	if d.Layout == maltcid.Prefix && (k.Kind != coordinate.Key || k.Index != 0) || d.Layout == maltcid.Positional && (k.Kind != coordinate.Index || k.Key != ([32]byte{})) {
-		return coordinate.Value{}, errors.New("invalid authentication coordinate")
+		return coordinate.Coordinate{}, errors.New("invalid authentication coordinate")
 	}
 	return k, nil
 }
@@ -114,7 +114,7 @@ type View struct {
 	TotalSize  uint64
 }
 type CoordinateBinding struct {
-	Coordinate coordinate.Value
+	Coordinate coordinate.Coordinate
 	Target     cid.Cid
 }
 

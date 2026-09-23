@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
@@ -17,7 +17,7 @@ func TestTypedWriterUpdatesCompleteCandidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.KZG4096}, Entries: []engine.Entry{{Input: input.LabelValue([]byte("key")), Target: cid.MustParse("bafkqaaa")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.KZG4096}, Entries: []engine.Entry{{Label: []byte("key"), Target: cid.MustParse("bafkqaaa")}}}
 	encoded, _ := json.Marshal(state)
 	base, err := c.PrepareAuthentication(context.Background(), encoded)
 	if err != nil {
@@ -41,7 +41,7 @@ func TestTypedWriterUpdatesCompleteCandidate(t *testing.T) {
 		t.Fatal("update lost its base")
 	}
 	original.State.Entries[0].Target = cid.MustParse("bafkqaaa")
-	original.State.Entries[0].Input = input.LabelValue([]byte("corrupt"))
+	original.State.Entries[0].Label = []byte("corrupt")
 	bad, _ := json.Marshal(original)
 	if _, err := c.UpdateAuthentication(context.Background(), bad, encoded); err == nil {
 		t.Fatal("corrupt base accepted")
