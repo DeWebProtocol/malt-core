@@ -88,7 +88,7 @@ func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
 }
 
 type coordinateChange struct {
-	key           coordinate.Value
+	key           coordinate.Coordinate
 	before, after cid.Cid
 }
 
@@ -103,7 +103,7 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 	b := u.builder
 	b.out = u
 	items := make([]coordinateChange, 0, len(changes))
-	seen := make(map[coordinate.Value]bool)
+	seen := make(map[coordinate.Coordinate]bool)
 	for _, change := range changes {
 		k, err := checkCoordinate(u.descriptor, change.Coordinate)
 		if err != nil {
@@ -240,7 +240,7 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 		}
 		bindings := make([]binding, 0, len(entries))
 		for key, target := range entries {
-			bindings = append(bindings, binding{coordinate: coordinate.Value{Kind: coordinate.Key, Key: key}, target: target})
+			bindings = append(bindings, binding{coordinate: coordinate.Coordinate{Kind: coordinate.Key, Key: key}, target: target})
 		}
 		sort.Slice(bindings, func(i, j int) bool {
 			return bytes.Compare(bindings[i].coordinate.Key[:], bindings[j].coordinate.Key[:]) < 0

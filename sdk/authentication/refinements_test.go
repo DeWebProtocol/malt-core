@@ -8,8 +8,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
@@ -51,13 +52,13 @@ func candidateEngine(t *testing.T, profile maltcid.ProfileID) (*engine.Engine, *
 	if err := profiles.Register(c); err != nil {
 		t.Fatal(err)
 	}
-	return engine.New(input.DefaultRegistry(), profiles), c
+	return engine.New(profiles), c
 }
 
 func TestExportOwnsRetainedInputs(t *testing.T) {
 	e := pathEngine(t)
 	target := cid.MustParse("bafkqaaa")
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.LabelValue([]byte("entry")), Target: target}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("entry"), Target: target}}}
 	nodes := memory.NewNodes()
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
@@ -67,23 +68,23 @@ func TestExportOwnsRetainedInputs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	state.Entries[0].Input.Data[0] = 'X'
+	state.Entries[0].Label[0] = 'X'
 	state.Entries[0].Target = cid.Undef
 	if err := authentication.ValidateCandidate(t.Context(), e, candidate); err != nil {
 		t.Fatal("input mutation changed export", err)
 	}
-	candidate.State.Entries[0].Input.Data[1] = 'Y'
+	candidate.State.Entries[0].Label[1] = 'Y'
 	candidate.State.Entries[0].Target = target
-	if string(state.Entries[0].Input.Data) != "Xntry" || state.Entries[0].Target.Defined() {
+	if string(state.Entries[0].Label) != "Xntry" || state.Entries[0].Target.Defined() {
 		t.Fatal("export mutation changed caller state")
 	}
 }
 
 func TestCandidateVerifiesSharedNodesOnce(t *testing.T) {
 	e, work := candidateEngine(t, maltcid.IPA256)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
 	for i := uint64(0); i < 1020; i++ {
-		state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(i), Target: cid.MustParse("bafkqaaa")})
+		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: cid.MustParse("bafkqaaa")})
 	}
 	candidate, err := authentication.Prepare(t.Context(), e, state)
 	if err != nil {
@@ -118,10 +119,10 @@ func TestBulkAppendCommitsEachChangedNodeOnce(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("%d/%d-%d", tc.profile, tc.before, tc.after), func(t *testing.T) {
 			e, work := candidateEngine(t, tc.profile)
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: tc.profile}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: tc.profile}}
 			target := cid.MustParse("bafkqaaa")
 			for i := 0; i < tc.before; i++ {
-				state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(uint64(i)), Target: target})
+				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target})
 			}
 			base, err := authentication.BuildWriter(t.Context(), e, state)
 			if err != nil {
@@ -130,9 +131,9 @@ func TestBulkAppendCommitsEachChangedNodeOnce(t *testing.T) {
 			count := uint64(tc.after)
 			delta := authentication.Delta{Count: &count}
 			for i := tc.before; i < tc.after; i++ {
-				entry := engine.Entry{Input: input.IndexValue(uint64(i)), Target: target}
+				entry := engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target}
 				state.Entries = append(state.Entries, entry)
-				delta.Changes = append(delta.Changes, engine.Change{Input: entry.Input, After: target})
+				delta.Changes = append(delta.Changes, engine.Change{Label: entry.Label, After: target})
 			}
 			work.commits = 0
 			next, err := base.Apply(t.Context(), delta)

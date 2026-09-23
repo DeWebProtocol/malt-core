@@ -4,20 +4,20 @@ import (
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 
-func TestFlatAndRootedPayloadQueryComposition(t *testing.T) {
+func TestExplicitOpaqueLabelTraversal(t *testing.T) {
 	e := pathEngine(t)
 	nodes := memory.NewNodes()
 	manifest := cid.MustParse("bafkqaaa")
 	literal := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
-	descriptor := maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}
+	descriptor := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	build := func(entries ...engine.Entry) cid.Cid {
 		t.Helper()
 		root, err := e.Build(t.Context(), engine.State{Descriptor: descriptor, Entries: entries}, nodes)
@@ -26,21 +26,21 @@ func TestFlatAndRootedPayloadQueryComposition(t *testing.T) {
 		}
 		return root
 	}
-	payload := input.SystemValue(input.Payload)
-	child := build(engine.Entry{Input: payload, Target: manifest}, engine.Entry{Input: input.LabelValue([]byte("@payload")), Target: literal})
-	rooted := build(engine.Entry{Input: input.LabelValue([]byte("file")), Target: child})
-	flat := build(engine.Entry{Input: input.LabelValue([]byte("file")), Target: manifest}, engine.Entry{Input: payload, Target: manifest})
+	payload := []byte("content")
+	child := build(engine.Entry{Label: payload, Target: manifest}, engine.Entry{Label: []byte("@payload"), Target: literal})
+	rooted := build(engine.Entry{Label: []byte("file"), Target: child})
+	flat := build(engine.Entry{Label: []byte("file"), Target: manifest}, engine.Entry{Label: payload, Target: manifest})
 	for _, tc := range []struct {
 		name   string
 		root   cid.Cid
-		steps  []input.Value
+		steps  [][]byte
 		target cid.Cid
 	}{
-		{"rooted content", rooted, []input.Value{input.LabelValue([]byte("file")), payload}, manifest},
-		{"rooted relation", rooted, []input.Value{input.LabelValue([]byte("file"))}, child},
-		{"flat content", flat, []input.Value{input.LabelValue([]byte("file"))}, manifest},
-		{"flat entry manifest", flat, []input.Value{payload}, manifest},
-		{"literal label", child, []input.Value{input.LabelValue([]byte("@payload"))}, literal},
+		{"rooted content", rooted, [][]byte{[]byte("file"), payload}, manifest},
+		{"rooted relation", rooted, [][]byte{[]byte("file")}, child},
+		{"flat content", flat, [][]byte{[]byte("file")}, manifest},
+		{"flat entry manifest", flat, [][]byte{payload}, manifest},
+		{"literal label", child, [][]byte{[]byte("@payload")}, literal},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: tc.root.String(), Operation: "resolve", Steps: tc.steps}
@@ -61,12 +61,12 @@ func TestFlatAndRootedPayloadQueryComposition(t *testing.T) {
 		})
 	}
 	// Positional roots do not acquire payload bindings during composition.
-	positional, err := e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}}, nodes)
+	positional, err := e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: positional.String(), Operation: "resolve", Steps: []input.Value{payload}}
+	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: positional.String(), Operation: "resolve", Steps: [][]byte{payload}}
 	if _, err := authentication.Execute(t.Context(), e, q, nodes); err == nil {
-		t.Fatal("Positional accepted system payload")
+		t.Fatal("Positional accepted malformed Direct label")
 	}
 }

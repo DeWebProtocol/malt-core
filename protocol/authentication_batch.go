@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	AuthenticationBatchProfile    = "malt.authentication-batch/0"
-	AuthenticationReceiptProfile  = "malt.authentication-receipt/0"
+	AuthenticationBatchProfile    = "malt.authentication-batch/1"
+	AuthenticationReceiptProfile  = "malt.authentication-receipt/1"
 	MaxAuthenticationBatchObjects = 4096
 )
 

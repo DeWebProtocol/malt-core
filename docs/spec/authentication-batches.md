@@ -1,11 +1,11 @@
 # Authentication candidates, batches, and receipts
 
-Complete state uses `malt.authentication/0`. A candidate contains its exact
-Root, original typed inputs and targets, descriptor, and complete reachable
+Complete state uses `malt.authentication/2`. A candidate contains its exact
+Root, original application labels and targets, descriptor, and complete reachable
 node vectors. Optional `previous` records storage lineage. Updates that leave
 the Root unchanged preserve the existing lineage instead of naming themselves
 as their predecessor. The query profile
-is independently versioned as `malt.authentication/1`.
+is independently versioned as `malt.authentication/3`.
 
 Structural JSON validation is not cryptographic validation.
 `authentication.ValidateCandidate` checks a candidate against its Root before
@@ -13,7 +13,7 @@ external materialization. Missing, conflicting, unreachable, or inconsistent
 nodes fail. New retained writers own validated immutable nodes; unchanged
 owned nodes can be reused across branches without revalidating them.
 
-`malt.authentication-delta/0` describes expected-before typed changes against
+`malt.authentication-delta/1` describes expected-before typed changes against
 retained complete state. Prefix supports insertion, replacement, and deletion;
 Positional supports replacement, append, and suffix truncation with explicit
 count and measured total size. It is not a partial witness or transition proof.
@@ -21,7 +21,7 @@ Applications rebuild changed child ArcSets before rebinding their parents.
 
 ## Ordered batches
 
-`malt.authentication-batch/0` contains `transaction_id`, `base`, `root`, and
+`malt.authentication-batch/1` contains `transaction_id`, `base`, `root`, and
 `candidates`. Transaction IDs contain 1–128 ASCII letters, digits, `.`, `_`, or
 `-`. A batch contains 1–4096 distinct candidate Roots and canonical Root strings.
 Its final candidate must equal the declared final `root`.
@@ -45,7 +45,7 @@ a second canonical serializer or hash arbitrary incoming JSON bytes.
 
 ## Exact receipts and trust
 
-`malt.authentication-receipt/0` carries `transaction_id`, `base`, `root`,
+`malt.authentication-receipt/1` carries `transaction_id`, `base`, `root`,
 `digest`, and a nonempty `durable_boundary`. Receipt validation requires those
 values to match the exact locally computed batch, including profile and digest.
 A substituted candidate, reordered batch, transaction, base, or final Root

@@ -7,8 +7,8 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -36,7 +36,7 @@ func capabilityEngine(t *testing.T, p engine.Profile) *engine.Engine {
 	if err := registry.Register(p); err != nil {
 		t.Fatal(err)
 	}
-	return engine.New(input.DefaultRegistry(), registry)
+	return engine.New(registry)
 }
 
 // Every operation must work with its own capabilities rather than requiring
@@ -56,12 +56,12 @@ func TestIndependentAuthenticationCapabilities(t *testing.T) {
 			}
 			committer := capabilityEngine(t, commitProfile{Committer: backend, id: id})
 			prover := capabilityEngine(t, proofProfile{Prover: backend, Verifier: backend, id: id})
-			verifier, err := builtin.NewVerifier(nil, id)
+			verifier, err := builtin.NewVerifier(id)
 			if err != nil {
 				t.Fatal(err)
 			}
-			query := input.LabelValue([]byte("a/b"))
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: uint8(input.BytesSHA256), Profile: id}, Entries: []engine.Entry{{Input: query, Target: target("before")}}}
+			query := []byte("a/b")
+			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: id}, Entries: []engine.Entry{{Label: query, Target: target("before")}}}
 			nodes := memory.NewNodes()
 			root, err := committer.Build(t.Context(), state, nodes)
 			if err != nil {

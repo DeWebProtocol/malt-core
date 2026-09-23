@@ -38,7 +38,7 @@ Also compile a temporary external Go module against the candidate tag or
 commit. It should import only the intended public packages, at minimum:
 
 - `sdk/authentication` and `sdk/authentication/builtin`;
-- `protocol`, `auth/input`, and `wire/maltcid`;
+- `protocol`, `derivation`, and `wire/maltcid`;
 - `auth/arcset/materializer` when exercising executor composition.
 
 Review README, architecture, roadmap, schemas, compatibility policy, threat

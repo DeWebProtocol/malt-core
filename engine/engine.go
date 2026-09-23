@@ -1,4 +1,4 @@
-// Package engine binds typed application inputs to the coordinate-only authentication tree.
+// Package engine binds application labels to the coordinate-only authentication tree.
 package engine
 
 import (
@@ -7,13 +7,14 @@ import (
 	"fmt"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/auth/tree"
+	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 
-// These are the tree's shared types, also exposed by the typed-input facade.
+// These are the tree's shared types, also exposed by the label-aware composition layer.
 type (
 	Profile           = tree.Profile
 	Registry          = tree.Registry
@@ -34,24 +35,26 @@ var ErrNotMeasured = tree.ErrNotMeasured
 func NewRegistry() *Registry { return tree.NewRegistry() }
 
 type Engine struct {
-	Rules *input.Registry
-	Tree  *tree.Engine
+	Tree *tree.Engine
 }
 
-func New(rules *input.Registry, profiles *Registry) *Engine {
-	return &Engine{Rules: rules, Tree: tree.New(profiles)}
+func New(profiles *Registry) *Engine {
+	return &Engine{Tree: tree.New(profiles)}
 }
 func (e *Engine) check(d maltcid.RootDescriptor) error {
-	if e == nil || e.Rules == nil || e.Tree == nil {
+	if e == nil || e.Tree == nil {
 		return errors.New("authentication engine is not configured")
 	}
-	if !e.Rules.Supports(input.ID(d.InputRule)) {
-		return fmt.Errorf("unsupported input rule %d", d.InputRule)
+	if !derivation.Supported(derivation.ProfileID(d.DerivationProfile)) {
+		return fmt.Errorf("unsupported coordinate derivation profile %d", d.DerivationProfile)
+	}
+	if d.Layout == maltcid.Positional && d.DerivationProfile != uint8(derivation.Direct) {
+		return errors.New("Positional requires Direct derivation")
 	}
 	return e.Tree.CheckDescriptor(d)
 }
 
-// CheckRoot checks the complete configuration, including the installed input rule.
+// CheckRoot checks the complete configuration, including the installed coordinate derivation profile.
 func (e *Engine) CheckRoot(root cid.Cid) error {
 	d, _, err := maltcid.ParseRoot(root)
 	if err != nil {
@@ -61,11 +64,11 @@ func (e *Engine) CheckRoot(root cid.Cid) error {
 }
 
 type Entry struct {
-	Input  input.Value `json:"input"`
-	Target cid.Cid     `json:"target"`
+	Label  []byte  `json:"label"`
+	Target cid.Cid `json:"target"`
 }
 
-// State stores the original inputs so label-based persistence can reconstruct
+// State stores the original labels so label-based persistence can reconstruct
 // a Root without pretending that labels and authentication keys are identical.
 // ChunkSize/TotalSize are zero for Prefix and for plain Positional state.
 type State struct {
@@ -75,25 +78,28 @@ type State struct {
 	TotalSize  uint64                 `json:"total_size,omitempty,string"`
 }
 
-func (e *Engine) coordinate(d maltcid.RootDescriptor, value input.Value) (input.Coordinate, error) {
-	k, err := e.Rules.Derive(input.ID(d.InputRule), value)
-	if err != nil {
-		return input.Coordinate{}, err
+func (e *Engine) coordinate(d maltcid.RootDescriptor, value []byte) (coordinate.Coordinate, error) {
+	if value == nil {
+		return coordinate.Coordinate{}, errors.New("label must be present; use an empty slice for an empty label")
 	}
-	if d.Layout == maltcid.Prefix && k.Kind != input.Key || d.Layout == maltcid.Positional && k.Kind != input.Index {
-		return input.Coordinate{}, errors.New("input coordinate does not match layout")
+	k, err := derivation.Derive(derivation.ProfileID(d.DerivationProfile), value)
+	if err != nil {
+		return coordinate.Coordinate{}, err
+	}
+	if d.Layout == maltcid.Prefix && k.Kind != coordinate.Key || d.Layout == maltcid.Positional && k.Kind != coordinate.Index {
+		return coordinate.Coordinate{}, errors.New("derived coordinate does not match layout")
 	}
 	return k, nil
 }
 
-// Interpret performs AA conversion without invoking a commitment primitive.
+// Interpret derives coordinates from labels without invoking a commitment primitive.
 func (e *Engine) Interpret(state State) (View, error) {
 	if err := e.check(state.Descriptor); err != nil {
 		return View{}, err
 	}
 	view := View{Descriptor: state.Descriptor, ChunkSize: state.ChunkSize, TotalSize: state.TotalSize, Bindings: make([]CoordinateBinding, len(state.Entries))}
 	for i, entry := range state.Entries {
-		coordinate, err := e.coordinate(state.Descriptor, entry.Input)
+		coordinate, err := e.coordinate(state.Descriptor, entry.Label)
 		if err != nil {
 			return View{}, fmt.Errorf("entry %d: %w", i, err)
 		}
@@ -102,7 +108,7 @@ func (e *Engine) Interpret(state State) (View, error) {
 	return view, nil
 }
 
-// Build interprets application inputs and commits the resulting view. It
+// Build interprets application labels and commits the resulting view. It
 // creates a candidate only: it neither publishes nor accepts that Root.
 func (e *Engine) Build(ctx context.Context, state State, out materializer.NodeUpdater) (cid.Cid, error) {
 	view, err := e.Interpret(state)

@@ -8,19 +8,19 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 
 func TestAuthenticationResultRequiredFieldsAndNulls(t *testing.T) {
-	root, err := maltcid.NewRoot(maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, make([]byte, 32))
+	root, err := maltcid.NewRoot(maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, make([]byte, 32))
 	if err != nil {
 		t.Fatal(err)
 	}
-	prefix := fmt.Sprintf(`{"profile":"malt.authentication/1","resolved":%q,`, root.String())
+	prefix := fmt.Sprintf(`{"profile":"malt.authentication/3","resolved":%q,`, root.String())
 	binding := `{"present":false,"target":null,"proof":{"format":"malt.binding/0","nodes":[{}]}}`
 	rangeResult := `{"metadata":{"height":"0","count":"0","chunk_size":"1","total_size":"0"},"metadata_evidence":` + binding + `,"segments":[]}`
 	valid := prefix + `"traversal":{"results":[]},"range":` + rangeResult + `}`
@@ -56,7 +56,7 @@ func TestAuthenticationResultRequiredFieldsAndNulls(t *testing.T) {
 }
 
 func TestAuthenticationCandidateNullCellsAndOptionalDefaults(t *testing.T) {
-	descriptor := maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}
+	descriptor := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}
 	root, err := maltcid.NewRoot(descriptor, make([]byte, 32))
 	if err != nil {
 		t.Fatal(err)
@@ -83,9 +83,9 @@ func TestAuthenticationCandidateNullCellsAndOptionalDefaults(t *testing.T) {
 		t.Fatal("accepted null entry")
 	}
 	for _, state := range []string{
-		`{"descriptor":{"layout":2,"vc_profile":2}}`,
-		`{"descriptor":{"layout":2,"vc_profile":2},"entries":null}`,
-		`{"descriptor":{"layout":2,"vc_profile":2},"entries":[]}`,
+		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2}}`,
+		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2},"entries":null}`,
+		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2},"entries":[]}`,
 	} {
 		if _, err := protocol.DecodeAuthenticationState([]byte(state)); err != nil {
 			t.Fatal("schema defaults rejected", state, err)
@@ -165,7 +165,7 @@ func TestAuthenticationFieldShapesMatchSchemas(t *testing.T) {
 		for typ.Kind() == reflect.Pointer {
 			typ = typ.Elem()
 		}
-		if typ == reflect.TypeFor[input.Value]() || typ == reflect.TypeFor[cid.Cid]() {
+		if typ == reflect.TypeFor[[]byte]() || typ == reflect.TypeFor[cid.Cid]() {
 			return
 		}
 		if typ.Kind() == reflect.Slice {

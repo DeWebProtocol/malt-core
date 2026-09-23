@@ -10,8 +10,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
@@ -84,17 +85,17 @@ func TestEngineVerifiesEachGeneratedOpeningOnce(t *testing.T) {
 				if err := registry.Register(counter); err != nil {
 					t.Fatal(err)
 				}
-				e := engine.New(input.DefaultRegistry(), registry)
+				e := engine.New(registry)
 				nodes := memory.NewNodes()
-				descriptor := maltcid.RootDescriptor{Layout: layout, Profile: profile}
-				query := input.IndexValue(0)
+				descriptor := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: layout, Profile: profile}
+				query := coordinate.EncodeIndex(0)
 				wantOpenings := 2
 				if layout == maltcid.Prefix {
-					descriptor.InputRule = uint8(input.BytesSHA256)
-					query = input.LabelValue([]byte("entry"))
+					descriptor.DerivationProfile = uint8(derivation.SHA256)
+					query = []byte("entry")
 					wantOpenings = 1
 				}
-				root, err := e.Build(t.Context(), engine.State{Descriptor: descriptor, Entries: []engine.Entry{{Input: query, Target: target("value")}}}, nodes)
+				root, err := e.Build(t.Context(), engine.State{Descriptor: descriptor, Entries: []engine.Entry{{Label: query, Target: target("value")}}}, nodes)
 				if err != nil {
 					t.Fatal(err)
 				}

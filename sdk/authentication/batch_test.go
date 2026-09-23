@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -15,16 +15,16 @@ import (
 
 func TestBatchVerifiesCandidatesAndBindsExactReceipt(t *testing.T) {
 	e := pathEngine(t)
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: uint8(input.BytesSHA256), Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	base, err := authentication.Prepare(t.Context(), e, engine.State{Descriptor: d})
 	if err != nil {
 		t.Fatal(err)
 	}
-	child, err := authentication.Prepare(t.Context(), e, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: input.SystemValue(input.Payload), Target: cid.MustParse("bafkqaaa")}}})
+	child, err := authentication.Prepare(t.Context(), e, engine.State{Descriptor: d, Entries: []engine.Entry{{Label: []byte("@payload"), Target: cid.MustParse("bafkqaaa")}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	parent, err := authentication.PrepareUpdate(t.Context(), e, base, engine.State{Descriptor: d, Entries: []engine.Entry{{Input: input.LabelValue([]byte("child")), Target: cid.MustParse(child.Root)}}})
+	parent, err := authentication.PrepareUpdate(t.Context(), e, base, engine.State{Descriptor: d, Entries: []engine.Entry{{Label: []byte("child"), Target: cid.MustParse(child.Root)}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,12 +101,12 @@ func TestBatchVerifiesCandidatesAndBindsExactReceipt(t *testing.T) {
 // real update. Batch and receipt checks must agree with both writer APIs.
 func TestNoOpCandidatesKeepLineageAndMaterialize(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: uint8(input.BytesSHA256), Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
 	initial, err := authentication.Prepare(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
 	}
-	state.Entries = []engine.Entry{{Input: input.LabelValue([]byte("file")), Target: cid.MustParse("bafkqaaa")}}
+	state.Entries = []engine.Entry{{Label: []byte("file"), Target: cid.MustParse("bafkqaaa")}}
 	changed, err := authentication.PrepareUpdate(t.Context(), e, initial, state)
 	if err != nil {
 		t.Fatal(err)

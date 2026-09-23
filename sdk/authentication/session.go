@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	cid "github.com/ipfs/go-cid"
 )
@@ -37,7 +37,7 @@ type Session struct {
 }
 
 func NewSession(e *engine.Engine, limits SessionLimits) (*Session, error) {
-	if e == nil || e.Tree == nil || e.Rules == nil {
+	if e == nil || e.Tree == nil {
 		return nil, errors.New("authentication engine is required")
 	}
 	if limits.MaxCandidates == 0 {

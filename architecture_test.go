@@ -33,12 +33,12 @@ func TestProductionImportBoundaries(t *testing.T) {
 		forbidden []string
 	}{
 		{name: "coordinate-only authentication tree", dir: filepath.Join(root, "auth", "tree"), recursive: true,
-			forbidden: []string{"auth/input", "auth/engine", "traversal", "graph", "protocol", "sdk", "mutation", "execution"}},
+			forbidden: []string{"derivation", "engine", "traversal", "graph", "protocol", "sdk", "mutation", "execution"}},
 		{
 			name:      "authentication kernel",
 			dir:       filepath.Join(root, "auth"),
 			recursive: true,
-			forbidden: []string{"traversal", "graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
+			forbidden: []string{"derivation", "engine", "protocol", "traversal", "graph", "runtime", "storage", "layout", "model", "sdk", "execution", "api", "server", "logger"},
 		},
 		{
 			name:      "explicit traversal",
@@ -100,7 +100,7 @@ func TestSDKOnlyRepositoryDoesNotRetainProductResidue(t *testing.T) {
 	}
 	root := filepath.Dir(sourceFile)
 	for _, name := range []string{
-		"config.example.json", "graph", "sdk/authentication/verifier",
+		"config.example.json", "graph", "auth/input", "auth/engine", "sdk/authentication/verifier",
 		"cmd/malt-verifier-wasm", "cmd/malt-writer-wasm",
 		"scripts/build-verifier-wasm.sh", "scripts/build-writer-wasm.sh", "scripts/build-wasm-release.sh",
 		"auth/semantic", "auth/proof", "auth/verifier", "sdk/writer", "sdk/verifier", "execution", "mutation", "graph/runtime", "graph/resolver", "graph/writer",

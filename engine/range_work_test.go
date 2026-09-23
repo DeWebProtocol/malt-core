@@ -11,8 +11,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
@@ -70,11 +71,11 @@ func TestRangeReusesVerifiedNodeWork(t *testing.T) {
 			if err := profiles.Register(counter); err != nil {
 				t.Fatal(err)
 			}
-			e := engine.New(input.DefaultRegistry(), profiles)
+			e := engine.New(profiles)
 			store := memory.NewNodes()
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: tc.profile}, ChunkSize: 1, TotalSize: tc.count}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: tc.profile}, ChunkSize: 1, TotalSize: tc.count}
 			for i := uint64(0); i < tc.count; i++ {
-				state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(i), Target: target(fmt.Sprint(i))})
+				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: target(fmt.Sprint(i))})
 			}
 			root, err := e.Build(t.Context(), state, store)
 			if err != nil {
@@ -85,7 +86,7 @@ func TestRangeReusesVerifiedNodeWork(t *testing.T) {
 				if err := profiles.Register(proofProfile{Prover: counter, Verifier: counter, id: tc.profile}); err != nil {
 					t.Fatal(err)
 				}
-				e = engine.New(input.DefaultRegistry(), profiles)
+				e = engine.New(profiles)
 			}
 			nodes := &rangeNodes{NodeLookup: store, reads: make(map[string]int)}
 			result, err := e.ProveRange(t.Context(), root, tc.start, &tc.end, nodes)

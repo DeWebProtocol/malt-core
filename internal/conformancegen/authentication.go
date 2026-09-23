@@ -8,8 +8,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
@@ -27,7 +28,7 @@ func GenerateAuthentication() ([]byte, error) {
 	corpus := struct {
 		Schema  string   `json:"schema"`
 		Vectors []vector `json:"vectors"`
-	}{Schema: "malt.conformance.authentication/1", Vectors: []vector{}}
+	}{Schema: "malt.conformance.authentication/2", Vectors: []vector{}}
 	ctx := context.Background()
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		var scheme engine.Profile
@@ -44,9 +45,9 @@ func GenerateAuthentication() ([]byte, error) {
 		if err := profiles.Register(scheme); err != nil {
 			return nil, err
 		}
-		e := engine.New(input.DefaultRegistry(), profiles)
+		e := engine.New(profiles)
 		nodes := memory.NewNodes()
-		state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: profile}, Entries: []engine.Entry{{Input: input.LabelValue([]byte("a/b")), Target: cid.MustParse("bafkqaaa")}, {Input: input.SystemValue(input.Payload), Target: cid.MustParse("bafkqaaa")}}}
+		state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, Entries: []engine.Entry{{Label: []byte("a/b"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte("@payload"), Target: cid.MustParse("bafkqaaa")}}}
 		root, err := e.Build(ctx, state, nodes)
 		if err != nil {
 			return nil, err
@@ -69,53 +70,53 @@ func GenerateAuthentication() ([]byte, error) {
 		}
 		for _, query := range []struct {
 			name  string
-			value input.Value
-		}{{"opaque-label", input.LabelValue([]byte("a/b"))}, {"system-payload", input.SystemValue(input.Payload)}, {"literal-at-payload-absent", input.LabelValue([]byte("@payload"))}, {"missing", input.LabelValue([]byte("absent"))}} {
+			value []byte
+		}{{"opaque-label", []byte("a/b")}, {"system-payload", []byte("@payload")}, {"literal-at-payload-absent", []byte("@payload")}, {"missing", []byte("absent")}} {
 			value := query.value
-			q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Steps: []input.Value{}, Operation: "binding", Input: &value}
+			q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Steps: [][]byte{}, Operation: "binding", Label: &value}
 			if err := add(query.name, q); err != nil {
 				return nil, err
 			}
 		}
-		path := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: []input.Value{input.LabelValue([]byte("missing")), input.LabelValue([]byte("suffix"))}}
+		path := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: [][]byte{[]byte("missing"), []byte("suffix")}}
 		if err := add("path-absence", path); err != nil {
 			return nil, err
 		}
 		badPath := corpus.Vectors[len(corpus.Vectors)-1]
 		badPath.ID = fmt.Sprintf("profile-%d.path-wrong-prefix", profile)
-		badPath.Verification.Request.Steps = []input.Value{input.LabelValue([]byte("a/b")), input.LabelValue([]byte("suffix"))}
+		badPath.Verification.Request.Steps = [][]byte{[]byte("a/b"), []byte("suffix")}
 		badPath.Valid = false
 		corpus.Vectors = append(corpus.Vectors, badPath)
 		native := state
-		native.Descriptor.InputRule = 0
+		native.Descriptor.DerivationProfile = uint8(derivation.Direct)
 		native.Entries = append([]engine.Entry(nil), state.Entries...)
 		for i, entry := range native.Entries {
-			key, err := e.Rules.Derive(input.BytesSHA256, entry.Input)
+			key, err := derivation.Derive(derivation.SHA256, entry.Label)
 			if err != nil {
 				return nil, err
 			}
-			native.Entries[i].Input = input.KeyValue(key.Key)
+			native.Entries[i].Label = coordinate.EncodeKey(key.Key)
 		}
 		nativeRoot, err := e.Build(ctx, native, nodes)
 		if err != nil {
 			return nil, err
 		}
-		key := native.Entries[0].Input
-		if err := add("native-key", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: nativeRoot.String(), Steps: []input.Value{}, Operation: "binding", Input: &key}); err != nil {
+		key := native.Entries[0].Label
+		if err := add("native-key", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: nativeRoot.String(), Steps: [][]byte{}, Operation: "binding", Label: &key}); err != nil {
 			return nil, err
 		}
-		sequence := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: profile}, ChunkSize: 8, TotalSize: 5, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: cid.MustParse("bafkqaaa")}}}
+		sequence := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: profile}, ChunkSize: 8, TotalSize: 5, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 		listRoot, err := e.Build(ctx, sequence, nodes)
 		if err != nil {
 			return nil, err
 		}
 		start := uint64(1)
 		end := uint64(4)
-		if err := add("measured-range", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: []input.Value{}, Operation: "range", Start: &start, End: &end}); err != nil {
+		if err := add("measured-range", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: [][]byte{}, Operation: "range", Start: &start, End: &end}); err != nil {
 			return nil, err
 		}
-		maximum := input.IndexValue(^uint64(0))
-		if err := add("max-index-absence", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: []input.Value{}, Operation: "binding", Input: &maximum}); err != nil {
+		maximum := coordinate.EncodeIndex(^uint64(0))
+		if err := add("max-index-absence", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: [][]byte{}, Operation: "binding", Label: &maximum}); err != nil {
 			return nil, err
 		}
 		// A proof remains bound to the complete caller query, not a server echo.

@@ -1,6 +1,6 @@
 # Typed authentication query contract
 
-The sole current query profile is `malt.authentication/1`. The schemas in
+The sole current query profile is `malt.authentication/3`. The schemas in
 `protocol/schemas/authentication-request.schema.json`,
 `authentication-result.schema.json`, and `authentication-verification.schema.json`
 are transport neutral. Core owns no HTTP routes.
@@ -9,24 +9,23 @@ are transport neutral. Core owns no HTTP routes.
 
 | Field | Meaning |
 | --- | --- |
-| `profile` | Exactly `malt.authentication/1` |
+| `profile` | Exactly `malt.authentication/3` |
 | `root` | Caller-selected complete self-describing V0 Root CID |
-| `steps` | At most 256 explicit typed inputs, evaluated in order |
+| `steps` | At most 256 explicit application labels, evaluated in order |
 | `operation` | `resolve`, `binding`, or `range` |
-| `input` | Required only for `binding` |
+| `label` | Required only for `binding` |
 | `start`, `end` | Decimal-string byte offsets; start required for `range`, end optional |
 
 `resolve` permits no primitive input/range fields. `binding` permits only its
-input. `range` permits start and optional end, with end no smaller than start.
+label. `range` permits start and optional end, with end no smaller than start.
 Typed input grammar and layout restrictions are fixed by
 [authentication inputs](authentication-inputs.md). Each reached Root supplies
-its own input rule and exact VC profile. Empty traversal still validates the
+its own derivation profile and exact VC profile. Empty traversal still validates the
 initial Root and installed rules/profiles.
 
 There is no string path parser, longest-prefix grouping, inferred backend, or
 implicit terminal selector. Applications choose every step. A full flat path
-can be one AA=1 label; a rooted path supplies separate selectors. The literal
-label `@payload` is distinct from `system` selector `1`.
+can be one AA=4 label; a rooted path supplies separate selectors. The label `@payload` has no special Core meaning.
 
 ## Result and verification
 
@@ -62,7 +61,7 @@ of an arbitrary HTTP response.
 
 Decoders reject duplicate keys, non-exact field names, unknown fields, trailing
 JSON, missing required fields, null values where the schema disallows them,
-invalid tagged unions, and retired query profiles. Required arrays must be
+noncanonical base64, retired tagged inputs, and retired query profiles. Required arrays must be
 present as arrays even when empty; optional defaults and nullable fields follow
 the published schemas. Documents are bounded at 96 MiB with nesting depth at
 most 256. Unsigned 64-bit numbers use canonical decimal strings. Byte fields

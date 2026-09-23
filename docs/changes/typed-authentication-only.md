@@ -1,5 +1,9 @@
 # Typed authentication is the sole current chain
 
+Historical implementation note. The current coordinate derivation boundary and
+label contracts supersede its input/system-selector API; see
+[the current specification](../spec/authentication-inputs.md).
+
 The pre-beta source migration removes Map/List adapters and their old root
 constructors, string resolver and module facade, Resolve/Read and Map-proof
 APIs, `execution`, `mutation`, `sdk/writer`, `sdk/verifier`, and the old proof

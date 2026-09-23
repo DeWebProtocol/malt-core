@@ -1,12 +1,14 @@
 package authentication_test
 
 import (
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"testing"
+
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
-	"testing"
 )
 
 func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
@@ -15,7 +17,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 	other := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
 	for _, measured := range []bool{false, true} {
 		t.Run(map[bool]string{false: "plain", true: "measured"}[measured], func(t *testing.T) {
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
 			if measured {
 				state.ChunkSize = 8
 			}
@@ -32,7 +34,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 			for _, count := range []int{3, 256, 256, 510, 511, 255, 2, 0, 4} {
 				state.Entries = make([]engine.Entry, count)
 				for i := range state.Entries {
-					state.Entries[i] = engine.Entry{Input: input.IndexValue(uint64(i)), Target: target}
+					state.Entries[i] = engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target}
 				}
 				if count > 0 {
 					state.Entries[count-1].Target = other
@@ -66,7 +68,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 			}
 		})
 	}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, InputRule: 1, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Input: input.LabelValue([]byte("a")), Target: target}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("a"), Target: target}}}
 	base, err := authentication.Prepare(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
@@ -75,7 +77,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	state.Entries = []engine.Entry{{Input: input.LabelValue([]byte("b")), Target: other}, {Input: input.SystemValue(input.Payload), Target: target}}
+	state.Entries = []engine.Entry{{Label: []byte("b"), Target: other}, {Label: []byte("@payload"), Target: target}}
 	next, err := w.Update(t.Context(), state)
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +90,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 		t.Fatal("Prefix update or immutable base mismatch")
 	}
 	detached := next.Candidate()
-	detached.State.Entries[0].Input.Data[0] = 'x'
+	detached.State.Entries[0].Label[0] = 'x'
 	detached.Nodes[0].Cells[0] = []byte("bad")
 	if err := authentication.ValidateCandidate(t.Context(), e, next.Candidate()); err != nil {
 		t.Fatal("candidate aliases writer", err)
@@ -104,9 +106,9 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 
 func TestWriterFillsPartialInternalTailBeforeAppend(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 8, TotalSize: 510*8 - 3}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 8, TotalSize: 510*8 - 3}
 	for i := uint64(0); i < 510; i++ {
-		state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(i), Target: cid.MustParse("bafkqaaa")})
+		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: cid.MustParse("bafkqaaa")})
 	}
 	base, err := authentication.Prepare(t.Context(), e, state)
 	if err != nil {
@@ -118,7 +120,7 @@ func TestWriterFillsPartialInternalTailBeforeAppend(t *testing.T) {
 	}
 	for _, count := range []uint64{510, 511} {
 		if count > uint64(len(state.Entries)) {
-			state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(count - 1), Target: cid.MustParse("bafkqaaa")})
+			state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(count - 1), Target: cid.MustParse("bafkqaaa")})
 		}
 		state.TotalSize = count * 8
 		w, err = w.Update(t.Context(), state)
@@ -137,12 +139,12 @@ func TestWriterFillsPartialInternalTailBeforeAppend(t *testing.T) {
 
 func TestWriterMeasuredPartialTailAtUint64Boundary(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 1 << 63, TotalSize: 1 << 63, Entries: []engine.Entry{{Input: input.IndexValue(0), Target: cid.MustParse("bafkqaaa")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 1 << 63, TotalSize: 1 << 63, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 	base, err := authentication.Prepare(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
 	}
-	state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(1), Target: cid.MustParse("bafkqaaa")})
+	state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(1), Target: cid.MustParse("bafkqaaa")})
 	state.TotalSize++
 	next, err := authentication.PrepareUpdate(t.Context(), e, base, state)
 	if err != nil {

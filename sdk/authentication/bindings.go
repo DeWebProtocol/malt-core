@@ -8,7 +8,7 @@ import (
 	"math/bits"
 
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
-	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/engine"
 )
 
 // bindingNode is an immutable compressed binary trie over authentication
@@ -18,13 +18,13 @@ type bindingNode struct {
 	maximum     [33]byte
 	key         [33]byte
 	entry       engine.Entry
-	coordinate  coordinate.Value
+	coordinate  coordinate.Coordinate
 	left, right *bindingNode
 	bit         int
 	size        uint64
 }
 
-func bindingKey(c coordinate.Value) (k [33]byte) {
+func bindingKey(c coordinate.Coordinate) (k [33]byte) {
 	if c.Kind == coordinate.Index {
 		k[0] = 1
 		binary.BigEndian.PutUint64(k[25:], c.Index)
@@ -50,9 +50,9 @@ func bindingGet(n *bindingNode, k [33]byte) *bindingNode {
 func branch(bit int, left, right *bindingNode) *bindingNode {
 	return &bindingNode{charge: 256 + left.charge + right.charge, key: left.key, maximum: right.maximum, bit: bit, left: left, right: right, size: left.size + right.size}
 }
-func bindingSet(n *bindingNode, c coordinate.Value, entry engine.Entry) *bindingNode {
-	entry.Input.Data = bytes.Clone(entry.Input.Data)
-	leaf := &bindingNode{charge: uint64(256 + len(entry.Input.Data)*2 + len(entry.Target.Bytes())*2), key: bindingKey(c), maximum: bindingKey(c), coordinate: c, entry: entry, size: 1}
+func bindingSet(n *bindingNode, c coordinate.Coordinate, entry engine.Entry) *bindingNode {
+	entry.Label = bytes.Clone(entry.Label)
+	leaf := &bindingNode{charge: uint64(256 + len(entry.Label)*2 + len(entry.Target.Bytes())*2), key: bindingKey(c), maximum: bindingKey(c), coordinate: c, entry: entry, size: 1}
 	if n == nil {
 		return leaf
 	}

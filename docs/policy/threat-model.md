@@ -3,7 +3,7 @@
 The trusted inputs are the caller-selected complete Root and intended typed
 query. The executor, materializer, cache, network, response, and payload source
 are untrusted. The local verifier uses installed exact cryptographic profiles
-and deterministic input rules, with no network or storage lookup.
+and deterministic derivation profiles, with no network or storage lookup.
 
 ## Query attacks
 
@@ -27,7 +27,7 @@ application default overrides that identity.
 ## Materialization and writers
 
 External complete candidates undergo Root-bound validation, including closed
-reachable node sets and original input interpretation. Untrusted node storage
+reachable node sets and original coordinate derivation. Untrusted node storage
 cannot grant ownership or bypass cryptographic checks. Owned immutable nodes
 may be reused only through the tree's internal construction capability.
 Session limits bound retained candidate count and conservative state charge;

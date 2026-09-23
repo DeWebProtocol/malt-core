@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.0.10-rc.1
+
+- Move label derivation outside authentication into `derivation`, and move
+  label-aware composition from `auth/engine` to `engine`.
+- Replace typed input unions with opaque labels; expose `coordinate.Coordinate`
+  and canonical 32-byte key / eight-byte big-endian index encoding helpers.
+- Add immutable Direct (3) and SHA256 (4) profiles; remove mutable derivation
+  registration and Core-owned UnixFS/system-payload interpretation.
+- Publish candidate `/2`, query `/3`, delta/batch/receipt `/1`, and conformance
+  `/2` contracts. Root V remains 0; retired inputs and profiles are rejected.
+- Retain original label–target bindings for reconstruction; authentication
+  consumes coordinates and verifies against the caller-selected complete Root.
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).

@@ -4,10 +4,22 @@
   "title": "MALT Diagnostic Verification Result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["profile", "valid"],
+  "required": [
+    "profile",
+    "valid"
+  ],
   "properties": {
-    "profile": {"enum": ["malt.resolve/v0alpha1", "malt.read/v0alpha1"]},
-    "valid": {"type": "boolean"},
-    "error": {"type": "string"}
+    "profile": {
+      "enum": [
+        "malt.resolve/v0alpha1",
+        "malt.read/v0alpha1"
+      ]
+    },
+    "valid": {
+      "type": "boolean"
+    },
+    "error": {
+      "type": "string"
+    }
   }
 }

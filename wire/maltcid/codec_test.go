@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
@@ -16,9 +17,9 @@ func TestCurrentRootClassification(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			d := maltcid.RootDescriptor{Layout: layout, Profile: profile}
+			d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: layout, Profile: profile}
 			if layout == maltcid.Prefix {
-				d.InputRule = 1
+				d.DerivationProfile = uint8(derivation.SHA256)
 			}
 			size := maltcid.KZGCommitmentSize
 			if profile == maltcid.IPA256 {

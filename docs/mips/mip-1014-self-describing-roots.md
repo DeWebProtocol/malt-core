@@ -52,9 +52,10 @@ and the required primitive verification rules. Cell to scalar conversion
 needs a fixed owner. Runtime-only MSM/precomputation choices must not allocate
 different cryptographic profiles.
 
-The implementation fixes native keys at 32 bytes, uses tagged input values,
-keeps system bindings exclusively in Prefix, and gives internal nodes
-AA-independent identities. Exact multicommitment framing and rule IDs are
+The implementation fixes native keys at 32 bytes and indices at eight canonical
+big-endian bytes. Opaque labels are derived outside auth using Direct (3) or
+SHA256 (4); payload and UnixFS conventions belong to applications. Internal
+nodes have derivation-independent identities. Exact multicommitment framing and rule IDs are
 recorded in the reference specification. Future normative definitions belong in
 [the reference specifications](../spec/README.md), with executable schemas
 and conformance vectors in this repository.
@@ -96,8 +97,7 @@ Roots remain operational outputs, not portable transition proofs.
 
 ## Implementation Plan
 
-The maintainer authorized implementation after fixing the input/selector and
-Prefix-only system-binding decisions. The following boundaries guide review
+The maintainer authorized the opaque-label coordinate-derivation refactor. The following boundaries guide review
 of the experimental change; they are not a production-readiness declaration.
 
 | Candidate boundary | Current Core touchpoints | Necessary evidence |

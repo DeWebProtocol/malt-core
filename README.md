@@ -5,7 +5,7 @@
 
 MALT Core authenticates typed relations under a caller-selected Root. Payload
 bytes stay in ordinary content-addressed storage. This repository owns the
-coordinate-based authentication tree, typed input rules, explicit graph
+coordinate-based authentication tree, coordinate derivation, explicit graph
 traversal, local verification, and immutable candidate writers.
 
 ```text
@@ -21,8 +21,8 @@ Start with [authentication inputs and Roots](docs/spec/authentication-inputs.md)
 ## Current source API
 
 `auth/tree` implements Prefix and Positional layouts over coordinates.
-`auth/input` interprets labels, native keys, indices, and system selectors.
-`auth/engine` combines those layers with an exact commitment profile.
+`derivation.Derive` converts opaque label bytes using Direct or SHA256.
+`engine` combines those layers with an exact commitment profile.
 `sdk/authentication` constructs, queries, verifies, and updates this state;
 `traversal` composes explicit steps across Roots.
 
@@ -34,8 +34,8 @@ profiles; writers inject the capabilities they need. See the
 
 The old Map/List adapters, string resolver, Resolve/Read and Map-proof
 contracts, module-root forwarding API, and client-root writer are removed.
-There is one typed query profile, `malt.authentication/1`. Complete candidates
-use the separate `malt.authentication/0` profile. Root encoding remains
+There is one typed query profile, `malt.authentication/3`. Complete candidates
+use the separate `malt.authentication/2` profile. Root encoding remains
 self-describing `V=0` under the [Root version policy](docs/policy/root-versioning.md).
 
 For local verification, construct the request independently of the response:
@@ -46,7 +46,7 @@ import (
     "github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
 )
 
-engine, err := builtin.NewVerifier(nil) // built-in KZG and IPA verification profiles
+engine, err := builtin.NewVerifier() // built-in KZG and IPA verification profiles
 if err != nil {
     return err
 }
@@ -67,9 +67,9 @@ retained local state, not a portable state-transition proof.
 
 | Package | Responsibility |
 | --- | --- |
-| `auth/coordinate`, `auth/input` | Coordinates and deterministic typed input rules |
+| `auth/coordinate`, `derivation` | Coordinates and deterministic coordinate derivation |
 | `auth/tree` | Prefix/Positional construction, updates, binding/range proofs |
-| `auth/engine` | Root descriptor, input interpretation, exact backend selection |
+| `engine` | Root descriptor, coordinate derivation, exact backend selection |
 | `auth/commitment` | KZG and IPA primitives |
 | `auth/arcset/materializer` | Narrow injected node lookup/update/snapshot capabilities |
 | `traversal` | Explicit traversal across authenticated Roots |

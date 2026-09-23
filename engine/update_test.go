@@ -7,8 +7,9 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
+	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -31,13 +32,13 @@ func TestPrefixBatchCopiesPathsAndValidatesBeforeWriting(t *testing.T) {
 	ctx := context.Background()
 	e, base := setup(t, maltcid.IPA256)
 	nodes := &countedNodes{Nodes: base}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
 	for i := 0; i < 256; i++ {
 		for j := 0; j < 2; j++ {
 			var key [32]byte
 			key[0] = byte(i)
 			key[1] = byte(j)
-			state.Entries = append(state.Entries, engine.Entry{Input: input.KeyValue(key), Target: target(fmt.Sprint(i, j))})
+			state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeKey(key), Target: target(fmt.Sprint(i, j))})
 		}
 	}
 	root, err := e.Build(ctx, state, nodes)
@@ -46,7 +47,7 @@ func TestPrefixBatchCopiesPathsAndValidatesBeforeWriting(t *testing.T) {
 	}
 	nodes.reads = 0
 	nodes.writes = 0
-	changes := []engine.Change{{Input: state.Entries[0].Input, Before: state.Entries[0].Target, After: target("new")}, {Input: state.Entries[1].Input, Before: state.Entries[1].Target}}
+	changes := []engine.Change{{Label: state.Entries[0].Label, Before: state.Entries[0].Target, After: target("new")}, {Label: state.Entries[1].Label, Before: state.Entries[1].Target}}
 	next, err := e.Apply(ctx, root, changes, nodes, nodes)
 	if err != nil {
 		t.Fatal(err)
@@ -74,9 +75,9 @@ func TestPositionalPathUpdatesMatchRebuildAndRange(t *testing.T) {
 	ctx := context.Background()
 	e, base := setup(t, maltcid.IPA256)
 	nodes := &countedNodes{Nodes: base}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
 	for i := 0; i < 255; i++ {
-		state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(uint64(i)), Target: target(fmt.Sprint(i))})
+		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target(fmt.Sprint(i))})
 	}
 	root, err := e.Build(ctx, state, nodes)
 	if err != nil {
@@ -93,14 +94,14 @@ func TestPositionalPathUpdatesMatchRebuildAndRange(t *testing.T) {
 		if nodes.reads > 2 || nodes.writes > 2 {
 			t.Fatal("append rebuilt unchanged sequence")
 		}
-		state.Entries = append(state.Entries, engine.Entry{Input: input.IndexValue(uint64(i)), Target: v})
+		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: v})
 		expected, err := e.Build(ctx, state, memory.NewNodes())
 		if err != nil || !next.Equals(expected) {
 			t.Fatalf("append rebuild %d: %v", i, err)
 		}
 		root = next
 	}
-	next, err := e.Apply(ctx, root, []engine.Change{{Input: input.IndexValue(256), Before: state.Entries[256].Target, After: target("replace")}}, nodes, nodes)
+	next, err := e.Apply(ctx, root, []engine.Change{{Label: coordinate.EncodeIndex(256), Before: state.Entries[256].Target, After: target("replace")}}, nodes, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +125,7 @@ func TestPositionalPathUpdatesMatchRebuildAndRange(t *testing.T) {
 	}
 	state.ChunkSize = 4
 	state.TotalSize = 8
-	state.Entries = []engine.Entry{{Input: input.IndexValue(0), Target: target("first")}, {Input: input.IndexValue(1), Target: target("second")}}
+	state.Entries = []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: target("first")}, {Label: coordinate.EncodeIndex(1), Target: target("second")}}
 	root, err = e.Build(ctx, state, nodes)
 	if err != nil {
 		t.Fatal(err)

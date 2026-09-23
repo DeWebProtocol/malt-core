@@ -5,13 +5,12 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/input"
 	"github.com/dewebprotocol/malt-core/auth/tree"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 
-func (e *Engine) Prove(ctx context.Context, root cid.Cid, query input.Value, source materializer.NodeLookup) (Result, error) {
+func (e *Engine) Prove(ctx context.Context, root cid.Cid, query []byte, source materializer.NodeLookup) (Result, error) {
 	if err := e.CheckRoot(root); err != nil {
 		return Result{}, err
 	}
@@ -22,7 +21,7 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query input.Value, sou
 	}
 	return e.Tree.Prove(ctx, root, k, source)
 }
-func (e *Engine) Verify(root cid.Cid, query input.Value, result Result) (bool, error) {
+func (e *Engine) Verify(root cid.Cid, query []byte, result Result) (bool, error) {
 	if err := e.CheckRoot(root); err != nil {
 		return false, err
 	}
@@ -40,7 +39,7 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 	d, _, _ := maltcid.ParseRoot(root)
 	derived := make([]tree.Change, len(changes))
 	for i, c := range changes {
-		k, err := e.coordinate(d, c.Input)
+		k, err := e.coordinate(d, c.Label)
 		if err != nil {
 			return cid.Undef, err
 		}

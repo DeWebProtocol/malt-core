@@ -10,7 +10,7 @@ import (
 	"errors"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
-	"github.com/dewebprotocol/malt-core/auth/engine"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/traversal"
 	cid "github.com/ipfs/go-cid"
@@ -55,7 +55,7 @@ func ExecuteWithRoots(ctx context.Context, e *engine.Engine, q protocol.Authenti
 	}
 	switch q.Operation {
 	case "binding":
-		r, err := e.Prove(ctx, current, *q.Input, source)
+		r, err := e.Prove(ctx, current, *q.Label, source)
 		if err != nil {
 			return protocol.AuthenticationResult{}, err
 		}
@@ -102,7 +102,7 @@ func Verify(e *engine.Engine, q protocol.AuthenticationRequest, result protocol.
 		if result.Binding == nil || result.Range != nil {
 			return false, nil
 		}
-		return e.Verify(resolved, *q.Input, *result.Binding)
+		return e.Verify(resolved, *q.Label, *result.Binding)
 	case "range":
 		if result.Range == nil || result.Binding != nil {
 			return false, nil

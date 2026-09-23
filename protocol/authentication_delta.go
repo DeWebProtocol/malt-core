@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/engine"
 	cid "github.com/ipfs/go-cid"
 )
 
-const AuthenticationDeltaProfile = "malt.authentication-delta/0"
+const AuthenticationDeltaProfile = "malt.authentication-delta/1"
 
 const MaxAuthenticationChanges = 1 << 20
 
@@ -22,9 +21,9 @@ type AuthenticationDelta struct {
 	TotalSize *uint64                `json:"total_size,omitempty,string"`
 }
 type AuthenticationChange struct {
-	Input  input.Value `json:"input"`
-	Before *string     `json:"before,omitempty"`
-	After  *string     `json:"after,omitempty"`
+	Label  []byte  `json:"label"`
+	Before *string `json:"before,omitempty"`
+	After  *string `json:"after,omitempty"`
 }
 
 func DecodeAuthenticationDelta(data []byte) (AuthenticationDelta, error) {
@@ -44,13 +43,13 @@ func (d AuthenticationDelta) CoreChanges() ([]engine.Change, error) {
 	}
 	changes := make([]engine.Change, len(d.Changes))
 	for i, c := range d.Changes {
-		if err := c.Input.Validate(); err != nil {
-			return nil, err
+		if c.Label == nil {
+			return nil, errors.New("label is required")
 		}
 		if c.Before == nil && c.After == nil {
 			return nil, errors.New("empty authentication change")
 		}
-		changes[i].Input = c.Input
+		changes[i].Label = c.Label
 		for j, raw := range []*string{c.Before, c.After} {
 			if raw == nil {
 				continue

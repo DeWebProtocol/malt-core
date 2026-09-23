@@ -7,9 +7,9 @@ import (
 	"sort"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/auth/tree"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
@@ -115,7 +115,7 @@ func (w *Writer) exportState(ctx context.Context) (engine.State, error) {
 	state.Entries = []engine.Entry{}
 	err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {
 		entry := n.entry
-		entry.Input.Data = bytes.Clone(entry.Input.Data)
+		entry.Label = bytes.Clone(entry.Label)
 		state.Entries = append(state.Entries, entry)
 		return nil
 	})
@@ -125,7 +125,7 @@ func (w *Writer) exportState(ctx context.Context) (engine.State, error) {
 func cloneState(state engine.State) engine.State {
 	state.Entries = append([]engine.Entry{}, state.Entries...)
 	for i := range state.Entries {
-		state.Entries[i].Input.Data = bytes.Clone(state.Entries[i].Input.Data)
+		state.Entries[i].Label = bytes.Clone(state.Entries[i].Label)
 	}
 	return state
 }
@@ -185,7 +185,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 	if err != nil {
 		return nil, err
 	}
-	desired := make(map[input.Coordinate]bool, len(view.Bindings))
+	desired := make(map[coordinate.Coordinate]bool, len(view.Bindings))
 	delta := Delta{}
 	for i, b := range view.Bindings {
 		if err := ctx.Err(); err != nil {
@@ -200,10 +200,10 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		desired[b.Coordinate] = true
 		old := bindingGet(w.bindings, bindingKey(b.Coordinate))
 		entry := state.Entries[i]
-		if old != nil && old.entry.Target.Equals(b.Target) && old.entry.Input.Kind == entry.Input.Kind && old.entry.Input.Number == entry.Input.Number && bytes.Equal(old.entry.Input.Data, entry.Input.Data) {
+		if old != nil && old.entry.Target.Equals(b.Target) && bytes.Equal(old.entry.Label, entry.Label) {
 			continue
 		}
-		change := engine.Change{Input: entry.Input, After: b.Target}
+		change := engine.Change{Label: entry.Label, After: b.Target}
 		if old != nil {
 			change.Before = old.entry.Target
 		}
@@ -215,7 +215,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		}
 		if err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {
 			if !desired[n.coordinate] {
-				delta.Changes = append(delta.Changes, engine.Change{Input: n.entry.Input, Before: n.entry.Target})
+				delta.Changes = append(delta.Changes, engine.Change{Label: n.entry.Label, Before: n.entry.Target})
 			}
 			return nil
 		}); err != nil {
@@ -225,7 +225,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		count := uint64(len(state.Entries))
 		delta.Count = &count
 		for i := uint64(0); i < count; i++ {
-			if !desired[input.Coordinate{Kind: input.Index, Index: i}] {
+			if !desired[coordinate.Coordinate{Kind: coordinate.Index, Index: i}] {
 				return nil, errors.New("Positional inputs must be contiguous")
 			}
 		}

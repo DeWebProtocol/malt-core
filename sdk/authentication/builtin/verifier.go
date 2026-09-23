@@ -8,18 +8,14 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
-	"github.com/dewebprotocol/malt-core/auth/engine"
-	"github.com/dewebprotocol/malt-core/auth/input"
+	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
-// NewVerifier installs exact verification-only profiles and the given input
-// registry. Nil rules selects the built-in rules. No profiles means both
-// built-in VC profiles. It performs no network lookup or mutable resolution.
-func NewVerifier(rules *input.Registry, profiles ...maltcid.ProfileID) (*engine.Engine, error) {
-	if rules == nil {
-		rules = input.DefaultRegistry()
-	}
+// NewVerifier installs exact verification-only profiles. With no arguments it
+// installs both built-in VC profiles. It performs no network lookup or mutable
+// resolution.
+func NewVerifier(profiles ...maltcid.ProfileID) (*engine.Engine, error) {
 	if len(profiles) == 0 {
 		profiles = []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256}
 	}
@@ -42,5 +38,5 @@ func NewVerifier(rules *input.Registry, profiles ...maltcid.ProfileID) (*engine.
 			return nil, err
 		}
 	}
-	return engine.New(rules, registry), nil
+	return engine.New(registry), nil
 }
