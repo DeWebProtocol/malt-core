@@ -25,7 +25,8 @@ Roots. Source callers must adopt these contracts before old entrypoints are
 removed. Published dependency locks, release assets, deployment, and trusted-
 root acceptance remain separate actions.
 
-The current corpus is authentication/1. Release metadata moves to
-`malt.wasm-release/v2`, `malt.web-verifier.provenance/v2`, and
-`malt.web-writer.provenance/v4`, binding only the current corpus and ABI. These
-source changes do not claim that any new package or release has been published.
+The current portable corpus is authentication/1. Browser ABI, provenance,
+and WASM release manifests are owned by `malt-ts`; see
+[WASM ownership](wasm-ownership.md). Core publishes source and conformance data.
+Each browser package must bind an exact published Core tag, source commit, and
+module checksums. Source changes alone do not publish or update that package.
