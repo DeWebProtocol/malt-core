@@ -122,11 +122,16 @@ func (w *Writer) exportState(ctx context.Context) (engine.State, error) {
 	return state, err
 }
 
-func cloneCandidate(c protocol.AuthenticationCandidate) protocol.AuthenticationCandidate {
-	c.State.Entries = append([]engine.Entry{}, c.State.Entries...)
-	for i := range c.State.Entries {
-		c.State.Entries[i].Input.Data = append([]byte(nil), c.State.Entries[i].Input.Data...)
+func cloneState(state engine.State) engine.State {
+	state.Entries = append([]engine.Entry{}, state.Entries...)
+	for i := range state.Entries {
+		state.Entries[i].Input.Data = bytes.Clone(state.Entries[i].Input.Data)
 	}
+	return state
+}
+
+func cloneCandidate(c protocol.AuthenticationCandidate) protocol.AuthenticationCandidate {
+	c.State = cloneState(c.State)
 	c.Nodes = append([]protocol.AuthenticationNode{}, c.Nodes...)
 	for i := range c.Nodes {
 		c.Nodes[i].Reference = append([]byte(nil), c.Nodes[i].Reference...)

@@ -11,7 +11,7 @@ import (
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
-// proofWork belongs to one binding/range query. It loads each touched vector
+// proofWork belongs to one binding/range query or snapshot. It loads each touched vector
 // once and reuses its auxiliary opening material and verified index evidence.
 // Nothing survives the call or changes the caller's storage/cache policy.
 type proofWork struct {

@@ -31,6 +31,9 @@ both the input index and authentication DAG, and shares unchanged descendants.
 The resulting writer retains no parent writer or obsolete ancestor chain.
 `Writer.Update` scans complete desired inputs and compiles them to the same delta
 path; callers that already know their changes use `Apply` to avoid that scan.
+Positional growth uses `AppendBatch` to commit each changed or new node once
+for the whole suffix, including growth across multiple tree levels. Mixed
+replacement or measured-tail changes run before that suffix edit.
 
 `Writer.Root` returns the candidate identity without exporting state.
 `Writer.Export` explicitly traverses and copies complete inputs and nodes.
@@ -40,7 +43,13 @@ imports and external node writes still validate commitments; newly constructed
 nodes are retained only through the tree's private computed-node path. Wrapping
 an owned materializer does not grant this private capability. External readers
 and writers receive detached node references and cannot mutate the commitment
-being constructed or verified.
+being constructed or verified. Stateless `authentication.Export` also copies
+retained inputs, so the returned candidate does not alias caller-owned state.
+
+A bounded snapshot verifies each distinct physical vector once per call.
+Repeated references still undergo metadata and routing checks, and each logical
+binding counts toward the expansion limit. No verification cache survives the
+snapshot call.
 
 An `authentication.Session` retains bounded immutable branches. Its defaults are
 64 handles and a 64 MiB conservative state charge. Shared descendants count at

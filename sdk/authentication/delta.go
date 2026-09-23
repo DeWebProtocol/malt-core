@@ -9,6 +9,7 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/auth/engine"
 	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	cid "github.com/ipfs/go-cid"
 )
 
 // Delta changes typed relations in an already verified retained ArcSet. Count
@@ -127,7 +128,8 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 			}
 			root, err = w.engine.ResizeMeasured(ctx, root, oldCount, oldCount*meta.ChunkSize, nodes, nodes)
 		}
-		for i := oldCount; err == nil && i < count; i++ {
+		targets := make([]cid.Cid, 0, count-oldCount)
+		for i := oldCount; i < count; i++ {
 			if err := ctx.Err(); err != nil {
 				return nil, err
 			}
@@ -135,15 +137,14 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 			if entry == nil {
 				return nil, errors.New("appended position is missing")
 			}
-			var total *uint64
-			if meta.ChunkSize > 0 {
-				n := meta.TotalSize
-				if i+1 < count {
-					n = (i + 1) * meta.ChunkSize
-				}
-				total = &n
-			}
-			root, _, err = w.engine.Append(ctx, root, entry.entry.Target, total, nodes, nodes)
+			targets = append(targets, entry.entry.Target)
+		}
+		var total *uint64
+		if meta.ChunkSize > 0 {
+			total = &meta.TotalSize
+		}
+		if err == nil {
+			root, _, err = w.engine.AppendBatch(ctx, root, targets, total, nodes, nodes)
 		}
 	}
 	if err != nil {
