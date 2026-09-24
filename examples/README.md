@@ -1,16 +1,17 @@
 # MALT Core examples
 
-Start with **Commit → Prove → Verify**, using one complete program and the same
-Root throughout. From the repository root, with Go 1.26.0 or newer:
+Start with **Commit → Prove → Update → Verify**, using one complete program.
+Keep the original Root and the new Root distinct when verifying their results.
+From the repository root, with Go 1.26.0 or newer:
 
 ```bash
 go run ./examples/basic
 ```
 
 [Complete source](basic/main.go). It commits two labeled entries, proves a
-lookup for `report.txt`, and verifies the returned target. The excerpts below
-are successive sections of that program; its engine setup and input data are
-included in the source. SDK query envelopes, serialization, and retained writers
+lookup for `report.txt`, creates an updated version, and verifies both targets.
+The excerpts below are successive sections of that program; its engine setup and
+input data are included in the source. SDK query envelopes, serialization, and retained writers
 are introduced in later examples.
 
 ## 1. Commit structured data
@@ -54,10 +55,32 @@ if err != nil {
 evidence. `result.Present` distinguishes a present binding from an absence
 result. These fields become trustworthy only after verification.
 
-## 3. Verify the result
+## 3. Update the collection
 
-Create a separate verification-only engine, then check the result against the
-original Root and label:
+Compute `replacement`, the CID of the revised report, as shown in the complete
+source. Apply that change and prove the same lookup at the new Root:
+
+```go
+updatedRoot, err := e.Apply(ctx, root, []engine.Change{{
+    Label: label, Before: state.Entries[0].Target, After: replacement,
+}}, nodes, nodes)
+if err != nil {
+    return err
+}
+updatedResult, err := e.Prove(ctx, updatedRoot, label, nodes)
+if err != nil {
+    return err
+}
+```
+
+`Before` is the expected target from the application's original data. `Apply`
+returns a new Root while preserving the original nodes; it does not modify
+`state` or retain the application's new labels and payloads for it.
+
+## 4. Verify the results
+
+Create a separate verification-only engine, then check each result against its
+Root and the original label:
 
 ```go
 verifier, err := builtin.NewVerifier(maltcid.IPA256)
@@ -68,38 +91,46 @@ valid, err := verifier.Verify(root, label, result)
 if err != nil {
     return err
 }
-if !valid {
-    return fmt.Errorf("invalid proof")
+if !valid || !result.Present {
+    return fmt.Errorf("invalid original binding")
 }
-if !result.Present {
-    return fmt.Errorf("expected report.txt to be present")
+updatedValid, err := verifier.Verify(updatedRoot, label, updatedResult)
+if err != nil {
+    return err
+}
+if !updatedValid || !updatedResult.Present {
+    return fmt.Errorf("invalid updated binding")
 }
 ```
 
 Verification needs neither the original collection nor the prover's node
-lookup. This example selects the Root it constructed locally. A real client
+lookup. This example selects both Roots it constructed locally. A real client
 must select its trusted Root and query independently of the prover's response.
+These checks authenticate each state separately; they do not establish that a
+state transition was authorized.
 Verifying a binding authenticates a target CID; checking fetched payload bytes
 is a separate application step demonstrated by the range and SDK query examples.
 
-Expected output, in Commit/Prove/Verify order:
+Expected output, in Commit/Prove/Update/Verify order:
 
 ```text
 Commit: Root = bagcifqabaaraeibt34j4shbv7zz32u3thgnsxlujdur6r3kv6qpw3vxjzntaaoqbde
 Prove: target = bafkreihxr4h2utl76gyfnxqhmfucmhrzctzxfz4n7jjxohbhag6ip5jtlm; evidence ready
-Verify: valid
+Update: a new Root created; original Root preserved
+Verify: original and updated targets verified
 ```
 
 The remaining examples extend this flow. Every directory contains a complete
 program with imports, configuration, input data, and error handling.
 
-## 4. Traverse several Roots
+## 5. Traverse several Roots
 
 ```bash
 go run ./examples/traversal
 ```
 
-[Source](traversal/main.go). Apply the same three stages to two composed ArcSets:
+[Source](traversal/main.go). Extend the Commit/Prove/Verify steps to two
+composed ArcSets:
 
 1. **Commit:** commit the child, then commit the parent with a link to that
    child's complete Root.
@@ -125,7 +156,7 @@ Verify: docs -> report.txt -> content CID
 Missing second step verified; suffix not evaluated
 ```
 
-## 5. Prove a byte range
+## 6. Prove a byte range
 
 ```bash
 go run ./examples/range
@@ -156,14 +187,15 @@ Range proof and all segment CIDs verified
 Bytes [3,9): lo wor
 ```
 
-## 6. Use the SDK query contract
+## 7. Use the SDK query contract
 
 ```bash
 go run ./examples/query
 ```
 
-[Source](query/main.go). After the direct Commit/Prove/Verify walkthrough, this
-example introduces complete candidates and serialized query responses:
+[Source](query/main.go). After the direct Commit/Prove/Update/Verify
+walkthrough, this example introduces complete candidates and serialized query
+responses:
 
 - `authentication.Prepare` builds and exports a candidate;
   `Materialize` validates and imports its nodes.
@@ -184,7 +216,7 @@ Absence verified: missing.txt
 Tampered target rejected
 ```
 
-## 7. Retain state across updates
+## 8. Retain state across updates
 
 ```bash
 go run ./examples/update

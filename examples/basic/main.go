@@ -1,4 +1,4 @@
-// Command basic demonstrates Commit, then Prove, then Verify.
+// Command basic demonstrates Commit, Prove, Update, and Verify.
 package main
 
 import (
@@ -75,7 +75,28 @@ func run() error {
 	}
 	fmt.Printf("Prove: target = %s; evidence ready\n", result.Target)
 
-	// 3. Verify: a separate verification-only engine checks the original Root
+	// 3. Update: replace the report's target while preserving the original Root.
+	// Before comes from the locally committed data, not the unverified result.
+	replacement, err := (cid.Prefix{Version: 1, Codec: cid.Raw, MhType: mh.SHA2_256, MhLength: -1}).Sum([]byte("An updated report."))
+	if err != nil {
+		return err
+	}
+	updatedRoot, err := e.Apply(ctx, root, []engine.Change{{
+		Label: label, Before: state.Entries[0].Target, After: replacement,
+	}}, nodes, nodes)
+	if err != nil {
+		return err
+	}
+	updatedResult, err := e.Prove(ctx, updatedRoot, label, nodes)
+	if err != nil {
+		return err
+	}
+	if updatedRoot.Equals(root) {
+		return fmt.Errorf("expected a new Root for the changed report")
+	}
+	fmt.Println("Update: a new Root created; original Root preserved")
+
+	// 4. Verify: a separate verification-only engine checks the original Root
 	// and path against the result. It needs neither state nor nodes.
 	// This demo trusts the Root it built locally; a real client selects its
 	// trusted Root independently of an untrusted prover's response.
@@ -87,12 +108,19 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	if !valid {
-		return fmt.Errorf("invalid proof")
+	if !valid || !result.Present {
+		return fmt.Errorf("invalid original binding")
 	}
-	if !result.Present {
-		return fmt.Errorf("expected report.txt to be present")
+	updatedValid, err := verifier.Verify(updatedRoot, label, updatedResult)
+	if err != nil {
+		return err
 	}
-	fmt.Println("Verify: valid")
+	if !updatedValid || !updatedResult.Present {
+		return fmt.Errorf("invalid updated binding")
+	}
+	if !result.Target.Equals(state.Entries[0].Target) || !updatedResult.Target.Equals(replacement) {
+		return fmt.Errorf("unexpected target at the original or updated Root")
+	}
+	fmt.Println("Verify: original and updated targets verified")
 	return nil
 }

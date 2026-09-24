@@ -42,9 +42,98 @@ go get github.com/dewebprotocol/malt-core@v0.0.10-rc.2
 For JavaScript or TypeScript, use
 [malt-ts](https://github.com/DeWebProtocol/malt-ts).
 
-## Try the examples
+## Quick start
 
-Clone the repository and run the first example:
+The following snippets show **Commit → Prove → Update → Verify** using the same
+collection. They are excerpts from the
+[complete example](examples/basic/main.go), in execution order.
+Its setup creates `e` (a MALT engine) and `state` (two labeled entries pointing
+to content CIDs), with `report.txt` as the first entry. Each snippet runs inside
+a function returning an error.
+
+### Commit
+
+Commit the collection to a Root. Keep `nodes` available for subsequent queries
+and updates:
+
+```go
+view, err := e.Interpret(state)
+if err != nil {
+    return err
+}
+nodes := memory.NewNodes()
+root, err := e.Commit(ctx, view, nodes)
+if err != nil {
+    return err
+}
+```
+
+### Prove
+
+Query `report.txt`, a one-step traversal path from the Root. The result contains
+both the target and its verification evidence:
+
+```go
+label := []byte("report.txt")
+result, err := e.Prove(ctx, root, label, nodes)
+if err != nil {
+    return err
+}
+```
+
+### Update
+
+Replace that entry with `replacement`, the CID of the revised content.
+`Apply` checks the expected previous target and returns a new Root; the original
+Root remains available:
+
+```go
+updatedRoot, err := e.Apply(ctx, root, []engine.Change{{
+    Label: label, Before: state.Entries[0].Target, After: replacement,
+}}, nodes, nodes)
+if err != nil {
+    return err
+}
+updatedResult, err := e.Prove(ctx, updatedRoot, label, nodes)
+if err != nil {
+    return err
+}
+```
+
+Here `Before` comes from the application's original data. `replacement` is
+computed from the new content in the complete example.
+
+### Verify
+
+Use a separate verifier to check each result against its selected Root and
+query. Verification needs neither the original collection nor `nodes`:
+
+```go
+verifier, err := builtin.NewVerifier(maltcid.IPA256)
+if err != nil {
+    return err
+}
+valid, err := verifier.Verify(root, label, result)
+if err != nil {
+    return err
+}
+if !valid || !result.Present {
+    return fmt.Errorf("invalid original binding")
+}
+updatedValid, err := verifier.Verify(updatedRoot, label, updatedResult)
+if err != nil {
+    return err
+}
+if !updatedValid || !updatedResult.Present {
+    return fmt.Errorf("invalid updated binding")
+}
+```
+
+After these checks, `result.Target` and `updatedResult.Target` are verified at
+their respective Roots. In this example both Roots are constructed locally;
+a client selects its trusted Root and query independently of a query response.
+
+Run the complete program, including imports, setup, and sample data:
 
 ```bash
 git clone https://github.com/DeWebProtocol/malt-core.git
@@ -52,22 +141,8 @@ cd malt-core
 go run ./examples/basic
 ```
 
-Start by committing data to a Root, then producing evidence for a lookup, and
-finally verifying the target. The first example demonstrates these three steps
-in order. Each example is a complete program you can read, run, and adapt.
-
-Run these commands from the repository root:
-
-| Command | What you will learn |
-| --- | --- |
-| `go run ./examples/basic` | Commit data, prove a lookup, then verify the target |
-| `go run ./examples/traversal` | Follow and verify a chain of relationships |
-| `go run ./examples/range` | Verify and assemble a partial read |
-| `go run ./examples/query` | Handle a query response, missing entries, and altered answers |
-| `go run ./examples/update` | Update data and verify both the old and new versions |
-
-The [examples guide](examples/README.md) explains each program and shows its
-expected output.
+See the [examples guide](examples/README.md) for traversal through several
+Roots, partial reads, serialized queries, and retained writers.
 
 ## Further reading
 
