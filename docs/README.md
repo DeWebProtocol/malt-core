@@ -10,6 +10,7 @@ independent `malt.authentication/2` profile. The
 [typed migration](changes/typed-authentication-only.md) records the removal of
 superseded APIs. Historical releases and MIPs retain their original meaning.
 
+- [Runnable Go examples](../examples/README.md)
 - [Concepts](concepts/README.md)
 - [Compatibility policy](policy/compatibility.md)
 - [Threat model](policy/threat-model.md)

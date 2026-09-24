@@ -84,3 +84,20 @@ jobs:
 
       - name: Build SDK packages
         run: make build
+
+      - name: Run public API examples without CGO
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go run -p=6 ./examples/binding
+          go run -p=6 ./examples/traversal
+          go run -p=6 ./examples/range
+          go run -p=6 ./examples/update
+
+      - name: Cross-build examples for macOS and Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          for target in darwin/amd64 darwin/arm64 windows/amd64; do
+            GOOS="${target%/*}" GOARCH="${target#*/}" CGO_ENABLED=0 go build -p=6 ./examples/...
+          done

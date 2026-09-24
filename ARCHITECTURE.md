@@ -11,7 +11,8 @@ derivation -> auth/coordinate -> auth/tree -> auth/commitment
                     engine binds coordinate derivation to the Root
                     traversal composes explicit steps across Roots
                     sdk/authentication supplies queries and retained writers
-                    protocol / wire define their serialized contracts
+                    protocol defines serialized operation contracts
+                    maltcid defines Root and node identity encodings
 ```
 
 `auth/tree` owns canonical Prefix/Positional node construction, affected-path
