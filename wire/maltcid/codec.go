@@ -58,9 +58,15 @@ func GetMaltCodec(c cid.Cid) uint64 {
 	return 0
 }
 func ExtractCommitment(c cid.Cid) ([]byte, error) { _, data, err := ParseRoot(c); return data, err }
+
+// CodecName describes the version, authentication layout and derivation ID.
+// Like Root parsing, naming an ID does not claim its derivation is installed.
 func CodecName(codec uint64) string {
-	if codec >= 0x300100 && codec <= 0x3001ff || codec == 0x300200 {
-		return fmt.Sprintf("malt-v0-layout%d-aa%02x", (codec>>8)&15, codec&255)
+	version := uint8(codec >> 12 & 15)
+	layout := Layout(codec >> 8 & 15)
+	if codec >= codecMaltRootBase && codec <= codecMaltRootMax &&
+		version == RootVersion && (layout == Prefix || layout == Positional) {
+		return fmt.Sprintf("malt-v%d-layout%d-derivation%02x", version, layout, uint8(codec))
 	}
 	return fmt.Sprintf("unknown-%x", codec)
 }

@@ -11,8 +11,8 @@ does not use the Merkle-DAG object chain as the application proof path.
 | Authentication granularity | Parent/child links committed at block boundaries | Typed arcs committed independently from payload blocks |
 | Payload storage | Immutable content-addressed objects | Ordinary immutable CAS payloads |
 | Relationship authentication | Links embedded in parent object content | Typed bindings under Prefix/Positional Roots |
-| Read shape | Traverse linked objects from a root CID | Query `trusted root + typed arc`; layouts may expose paths |
-| Proof material | Traversal objects and sibling or linked evidence | Dedicated typed authentication evidence evidence |
+| Read shape | Traverse linked objects from a root CID | Query `trusted root + typed arc`; application models may expose paths |
+| Proof material | Traversal objects and sibling or linked evidence | Dedicated typed authentication evidence |
 | Trusted components | Traversed content-addressed object chain | Portable auth kernel; indexes and gateways remain untrusted |
 | Network reads | Transport linked blocks or gateway responses | Carry operation-specific result/evidence plus separately fetched CID bytes |
 | Update cost | Child-reference changes can propagate rootward | Structure roots advance without rewriting unrelated payload objects |
@@ -50,7 +50,7 @@ Execute(AuthenticationRequest{Root, Steps, Operation}) -> AuthenticationResult
 ```
 
 The application requests one authenticated relation, and the verifier checks
-the result against the trusted root and query. A layout such as UnixFS can
+the result against the trusted root and query. An application model such as UnixFS can
 compose primitive arc reads into a path without making Unix paths part of the
 generic core.
 

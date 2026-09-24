@@ -27,6 +27,12 @@ There is no string path parser, longest-prefix grouping, inferred backend, or
 implicit terminal selector. Applications choose every step. A full flat path
 can be one AA=4 label; a rooted path supplies separate selectors. The label `@payload` has no special Core meaning.
 
+Applications currently assume a single valid resolution chain. The explicit
+step verifier authenticates the selected chain, not that construction
+assumption. Longest-match may guide an outer traversal search, but these
+proofs do not assert longest-match selection or uniqueness and do not require
+absence proofs for unselected longer labels.
+
 ## Result and verification
 
 A result has the same profile, `resolved`, and ordered `traversal` evidence.

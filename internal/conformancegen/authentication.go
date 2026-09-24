@@ -17,7 +17,7 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// GenerateAuthentication emits current query-profile /1 vectors over V=0
+// GenerateAuthentication emits current authentication query vectors over V=0
 // Roots. Earlier corpus revisions remain immutable in Git history.
 func GenerateAuthentication() ([]byte, error) {
 	type vector struct {

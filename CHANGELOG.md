@@ -20,6 +20,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Recognize current Positional/Direct codecs in `CodecName` and use coordinate
+  derivation terminology in diagnostic names.
+
+### Changed
+
+- Distinguish authentication layout from application ArcSet organization and
+  document the single-path assumption without adding longest-match or
+  uniqueness proof requirements.
+
 ## [0.0.9] - 2026-09-23
 
 ### Changed

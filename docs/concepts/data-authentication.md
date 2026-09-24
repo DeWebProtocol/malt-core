@@ -101,13 +101,13 @@ block boundary:
 
 - payload storage in CAS
 - relation authentication through typed arc commitments and proofs
-- execution and access through layouts, indexes, daemons, gateways, or clients
+- execution and access through application models, indexes, daemons, gateways, or clients
 
 This separation gives MALT four core advantages:
 
 - **Dedicated proof material:** verification uses `ProofList` evidence instead
   of the Merkle-DAG traversal object chain.
-- **Direct application-shaped reads:** clients use typed arc queries; layouts
+- **Direct application-shaped reads:** clients use typed arc queries; application models
   such as UnixFS may compose them into familiar path operations.
 - **Transport-neutral verification:** operation-specific results carry
   ProofList evidence while payload bytes can be fetched from ordinary CAS.

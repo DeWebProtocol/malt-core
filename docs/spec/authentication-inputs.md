@@ -9,7 +9,7 @@ It is independent of CIDv1, package versions and operation-profile suffixes.
 
 ```text
 application label --coordinate derivation--> authentication coordinate
-coordinate bindings --layout + exact VC profile--> commitment
+coordinate bindings --authentication layout + exact VC profile--> commitment
 Root descriptor + commitment --> CIDv1 Root
 ```
 
@@ -43,7 +43,7 @@ decodes the descriptor; an engine additionally requires a supported derivation/l
 and an installed commitment profile. Parsing an unknown AA is not
 permission to execute it. No fallback derivation or backend inference is used.
 
-| L | Layout | Permitted inputs |
+| L | Authentication layout | Permitted inputs |
 | --- | --- | --- |
 | 1 | Prefix | AA-derived 32-byte keys |
 | 2 | Positional | AA=3, unsigned 64-bit indices |
@@ -109,7 +109,12 @@ codec parses profile IDs structurally without importing derivation. `engine`
 checks supported profiles and layout compatibility even for empty state and
 empty traversal. `auth/tree` handles only coordinates, layout and commitments.
 
-## Layout and internal node identity
+## Authentication layout and internal node identity
+
+Prefix and Positional organize coordinate bindings within one authentication
+tree. Flat and compositional ArcSet organization describe how an application
+groups bindings across Roots. That application choice is not a Root field;
+the same ArcSet may be used in either organization or a mixture of them.
 
 Prefix routes over all 256 key bits (12 bits per KZG level, 8 per IPA level;
 the final KZG digit is zero-padded). Terminal cells bind the full key and target

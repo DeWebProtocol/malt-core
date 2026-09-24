@@ -21,10 +21,20 @@ selector, or persistent store policy. `engine` applies the Root's coordinate der
 profile before entering the tree. Every traversal hop uses the descriptor of the
 Root reached by the preceding authenticated binding.
 
+Authentication layout means Prefix or Positional organization within one
+authentication tree. ArcSet organization means how an application distributes
+bindings across Roots: flat, compositional, or mixed. ArcSet organization is
+not encoded in the Root.
+
 A slash inside a label is data. Traversal steps are explicit application labels and
 cannot be regrouped, inferred by longest-prefix search, or extended by a
-hidden payload redirect. Application flat/hybrid/rooted organization remains
+hidden payload redirect. Application ArcSet organization remains
 outside the tree. Applications choose any payload label explicitly and own reserved-name policy.
+
+Applications currently assume a single valid resolution chain. This is a
+construction assumption; traversal evidence does not prove uniqueness. A
+longest-match search is an outer traversal strategy, not a maximality claim
+attached to these explicit binding proofs.
 
 `commitment.Committer`, `Prover`, and `Verifier` are independent capabilities.
 The profile registry records identity and capacity; individual operations require

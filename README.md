@@ -20,7 +20,7 @@ Start with [authentication inputs and Roots](docs/spec/authentication-inputs.md)
 
 ## Current source API
 
-`auth/tree` implements Prefix and Positional layouts over coordinates.
+`auth/tree` implements Prefix and Positional authentication layouts over coordinates.
 `derivation.Derive` converts opaque label bytes using Direct or SHA256.
 `engine` combines those layers with an exact commitment profile.
 `sdk/authentication` constructs, queries, verifies, and updates this state;
