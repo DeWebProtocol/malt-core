@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dewebprotocol/malt-core/internal/conformancegen"
+	"github.com/dewebprotocol/malt-core/conformance/internal/generate"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	authbuiltin "github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
@@ -17,7 +17,7 @@ func TestAuthenticationV0Corpus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	regenerated, err := conformancegen.GenerateAuthentication()
+	regenerated, err := generate.GenerateAuthentication()
 	if err != nil {
 		t.Fatal(err)
 	}

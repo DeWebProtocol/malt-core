@@ -59,8 +59,13 @@ in Git history; do not relabel them or change CIDv1's container version.
   and exact candidate batches; its `host` shares native/WASM serialization.
 - `sdk/authentication/builtin` optionally installs built-in verification
   profiles. Backend-specific writers inject their own implementation.
-- `protocol` and `wire` own current strict JSON schemas and CID/node encoding.
+- `maltcid` owns Root descriptors, exact VC profile identities and CID/node
+  encoding without importing authentication, derivation or SDK packages.
+- `protocol` owns current strict JSON schemas, runtime decoding and contract
+  validation.
   Incompatible serialized changes require distinct profile identifiers.
+- `conformance/internal/generate` owns deterministic portable vector generation;
+  `conformance/cmd/generate` is its regeneration command.
 - Module-root `malt` is package documentation, not a forwarding facade.
 - WASM entrypoints, compilation, browser Workers, distribution archives, and
   native/WASM integration runners belong exclusively to `malt-ts`. Keep the

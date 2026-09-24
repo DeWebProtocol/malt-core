@@ -9,9 +9,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
 	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/engine"
+	"github.com/dewebprotocol/malt-core/maltcid"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 func pathEngine(t *testing.T) *engine.Engine {

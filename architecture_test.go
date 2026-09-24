@@ -32,6 +32,8 @@ func TestProductionImportBoundaries(t *testing.T) {
 		recursive bool
 		forbidden []string
 	}{
+		{name: "Root identity and encoding", dir: filepath.Join(root, "maltcid"), recursive: true,
+			forbidden: []string{"auth", "derivation", "engine", "traversal", "protocol", "sdk"}},
 		{name: "coordinate-only authentication tree", dir: filepath.Join(root, "auth", "tree"), recursive: true,
 			forbidden: []string{"derivation", "engine", "traversal", "graph", "protocol", "sdk", "mutation", "execution"}},
 		{
@@ -100,6 +102,7 @@ func TestSDKOnlyRepositoryDoesNotRetainProductResidue(t *testing.T) {
 	}
 	root := filepath.Dir(sourceFile)
 	for _, name := range []string{
+		"wire", "internal/conformancegen",
 		"config.example.json", "graph", "auth/input", "auth/engine", "sdk/authentication/verifier",
 		"cmd/malt-verifier-wasm", "cmd/malt-writer-wasm",
 		"scripts/build-verifier-wasm.sh", "scripts/build-writer-wasm.sh", "scripts/build-wasm-release.sh",

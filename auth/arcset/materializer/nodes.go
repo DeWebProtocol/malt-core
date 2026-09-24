@@ -3,7 +3,7 @@ package materializer
 import (
 	"context"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
 // NodeLookup loads one complete immutable vector. Missing state is an error,

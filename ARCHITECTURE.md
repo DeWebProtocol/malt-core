@@ -21,10 +21,26 @@ selector, or persistent store policy. `engine` applies the Root's coordinate der
 profile before entering the tree. Every traversal hop uses the descriptor of the
 Root reached by the preceding authenticated binding.
 
+`maltcid` is the shared lower-level package for Root descriptors, exact VC
+profile identities and CID/node encoding. It depends on no authentication,
+derivation, traversal, protocol or SDK package. `protocol` supplies typed
+serialized contracts, strict decoding and runtime validation alongside its
+published JSON schemas and Markdown specifications.
+
+Authentication layout means Prefix or Positional organization within one
+authentication tree. ArcSet organization means how an application distributes
+bindings across Roots: flat, compositional, or mixed. ArcSet organization is
+not encoded in the Root.
+
 A slash inside a label is data. Traversal steps are explicit application labels and
 cannot be regrouped, inferred by longest-prefix search, or extended by a
-hidden payload redirect. Application flat/hybrid/rooted organization remains
+hidden payload redirect. Application ArcSet organization remains
 outside the tree. Applications choose any payload label explicitly and own reserved-name policy.
+
+Applications currently assume a single valid resolution chain. This is a
+construction assumption; traversal evidence does not prove uniqueness. A
+longest-match search is an outer traversal strategy, not a maximality claim
+attached to these explicit binding proofs.
 
 `commitment.Committer`, `Prover`, and `Verifier` are independent capabilities.
 The profile registry records identity and capacity; individual operations require
@@ -108,3 +124,8 @@ initialization, integration runners, release archives, and the stable TypeScript
 API. It builds against an exact published Core source release and consumes the
 portable corpus from `conformance/`; Core remains normative for semantics and
 provides no WASM build or distribution targets.
+
+`conformance/internal/generate` deterministically generates the portable corpus
+used by native and WASM verification. Its regeneration entrypoint is
+`conformance/cmd/generate`; neither package belongs to the runtime dependency
+graph.

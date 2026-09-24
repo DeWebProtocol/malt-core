@@ -21,7 +21,7 @@ formats, proof fields, HTTP headers, and compatibility rules remain in
 After the conceptual overview, use the implementation-bound specs for exact
 mechanics:
 
-- [authentication model](../spec/authentication-inputs.md) for application labels, Roots, payload selectors, and tree layouts.
+- [authentication model](../spec/authentication-inputs.md) for application labels, coordinate derivation, Roots, authentication layouts, and ArcSet organization.
 - [typed query evidence](../spec/authentication-contracts.md) for proof steps, ordering,
   serialized evidence, and range evidence.
 - [Core architecture](../../ARCHITECTURE.md) for why service routes,

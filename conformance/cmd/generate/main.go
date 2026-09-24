@@ -3,18 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/dewebprotocol/malt-core/internal/conformancegen"
 	"os"
+
+	"github.com/dewebprotocol/malt-core/conformance/internal/generate"
 )
 
 func main() {
 	out := flag.String("out", "", "output path for current typed authentication vectors")
 	flag.Parse()
 	if *out == "" || flag.NArg() != 0 {
-		fmt.Fprintln(os.Stderr, "usage: conformancegen -out FILE")
+		fmt.Fprintln(os.Stderr, "usage: generate -out FILE")
 		os.Exit(2)
 	}
-	data, err := conformancegen.GenerateAuthentication()
+	data, err := generate.GenerateAuthentication()
 	if err == nil {
 		err = os.WriteFile(*out, data, 0644)
 	}

@@ -5,22 +5,27 @@ import (
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/derivation"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
 
 func TestCurrentRootClassification(t *testing.T) {
-	for _, layout := range []maltcid.Layout{maltcid.Prefix, maltcid.Positional} {
+	for _, tc := range []struct {
+		layout     maltcid.Layout
+		derivation derivation.ProfileID
+		name       string
+	}{
+		{maltcid.Prefix, derivation.SHA256, "malt-v0-layout1-derivation04"},
+		{maltcid.Prefix, derivation.Direct, "malt-v0-layout1-derivation03"},
+		{maltcid.Positional, derivation.Direct, "malt-v0-layout2-derivation03"},
+	} {
 		for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 			p, err := maltcid.Profile(profile)
 			if err != nil {
 				t.Fatal(err)
 			}
-			d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: layout, Profile: profile}
-			if layout == maltcid.Prefix {
-				d.DerivationProfile = uint8(derivation.SHA256)
-			}
+			d := maltcid.RootDescriptor{DerivationProfile: uint8(tc.derivation), Layout: tc.layout, Profile: profile}
 			size := maltcid.KZGCommitmentSize
 			if profile == maltcid.IPA256 {
 				size = maltcid.IPACommitmentSize
@@ -32,6 +37,9 @@ func TestCurrentRootClassification(t *testing.T) {
 			decoded, _, err := maltcid.ParseRoot(root)
 			if err != nil || decoded != d || !maltcid.IsMaltCid(root) || maltcid.VersionIDOf(root) != 0 || maltcid.BackendKindOf(root) != p.Algorithm {
 				t.Fatalf("Root descriptor classification: %v", err)
+			}
+			if got := maltcid.CodecName(root.Prefix().Codec); got != tc.name {
+				t.Fatalf("CodecName(%#x) = %q, want %q", root.Prefix().Codec, got, tc.name)
 			}
 		}
 	}

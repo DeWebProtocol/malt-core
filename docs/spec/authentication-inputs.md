@@ -9,7 +9,7 @@ It is independent of CIDv1, package versions and operation-profile suffixes.
 
 ```text
 application label --coordinate derivation--> authentication coordinate
-coordinate bindings --layout + exact VC profile--> commitment
+coordinate bindings --authentication layout + exact VC profile--> commitment
 Root descriptor + commitment --> CIDv1 Root
 ```
 
@@ -38,12 +38,12 @@ Root = CIDv1(codec, identity_multihash(multicommitment))
 
 The length must equal the exact registered profile's length. Unknown profiles,
 nonminimal varints, trailing bytes, other hash containers, unsupported versions
-are rejected by the wire parser. `wire/maltcid.ParseRoot`
+are rejected by the wire parser. `maltcid.ParseRoot`
 decodes the descriptor; an engine additionally requires a supported derivation/layout combination
 and an installed commitment profile. Parsing an unknown AA is not
 permission to execute it. No fallback derivation or backend inference is used.
 
-| L | Layout | Permitted inputs |
+| L | Authentication layout | Permitted inputs |
 | --- | --- | --- |
 | 1 | Prefix | AA-derived 32-byte keys |
 | 2 | Positional | AA=3, unsigned 64-bit indices |
@@ -53,7 +53,7 @@ permission to execute it. No fallback derivation or backend inference is used.
 | 1 | KZG/BLS12-381, embedded 4096-point setup | 48 | 4096 |
 | 2 | IPA/Banderwagon over Bandersnatch, fixed 256-point SRS | 32 | 256 |
 
-`wire/maltcid.Profile` records the parameter fingerprints and encoding names.
+`maltcid.Profile` records the parameter fingerprints and encoding names.
 Profile 1's embedded setup SHA-256 is
 `0229b43f4fac9b17374809520eb621b5ee1a7f74547e7d36918e7d4b122e178d`.
 Profile 2's domain-separated compressed SRS fingerprint is
@@ -109,13 +109,18 @@ codec parses profile IDs structurally without importing derivation. `engine`
 checks supported profiles and layout compatibility even for empty state and
 empty traversal. `auth/tree` handles only coordinates, layout and commitments.
 
-## Layout and internal node identity
+## Authentication layout and internal node identity
+
+Prefix and Positional organize coordinate bindings within one authentication
+tree. Flat and compositional ArcSet organization describe how an application
+groups bindings across Roots. That application choice is not a Root field;
+the same ArcSet may be used in either organization or a mixture of them.
 
 Prefix routes over all 256 key bits (12 bits per KZG level, 8 per IPA level;
 the final KZG digit is zero-padded). Terminal cells bind the full key and target
 CID. An empty slot or a different full key proves absence. Native keys are not
 rehash inputs. Collisions and duplicate coordinates are rejected. Cell encodings
-are defined in `wire/maltcid/node_cells.go` and `auth/tree`; changing them must
+are defined in `maltcid/node_cells.go` and `auth/tree`; changing them must
 not silently reuse an existing descriptor's interpretation.
 
 Positional consumes dense indices `[0,count)`. Slot 0 contains structural

@@ -1,6 +1,37 @@
 # Changelog
 
-## v0.0.10-rc.1
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+## [0.0.10-rc.2] - 2026-09-24
+
+### Fixed
+
+- Recognize current Positional/Direct codecs in `CodecName` and use coordinate
+  derivation terminology in diagnostic names.
+
+### Changed
+
+- Distinguish authentication layout from application ArcSet organization and
+  document the single-path assumption without adding longest-match or
+  uniqueness proof requirements.
+- Move `wire/maltcid` to the top-level `maltcid` package. Consumers must update
+  imports; the former path has no forwarding package.
+- Move portable vector generation to `conformance/internal/generate` and its
+  command to `conformance/cmd/generate`.
+
+### Compatibility
+
+- This is a source package-path break relative to `v0.0.10-rc.1`; replace
+  imports of `github.com/dewebprotocol/malt-core/wire/maltcid` with
+  `github.com/dewebprotocol/malt-core/maltcid`.
+- Root encoding, proof/schema profiles, and the portable conformance corpus
+  are unchanged from `v0.0.10-rc.1`. Root V remains 0.
+
+## [0.0.10-rc.1] - 2026-09-23
 
 - Move label derivation outside authentication into `derivation`, and move
   label-aware composition from `auth/engine` to `engine`.
@@ -12,13 +43,6 @@
   `/2` contracts. Root V remains 0; retired inputs and profiles are rejected.
 - Retain original label–target bindings for reconstruction; authentication
   consumes coordinates and verifies against the caller-selected complete Root.
-
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-
-## [Unreleased]
 
 ## [0.0.9] - 2026-09-23
 

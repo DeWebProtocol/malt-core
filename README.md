@@ -20,7 +20,7 @@ Start with [authentication inputs and Roots](docs/spec/authentication-inputs.md)
 
 ## Current source API
 
-`auth/tree` implements Prefix and Positional layouts over coordinates.
+`auth/tree` implements Prefix and Positional authentication layouts over coordinates.
 `derivation.Derive` converts opaque label bytes using Direct or SHA256.
 `engine` combines those layers with an exact commitment profile.
 `sdk/authentication` constructs, queries, verifies, and updates this state;
@@ -76,7 +76,9 @@ retained local state, not a portable state-transition proof.
 | `sdk/authentication` | Queries, immutable writers, bounded sessions, exact batches |
 | `sdk/authentication/host` | Shared native/WASM serialization and session adapter |
 | `sdk/authentication/builtin` | Opt-in built-in verification backends |
-| `protocol`, `wire/maltcid` | Current strict JSON schemas, node and Root encoding |
+| `maltcid` | Root descriptors, exact VC profile identities, CID/node encoding |
+| `protocol` | Typed serialized contracts, strict decoding, validation and JSON schemas |
+| `conformance/internal/generate` | Deterministic portable test vectors; invoked by `conformance/cmd/generate` |
 | `auth/observation` | Optional diagnostics; never proof evidence |
 
 Gateway owns HTTP, persistence, service policy, and publication. The local MALT

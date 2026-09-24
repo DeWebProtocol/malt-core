@@ -13,6 +13,8 @@ import (
 // readiness. It is independent of CIDv1, SDK versions and historical Roots.
 const RootVersion uint8 = 0
 
+// Layout selects how coordinates are organized within one authentication tree.
+// Application ArcSet organization (flat or compositional) is not a Root field.
 type Layout uint8
 
 const (
@@ -50,7 +52,7 @@ func Profile(id ProfileID) (VCProfile, error) {
 	}
 }
 
-// RootDescriptor records derivation, layout and exact VC profile. Parsing checks
+// RootDescriptor records derivation, authentication layout and exact VC profile. Parsing checks
 // structural encoding; the outer engine checks derivation support and compatibility.
 type RootDescriptor struct {
 	Version           uint8     `json:"version" schema:"optional"`
