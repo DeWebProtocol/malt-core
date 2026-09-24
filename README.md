@@ -49,19 +49,21 @@ Clone the repository and run the first example:
 ```bash
 git clone https://github.com/DeWebProtocol/malt-core.git
 cd malt-core
-go run ./examples/binding
+go run ./examples/basic
 ```
 
-This example verifies a lookup, confirms a missing entry, and rejects an altered
-answer. Each example is a complete program you can read, run, and adapt.
+Start by committing data to a Root, then producing evidence for a lookup, and
+finally verifying the target. The first example demonstrates these three steps
+in order. Each example is a complete program you can read, run, and adapt.
 
 Run these commands from the repository root:
 
 | Command | What you will learn |
 | --- | --- |
-| `go run ./examples/binding` | Verify a lookup and a missing entry |
+| `go run ./examples/basic` | Commit data, prove a lookup, then verify the target |
 | `go run ./examples/traversal` | Follow and verify a chain of relationships |
 | `go run ./examples/range` | Verify and assemble a partial read |
+| `go run ./examples/query` | Handle a query response, missing entries, and altered answers |
 | `go run ./examples/update` | Update data and verify both the old and new versions |
 
 The [examples guide](examples/README.md) explains each program and shows its

@@ -89,9 +89,10 @@ jobs:
         env:
           CGO_ENABLED: "0"
         run: |
-          go run -p=6 ./examples/binding
+          go run -p=6 ./examples/basic
           go run -p=6 ./examples/traversal
           go run -p=6 ./examples/range
+          go run -p=6 ./examples/query
           go run -p=6 ./examples/update
 
       - name: Cross-build examples for macOS and Windows

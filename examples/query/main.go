@@ -1,4 +1,4 @@
-// Command binding proves and independently verifies a label-to-CID binding.
+// Command query demonstrates the higher-level serialized SDK query contract.
 package main
 
 import (
