@@ -69,6 +69,7 @@ expected output.
 
 ## Further reading
 
+- [Construct state with Objects](docs/guides/objects.md) — Map, List, custom structs, and a runnable example
 - [Architecture](ARCHITECTURE.md) — how MALT Core works
 - [Documentation](docs/README.md) — specifications and detailed guides
 - [Changelog](CHANGELOG.md) — release changes

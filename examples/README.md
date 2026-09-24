@@ -9,15 +9,16 @@ package or running service to configure.
 
 Use Go 1.26.0 or newer and run the commands below from the repository root.
 Go downloads dependencies on the first build. The examples need no C compiler,
-Gateway, database, IPFS node, or external payload service. CI runs all four with
+Gateway, database, IPFS node, or external payload service. CI runs all examples with
 `CGO_ENABLED=0` on Linux amd64 and cross-compiles them for macOS amd64/arm64 and
 Windows amd64. Cross-compilation does not claim runtime coverage on those systems.
 
-All examples select the IPA256 commitment profile and `ipa.ProfileDirect` to
+The binding, traversal, range and update examples select IPA256 and `ipa.ProfileDirect` to
 avoid retaining a fixed-base precomputation table. This execution choice is
 independent of **coordinate derivation**: `derivation.SHA256` derives Prefix
 keys, while `derivation.Direct` accepts canonical key or index bytes. KZG is
 another supported backend; its implementation lives in `auth/commitment/kzg`.
+The Object example installs both IPA and KZG to compose a Map with a List.
 
 The commands execute source from this checkout. To use Core in your own Go
 module, follow the exact-release [installation instructions](../README.md#requirements-and-installation)
@@ -138,6 +139,7 @@ does not constitute a portable proof of an authorized state transition.
 
 ## Further reading
 
+- [Object construction](../docs/guides/objects.md) and [runnable Object example](objects/main.go): recursively Commit, Prove, update a nested child, and Verify; run `go run ./examples/objects`.
 - [Authentication inputs and Roots](../docs/spec/authentication-inputs.md)
 - [Queries and independent verification](../docs/spec/authentication-contracts.md)
 - [Candidate batches and receipts](../docs/spec/authentication-batches.md)

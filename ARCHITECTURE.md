@@ -49,6 +49,7 @@ derivation -> auth/coordinate -> auth/tree -> auth/commitment
                     engine binds coordinate derivation to the Root
                     traversal composes explicit steps across Roots
                     sdk/authentication supplies queries and retained writers
+                    sdk/object constructs vertices from Go object references
                     protocol defines serialized operation contracts
                     maltcid defines Root and node identity encodings
 ```
@@ -80,6 +81,7 @@ does not forward the SDK API.
 
 | Package | Responsibility |
 | --- | --- |
+| `sdk/object` | Object references, Map/List containers, tagged structs, and recursive child-first Commit |
 | `sdk/authentication` | Queries, independent verification, immutable writers, bounded sessions, and candidate batches |
 | `sdk/authentication/builtin` | Optional verification-only KZG and IPA engines |
 | `engine` | Apply Root-selected derivation and combine the tree with commitment capabilities |
@@ -121,6 +123,15 @@ reuses only locally verified index evidence. This work is scoped to that call;
 returned proofs own their buffers, and a later query checks its own materializer.
 
 ## Write flow
+
+`sdk/object` is an optional construction layer above the authentication SDK.
+Each Object is an application vertex: raw Immutable leaves return content CIDs,
+while authenticated containers return MALT Roots. Map keys, List indices and
+explicit struct tags describe references. Recursive Commit resolves child CIDs
+before constructing the parent ArcSet and retains a writer on each authenticated
+object. No object-specific encoding or payload-name interpretation enters
+`auth/tree`. See the [Object guide](docs/guides/objects.md) for the API, payload
+convention, complete example, and retention boundaries.
 
 `BuildWriter` constructs a new immutable ArcSet. `NewWriter` validates and owns
 a complete imported candidate. `Apply` checks expected-before bindings and

@@ -11,6 +11,7 @@ independent `malt.authentication/2` profile. The
 superseded APIs. Historical releases and MIPs retain their original meaning.
 
 - [Runnable Go examples](../examples/README.md)
+- [Constructing state with Objects](guides/objects.md)
 - [Concepts](concepts/README.md)
 - [Compatibility policy](policy/compatibility.md)
 - [Threat model](policy/threat-model.md)
