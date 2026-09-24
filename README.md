@@ -3,22 +3,22 @@
 [![Go CI](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml/badge.svg)](https://github.com/dewebprotocol/malt-core/actions/workflows/go.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**MALT Core is a Go SDK for building applications with verifiable data
-relationships.** It lets applications check query answers against a data state
-they choose to trust, even when another system stores the data or answers the
-query.
+**MALT turns a collection of structured data into a compact Root.** Given a
+Root and a traversal path, a query returns the target together with compact
+verification evidence.
 
-For example, an application can verify which content an entry refers to,
-confirm that an entry is missing, or follow a series of links and check every
-step. Verification runs locally in the application.
+A client can use that evidence to verify that the target follows the requested
+path from the selected Root, without trusting the system that answered the
+query.
 
 ## What you can do
 
-- **Verify lookups:** confirm what an entry refers to, or that the entry is
-  missing.
-- **Follow verified relationships:** check each link in a chain of related data.
-- **Verify partial reads:** check selected entries and the references needed
-  for a requested range.
+- **Generate compact Roots:** represent a collection of structured data with a
+  short identifier.
+- **Retrieve targets with evidence:** query by Root and traversal path, then
+  verify the returned target locally.
+- **Check missing entries and partial reads:** confirm absence or verify the
+  references needed for a requested range.
 - **Prepare new versions:** make changes while keeping earlier states available
   for queries and verification.
 - **Use your own storage:** add verification to your application without
@@ -26,7 +26,8 @@ step. Verification runs locally in the application.
 
 ## Requirements and installation
 
-You need **Go 1.26.0 or newer**. Go downloads the required packages automatically.
+This repository provides the Go implementation and SDK for MALT. You need
+**Go 1.26.0 or newer**. Go downloads the required packages automatically.
 The examples run locally without a server or database. They are tested on Linux.
 macOS and Windows builds are also checked; see the
 [examples guide](examples/README.md#requirements-and-execution) for platform
