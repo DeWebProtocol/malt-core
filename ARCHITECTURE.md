@@ -4,6 +4,44 @@ MALT Core is an application-neutral authentication SDK. Correctness is relative
 to the full caller-selected Root and typed query. Materializers and remote
 executors supply untrusted data; they do not select the client's trust anchor.
 
+## Data model and authentication choices
+
+An **ArcSet** is a set of application `label → target` bindings. Labels are
+opaque bytes; targets are CIDs, which can themselves be MALT Roots. Applications
+and Gateway-owned ArcTables retain the submitted label–target bindings for
+recovery and future writes.
+
+Authentication derives a coordinate from each label and binds it to the target:
+
+```text
+application label --coordinate derivation--> coordinate
+coordinate + target --authentication layout + commitment--> Root
+```
+
+| Choice | Meaning |
+| --- | --- |
+| Coordinate derivation | `SHA256` derives a 32-byte coordinate using Core's domain-separated framing; `Direct` parses an already canonical coordinate |
+| Authentication layout | `Prefix` organizes 32-byte keys; `Positional` organizes dense integer indices `[0, count)` |
+| Commitment profile | An exact KZG or IPA parameter set and encoding, identified in the Root |
+| ArcSet organization | The application's choice to group bindings in one Root or compose several Roots; this is not encoded in the Root |
+
+`Direct` accepts exactly 32 key bytes or eight unsigned big-endian index bytes.
+Use `coordinate.EncodeKey` or `coordinate.EncodeIndex`; a decimal text label such
+as `"42"` is not an encoded index. Prefix accepts Direct or SHA256 derivation;
+Positional requires Direct index labels.
+
+The Root identifies the derivation profile, authentication layout, and exact
+commitment profile. Coordinate derivation belongs outside `auth`; authentication
+trees operate on coordinates. The Root format remains experimental `V=0`,
+independently of the SDK version and CIDv1's container version.
+
+Traversal accepts explicit label steps. A slash or `@payload` inside a label has
+no built-in meaning. Applications currently assume a single valid resolution
+chain; a longest-match search can be an outer lookup strategy, but Core proofs
+authenticate the selected chain and do not prove uniqueness or longest-match
+selection. See [authentication inputs and Roots](docs/spec/authentication-inputs.md)
+and [query contracts](docs/spec/authentication-contracts.md).
+
 ## Layering
 
 ```text
@@ -28,26 +66,39 @@ derivation, traversal, protocol or SDK package. `protocol` supplies typed
 serialized contracts, strict decoding and runtime validation alongside its
 published JSON schemas and Markdown specifications.
 
-Authentication layout means Prefix or Positional organization within one
-authentication tree. ArcSet organization means how an application distributes
-bindings across Roots: flat, compositional, or mixed. ArcSet organization is
-not encoded in the Root.
-
-A slash inside a label is data. Traversal steps are explicit application labels and
-cannot be regrouped, inferred by longest-prefix search, or extended by a
-hidden payload redirect. Application ArcSet organization remains
-outside the tree. Applications choose any payload label explicitly and own reserved-name policy.
-
-Applications currently assume a single valid resolution chain. This is a
-construction assumption; traversal evidence does not prove uniqueness. A
-longest-match search is an outer traversal strategy, not a maximality claim
-attached to these explicit binding proofs.
-
 `commitment.Committer`, `Prover`, and `Verifier` are independent capabilities.
 The profile registry records identity and capacity; individual operations require
 only their relevant capabilities. Both KZG and IPA expose verification-only types
 without execution methods. The SDK stays backend-neutral; `builtin.NewVerifier`
 is an opt-in constructor that imports the built-in verification implementations.
+
+## Packages and integration boundaries
+
+Go integrations typically start with `sdk/authentication`, `engine`, `maltcid`,
+and a commitment backend. The module-root package contains documentation; it
+does not forward the SDK API.
+
+| Package | Responsibility |
+| --- | --- |
+| `sdk/authentication` | Queries, independent verification, immutable writers, bounded sessions, and candidate batches |
+| `sdk/authentication/builtin` | Optional verification-only KZG and IPA engines |
+| `engine` | Apply Root-selected derivation and combine the tree with commitment capabilities |
+| `derivation` | Deterministic conversion of application label bytes to coordinates |
+| `auth/coordinate` | Coordinate types and canonical key/index encodings |
+| `auth/tree` | Coordinate-only Prefix/Positional construction, updates, and proofs |
+| `auth/commitment` | Separate commitment, proving, and verification capabilities; KZG and IPA backends |
+| `auth/arcset/materializer` | Narrow injected lookup/update/snapshot capabilities and an in-memory reference implementation |
+| `traversal` | Compose explicit authenticated steps across Roots |
+| `maltcid` | Root descriptors, exact commitment profile identities, and CID/node encoding |
+| `protocol` | Serialized contracts, strict runtime decoding and validation, and JSON schemas |
+
+Core owns no durable ArcTable, KV/CAS backend, HTTP server, or application path
+policy. [Gateway](https://github.com/DeWebProtocol/gateway) owns managed services,
+persistence, and publication. The [local MALT runtime](https://github.com/DeWebProtocol/malt)
+owns UnixFS, trusted roots, payload binding, and CLI/daemon behavior.
+[malt-ts](https://github.com/DeWebProtocol/malt-ts) owns browser integration;
+[malt-evaluation](https://github.com/DeWebProtocol/malt-evaluation) owns reproducible
+measurements.
 
 ## Read flow
 
