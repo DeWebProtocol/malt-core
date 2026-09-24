@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/derivation"
+	"github.com/dewebprotocol/malt-core/maltcid"
 	"github.com/dewebprotocol/malt-core/protocol"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 func TestAuthenticationJSONExactFieldNamesAndValues(t *testing.T) {

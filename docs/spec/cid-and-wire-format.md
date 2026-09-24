@@ -15,7 +15,7 @@ uvarint(exact VC profile ID) || uvarint(commitment length) || commitment bytes
 ```
 
 The full descriptor selects interpretation. The codec alone cannot select a
-backend, and commitment length cannot infer one. `wire/maltcid.NewRoot` and
+backend, and commitment length cannot infer one. `maltcid.NewRoot` and
 `ParseRoot` are the current constructors/reader. Historical semantic-kind
 constructors and V2/V3 decoding are removed.
 

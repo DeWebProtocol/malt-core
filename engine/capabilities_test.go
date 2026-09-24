@@ -9,9 +9,9 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/commitment/kzg"
 	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/engine"
+	"github.com/dewebprotocol/malt-core/maltcid"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
 )
 
 type commitProfile struct {

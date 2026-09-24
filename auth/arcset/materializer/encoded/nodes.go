@@ -14,7 +14,7 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/arcset"
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )

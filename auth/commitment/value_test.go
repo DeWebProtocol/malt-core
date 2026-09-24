@@ -6,7 +6,7 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/derivation"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
 func TestValueBindsProfileAndDetachesBytes(t *testing.T) {

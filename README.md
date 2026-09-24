@@ -76,7 +76,9 @@ retained local state, not a portable state-transition proof.
 | `sdk/authentication` | Queries, immutable writers, bounded sessions, exact batches |
 | `sdk/authentication/host` | Shared native/WASM serialization and session adapter |
 | `sdk/authentication/builtin` | Opt-in built-in verification backends |
-| `protocol`, `wire/maltcid` | Current strict JSON schemas, node and Root encoding |
+| `maltcid` | Root descriptors, exact VC profile identities, CID/node encoding |
+| `protocol` | Typed serialized contracts, strict decoding, validation and JSON schemas |
+| `conformance/internal/generate` | Deterministic portable test vectors; invoked by `conformance/cmd/generate` |
 | `auth/observation` | Optional diagnostics; never proof evidence |
 
 Gateway owns HTTP, persistence, service policy, and publication. The local MALT

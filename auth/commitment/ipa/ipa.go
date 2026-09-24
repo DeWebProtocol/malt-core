@@ -14,7 +14,7 @@ import (
 	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/banderwagon"
 	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
 	ipa "github.com/dewebprotocol/malt-core/internal/third_party/goipa/ipa"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
 const (

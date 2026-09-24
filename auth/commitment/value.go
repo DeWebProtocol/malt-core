@@ -3,7 +3,7 @@ package commitment
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
 // Value is an immutable, profile-qualified primitive commitment. It is not an

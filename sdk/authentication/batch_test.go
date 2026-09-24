@@ -7,9 +7,9 @@ import (
 
 	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/engine"
+	"github.com/dewebprotocol/malt-core/maltcid"
 	"github.com/dewebprotocol/malt-core/protocol"
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

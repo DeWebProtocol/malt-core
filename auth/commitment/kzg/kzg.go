@@ -10,7 +10,7 @@ import (
 	blsfr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
 // bls12381ScalarMod is the BLS12-381 scalar field modulus.

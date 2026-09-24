@@ -9,8 +9,8 @@ import (
 	"reflect"
 
 	"github.com/dewebprotocol/malt-core/engine"
+	"github.com/dewebprotocol/malt-core/maltcid"
 	"github.com/dewebprotocol/malt-core/traversal"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
 

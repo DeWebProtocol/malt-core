@@ -13,7 +13,7 @@ import (
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/engine"
-	"github.com/dewebprotocol/malt-core/wire/maltcid"
+	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
 type openingCounter struct {

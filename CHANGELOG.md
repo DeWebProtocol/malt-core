@@ -30,6 +30,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Distinguish authentication layout from application ArcSet organization and
   document the single-path assumption without adding longest-match or
   uniqueness proof requirements.
+- Move `wire/maltcid` to the top-level `maltcid` package. Consumers must update
+  imports; the former path has no forwarding package.
+- Move portable vector generation to `conformance/internal/generate` and its
+  command to `conformance/cmd/generate`.
 
 ## [0.0.9] - 2026-09-23
 
