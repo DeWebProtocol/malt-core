@@ -84,13 +84,19 @@ func run() error {
 		return err
 	}
 	fmt.Println("Committed object graph, children before parents")
-
-	// Prove: retain/materialize each vertex's own authentication state. Ordinary
-	// content bytes remain with the application; Commit does not write a CAS.
-	nodes := memory.NewNodes()
-	if err := materialize(ctx, prover, nodes, parts, document, root); err != nil {
+	delta, err := root.Delta(ctx)
+	if err != nil {
 		return err
 	}
+
+	// Prove: the root's delta collects every new ArcSet and locally known block.
+	// The application chooses where to retain them; Commit performs no I/O.
+	nodes := memory.NewNodes()
+	blocks := make(map[string][]byte)
+	if err := materialize(ctx, prover, nodes, blocks, delta); err != nil {
+		return err
+	}
+	fmt.Printf("Collected %d ArcSets and %d content block\n", len(delta.ArcSets), len(delta.Blocks))
 	steps := [][]byte{[]byte("document"), []byte("parts"), coordinate.EncodeIndex(0)}
 	target, evidence, err := traversal.ResolvePath(ctx, prover, trustedRoot, steps, nodes)
 	if err != nil {
@@ -98,8 +104,8 @@ func run() error {
 	}
 	fmt.Println("Proved traversal to the content CID")
 
-	// Update: replace a child reference and recompute recursively. There is no
-	// dirty tracking; callers retain an old writer explicitly if they need it.
+	// Update: replace a child reference and Commit the root again. The retained
+	// ArcSets drive incremental updates; no dirty flag is needed for correctness.
 	replacement, err := object.NewImmutable([]byte("second version"))
 	if err != nil {
 		return err
@@ -114,14 +120,18 @@ func run() error {
 	if updatedRoot.Equals(trustedRoot) {
 		return fmt.Errorf("nested update did not change the root")
 	}
-	if err := materialize(ctx, prover, nodes, parts, document, root); err != nil {
+	delta, err = root.Delta(ctx)
+	if err != nil {
+		return err
+	}
+	if err := materialize(ctx, prover, nodes, blocks, delta); err != nil {
 		return err
 	}
 	updatedTarget, updatedEvidence, err := traversal.ResolvePath(ctx, prover, updatedRoot, steps, nodes)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Recommitted after replacing a nested reference")
+	fmt.Printf("Updated %d ArcSets; collected %d new content block\n", len(delta.ArcSets), len(delta.Blocks))
 
 	// Verify: use only the separately selected Root, path, target and evidence.
 	verifier, err := builtin.NewVerifier()
@@ -139,21 +149,26 @@ func run() error {
 	if valid, err := traversal.Verify(verifier, updatedRoot, steps, target, evidence); err == nil && valid {
 		return fmt.Errorf("old evidence was accepted against the updated root")
 	}
+	for _, target := range []cid.Cid{target, updatedTarget} {
+		data, present := blocks[target.KeyString()]
+		actual, err := target.Prefix().Sum(data)
+		if err != nil || !present || !actual.Equals(target) {
+			return fmt.Errorf("content bytes do not match the verified target %s", target)
+		}
+	}
 	fmt.Println("Verified both versions; rejected evidence for the wrong Root")
 	return nil
 }
 
-type writerSource interface {
-	Writer() (*authentication.Writer, error)
-}
-
-func materialize(ctx context.Context, e *engine.Engine, nodes *memory.Nodes, objects ...writerSource) error {
-	for _, o := range objects {
-		w, err := o.Writer()
-		if err != nil {
-			return err
-		}
-		candidate, err := w.Export(ctx)
+func materialize(ctx context.Context, e *engine.Engine, nodes *memory.Nodes, blocks map[string][]byte, delta object.Delta) error {
+	if len(delta.External) != 0 {
+		return fmt.Errorf("example has unresolved external content: %v", delta.External)
+	}
+	for _, block := range delta.Blocks {
+		blocks[block.CID.KeyString()] = block.Bytes
+	}
+	for _, arcset := range delta.ArcSets { // Already ordered children before parents.
+		candidate, err := arcset.Export(ctx)
 		if err != nil {
 			return err
 		}

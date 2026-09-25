@@ -17,14 +17,14 @@ import (
 // arbitrary binary labels. Only field references, configuration and Payload are
 // authenticated; other Go fields are not implicitly serialized.
 func (b *Base) CommitTagged(ctx context.Context, self Object) (cid.Cid, error) {
-	return withCommit(ctx, self, func(ctx context.Context) (cid.Cid, error) {
+	return withCommit(ctx, self, func(ctx context.Context) (*snapshot, error) {
 		v := reflect.ValueOf(self).Elem()
 		if v.Kind() != reflect.Struct {
-			return cid.Undef, fmt.Errorf("tagged object must point to a struct")
+			return nil, fmt.Errorf("tagged object must point to a struct")
 		}
 		refs, err := taggedReferences(v)
 		if err != nil {
-			return cid.Undef, err
+			return nil, err
 		}
 		return b.commitReferences(ctx, self, refs)
 	})

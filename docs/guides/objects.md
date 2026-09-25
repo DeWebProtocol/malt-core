@@ -23,8 +23,8 @@ in the engine you pass to the constructors. The Object package imports no
 concrete commitment backend.
 
 The [complete example](../../examples/objects/main.go) builds an object graph,
-commits it, proves a traversal, changes a nested reference, and independently
-verifies both versions:
+commits it, collects its ArcSets and content blocks, proves a traversal, changes
+a nested reference, and independently verifies both versions:
 
 ```sh
 go run ./examples/objects
@@ -132,32 +132,108 @@ is introduced here.
 
 ## Commit, prove, update, verify
 
-Each top-level Commit traverses current references and rebuilds authenticated
-vertices. Changing a child field or replacing a nested Map reference is picked
-up by the next root Commit. There is no persistent dirty flag or automatic
-incremental-update selection. Within one Commit, a shared child pointer is
-committed once. Cycles return `object.ErrCycle`.
+Each top-level Commit traverses current references. Changing a child field or
+replacing a nested Map reference is picked up by the next root Commit. With an
+unchanged configuration, the Object passes its current ArcSet to the retained
+`authentication.Writer.Update`: the input scan is complete, while authentication
+node updates are incremental. A new configuration builds a new writer. There is
+no persistent dirty flag. Within one Commit, a shared child pointer is committed
+once. Cycles return `object.ErrCycle`.
 
 Objects must not be mutated concurrently with Commit, or by a child while
 Commit is traversing the graph. Custom recursive implementations must propagate
 the supplied context; the built-in containers and CommitTagged cooperate in
-the traversal's cycle detection and shared-child memoization.
+cycle detection, shared-child memoization and snapshot staging. A custom Commit
+method should finish fallible preparation before calling its helper and return
+the helper's result directly, as in the Document example above.
 
 `CID()` returns the last successful authentication Commit result, or `cid.Undef`
 before the first success. It does not indicate whether the current Object has
 changed. `Writer()` returns that vertex's retained immutable
 `*authentication.Writer`; it returns `ErrNotCommitted` before the first success.
-Keep the writer before the next Commit if an earlier version is needed.
+Keep the writer if that particular ArcSet version is needed later. `Writer.State`
+copies its labels, targets and configuration without exporting node vectors.
 
-For proofs, export each relevant vertex's writer and materialize its candidate
-into caller-owned authentication-node storage. Existing `engine.Prove`,
+For proofs, export the collected ArcSet candidates described below and
+materialize them into caller-owned authentication-node storage. Existing `engine.Prove`,
 `traversal.ResolvePath`, and `authentication.Execute` then operate on those
 nodes. Verification uses the independently selected Root and query, with no
-access to the mutable Objects. A parent writer contains child CIDs, not the
-children's writers or payload bytes, so preserving a composed version also
-requires preserving the relevant descendant writers or their exports.
+access to the mutable Objects.
 
-A failed parent Commit preserves that parent's last successful writer. Children
-which already completed their own Commit can retain their new writers. Commit
-is local computation, not a graph-wide storage transaction: it does not collect
-a mutation batch, write a CAS, publish a Root, or establish client trust.
+Each managed Object retains its last two successful snapshots: the Root,
+configuration, ArcSet writer, and the exact committed child versions it used.
+An independently committed child cannot change an existing parent's snapshot.
+All new snapshots are staged until the outermost managed Commit succeeds. An
+error or cancellation before confirmation preserves every prior snapshot and
+delta, including those of children already visited, so retrying can collect the
+same pending changes. This atomicity covers local SDK state within that Commit
+scope; arbitrary custom side effects and storage writes are outside it.
+
+## Collecting changes
+
+After a successful Commit, `Map`, `List`, `Immutable`, and structs embedding
+`Base` expose `Delta(ctx)`. It compares the last two committed graphs. Before
+the first success it returns `ErrNotCommitted`; the first successful Commit is
+compared with an empty graph. Reading Delta does not advance its baseline.
+
+```go
+rootCID, err := root.Commit(ctx)
+if err != nil {
+    return err
+}
+delta, err := root.Delta(ctx)
+if err != nil {
+    return err
+}
+fmt.Printf("%s: %d changed ArcSets, %d content blocks\n",
+    rootCID, len(delta.ArcSets), len(delta.Blocks))
+
+// nodes is caller-owned authentication-node storage.
+for _, change := range delta.ArcSets {
+    candidate, err := change.Export(ctx)
+    if err != nil {
+        return err
+    }
+    if err := authentication.Materialize(ctx, e, candidate, nodes); err != nil {
+        return err
+    }
+}
+// Retain delta.Blocks in application content storage and ensure that the
+// dependencies listed in delta.External are available before publishing.
+```
+
+- `Before` and `After` identify the enclosing graph versions. `Before` is
+  undefined for the first Commit. Committing an unchanged graph yields an
+  empty delta with equal Roots.
+- `ArcSets` contains changed or newly attached ArcSets, deduplicated by their
+  new Root and ordered children before parents. Each item lists label additions,
+  deletions and target replacements, sorted by label bytes. List removals are
+  explicit binding deletions. Configuration changes can produce a new Root
+  with no changed bindings. `Export(ctx)` produces a complete candidate on
+  demand, with `Previous` set to this delta's `Before`.
+- `Blocks` contains owned bytes and CIDs for newly referenced local Immutable
+  leaves, deduplicated and sorted by CID bytes. Replacing a leaf adds its new
+  content; renaming or removing an arc does not duplicate or delete content.
+- `External` lists newly referenced CIDs for which the graph has no local
+  bytes or ArcSet writer, deduplicated and sorted by CID bytes. This includes
+  `SetPayload(cid)` and custom Objects that return a CID directly. A custom
+  Object delegating to `Immutable.Commit(ctx)` participates in byte collection.
+  A CID also supplied by a local Object is collected once with that local data.
+
+The comparison uses the enclosing graph's history. If a child independently
+commits A → B → C between parent commits, the parent's next delta compares the
+child's A with C. Attaching an already committed subtree to a new parent collects
+that subtree's full state and locally known bytes, even if its own last Commit
+was a no-op. Roots and content already referenced anywhere in the previous
+graph need no new write candidate.
+
+Save the returned Delta until its writes have been handled. The next successful
+Commit advances the local baseline, even for a no-op; it does not wait for a
+remote acknowledgement. Returned labels and bytes belong to the caller, and
+ArcSet exports remain tied to their immutable versions after later Commits.
+
+These are write candidates relative to the previous local graph, not a report
+of what a remote store lacks. There are no physical content-deletion commands:
+other graphs and retained older Roots may still need those CIDs. Commit and
+Delta perform no storage writes, root publication or trust promotion, and a
+Delta is not a portable state-transition proof.

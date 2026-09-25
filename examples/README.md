@@ -137,9 +137,38 @@ Updated binding verified
 operations do not publish or accept a Root. Verifying both states separately
 does not constitute a portable proof of an authorized state transition.
 
+## 5. Objects and collected graph changes
+
+```bash
+go run ./examples/objects
+```
+
+[Source](objects/main.go). Construct a Map → tagged Document → List → Immutable
+graph with ordinary Go references. Root Commit recursively commits every child.
+`root.Delta(ctx)` collects the new ArcSets and content bytes, so the caller can
+materialize the graph without enumerating its Objects. Replacing a List item
+and committing again updates the affected ArcSets and collects the new block.
+The example proves and independently verifies both versions, including their
+content CIDs.
+
+Expected output:
+
+```text
+Committed object graph, children before parents
+Collected 3 ArcSets and 1 content block
+Proved traversal to the content CID
+Updated 3 ArcSets; collected 1 new content block
+Verified both versions; rejected evidence for the wrong Root
+```
+
+The [Object guide](../docs/guides/objects.md) describes payloads, struct tags,
+failed Commit retries, external CID dependencies and delta retention. The
+example keeps application content bytes in a local map; Core adds no durable
+storage or publication behavior.
+
 ## Further reading
 
-- [Object construction](../docs/guides/objects.md) and [runnable Object example](objects/main.go): recursively Commit, Prove, update a nested child, and Verify; run `go run ./examples/objects`.
+- [Object construction and change collection](../docs/guides/objects.md)
 - [Authentication inputs and Roots](../docs/spec/authentication-inputs.md)
 - [Queries and independent verification](../docs/spec/authentication-contracts.md)
 - [Candidate batches and receipts](../docs/spec/authentication-batches.md)

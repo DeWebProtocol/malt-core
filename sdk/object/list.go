@@ -36,6 +36,9 @@ func (l *List) CID() cid.Cid { return l.cid() }
 // Writer returns this List's last successful immutable authentication state.
 func (l *List) Writer() (*authentication.Writer, error) { return l.retained() }
 
+// Delta compares the exact graphs used by the last two successful Commits.
+func (l *List) Delta(ctx context.Context) (Delta, error) { return l.delta(ctx) }
+
 func (l *List) Len() int { return len(l.items) }
 
 func (l *List) Get(index int) (Object, error) {
@@ -78,18 +81,20 @@ func (l *List) Remove(index int) error {
 }
 
 func (l *List) Commit(ctx context.Context) (cid.Cid, error) {
-	return withCommit(ctx, l, func(ctx context.Context) (cid.Cid, error) {
+	return withCommit(ctx, l, func(ctx context.Context) (*snapshot, error) {
 		if err := checkConfig(l.engine, l.Config(), maltcid.Positional); err != nil {
-			return cid.Undef, err
+			return nil, err
 		}
 		entries := make([]engine.Entry, len(l.items))
+		children := make([]*snapshot, len(l.items))
 		for i, child := range l.items {
 			target, err := commitChild(ctx, child)
 			if err != nil {
-				return cid.Undef, fmt.Errorf("index %d: %w", i, err)
+				return nil, fmt.Errorf("index %d: %w", i, err)
 			}
-			entries[i] = engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target}
+			entries[i] = engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target.root}
+			children[i] = target
 		}
-		return l.authenticated.commit(ctx, l.Config(), entries)
+		return l.authenticated.commit(ctx, l, l.Config(), entries, children)
 	})
 }

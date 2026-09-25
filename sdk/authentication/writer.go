@@ -74,7 +74,7 @@ func (w *Writer) Export(ctx context.Context) (protocol.AuthenticationCandidate, 
 	if w == nil || w.nodes == nil {
 		return protocol.AuthenticationCandidate{}, errors.New("writer is not initialized")
 	}
-	state, err := w.exportState(ctx)
+	state, err := w.State(ctx)
 	if err != nil {
 		return protocol.AuthenticationCandidate{}, err
 	}
@@ -110,7 +110,13 @@ func (w *Writer) Candidate() protocol.AuthenticationCandidate {
 	}
 	return c
 }
-func (w *Writer) exportState(ctx context.Context) (engine.State, error) {
+
+// State returns an owned copy of the retained labels, targets and configuration
+// without exporting authentication vectors. It performs a complete input scan.
+func (w *Writer) State(ctx context.Context) (engine.State, error) {
+	if w == nil || w.nodes == nil {
+		return engine.State{}, errors.New("writer is not initialized")
+	}
 	state := w.metadata
 	state.Entries = []engine.Entry{}
 	err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {

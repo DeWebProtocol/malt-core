@@ -59,7 +59,7 @@ func (m *Map) Delete(label []byte) bool {
 func (m *Map) Len() int { return len(m.entries) }
 
 func (m *Map) Commit(ctx context.Context) (cid.Cid, error) {
-	return withCommit(ctx, m, func(ctx context.Context) (cid.Cid, error) {
+	return withCommit(ctx, m, func(ctx context.Context) (*snapshot, error) {
 		refs := make([]reference, 0, len(m.entries))
 		for label, target := range m.entries {
 			refs = append(refs, reference{label: []byte(label), target: target})

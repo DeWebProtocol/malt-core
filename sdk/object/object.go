@@ -2,8 +2,9 @@
 // Each Object commits one vertex: Immutable returns a content CID, while Map,
 // List and tagged structs return a MALT Root. Commit visits children first.
 //
-// Objects are not safe for concurrent mutation or Commit. Every Commit rebuilds
-// the reachable state; a previous CID is never used as a dirty-state shortcut.
+// Objects are not safe for concurrent mutation or Commit. Every Commit rereads
+// reachable references and updates retained ArcSets without dirty tracking.
+// New snapshots become visible only after the outermost Commit succeeds.
 // Persistence, publication and trusted-root acceptance belong to the caller.
 package object
 
@@ -57,13 +58,6 @@ var (
 	ErrNotCommitted = errors.New("object has not been committed")
 )
 
-type scopeKey struct{}
-type commitScope struct {
-	active map[Object]bool
-	done   map[Object]cid.Cid
-	closed bool
-}
-
 func checkObject(o Object) error {
 	if o == nil {
 		return errors.New("object is nil")
@@ -75,9 +69,9 @@ func checkObject(o Object) error {
 	return nil
 }
 
-// withCommit scopes cycle detection and shared-child reuse to this traversal.
-// No result from an earlier top-level Commit is used here.
-func withCommit(ctx context.Context, self Object, build func(context.Context) (cid.Cid, error)) (cid.Cid, error) {
+// withCommit scopes cycle detection, shared-child reuse and snapshot staging to
+// this traversal. Custom Commit methods should return their helper's result.
+func withCommit(ctx context.Context, self Object, build func(context.Context) (*snapshot, error)) (cid.Cid, error) {
 	if err := ctx.Err(); err != nil {
 		return cid.Undef, err
 	}
@@ -85,55 +79,74 @@ func withCommit(ctx context.Context, self Object, build func(context.Context) (c
 		return cid.Undef, err
 	}
 	s, _ := ctx.Value(scopeKey{}).(*commitScope)
-	if s == nil || s.closed {
-		s = &commitScope{active: make(map[Object]bool), done: make(map[Object]cid.Cid)}
+	top := s == nil || s.closed
+	if top {
+		s = newScope()
 		ctx = context.WithValue(ctx, scopeKey{}, s)
-		defer func() {
-			s.closed = true
-			clear(s.active)
-			clear(s.done)
-		}()
+		defer s.close()
 	}
 	if s.active[self] {
-		return cid.Undef, ErrCycle
+		return cid.Undef, s.fail(ErrCycle)
 	}
-	if root, ok := s.done[self]; ok {
-		return root, nil
+	if node, ok := s.done[self]; ok {
+		return node.root, nil
 	}
 	s.active[self] = true
 	defer delete(s.active, self)
-	root, err := build(ctx)
+	node, err := build(ctx)
 	if err != nil {
-		return cid.Undef, err
+		return cid.Undef, s.fail(err)
 	}
-	if !root.Defined() {
-		return cid.Undef, errors.New("Commit returned an undefined CID")
+	if node == nil || !node.root.Defined() {
+		return cid.Undef, s.fail(errors.New("Commit returned an undefined CID"))
 	}
-	s.done[self] = root
-	return root, nil
+	if err := ctx.Err(); err != nil {
+		return cid.Undef, s.fail(err)
+	}
+	if s.failed != nil {
+		return cid.Undef, s.failed
+	}
+	s.done[self] = node
+	s.byCID[node.root.KeyString()] = node
+	if top {
+		s.confirm()
+	}
+	return node.root, nil
 }
 
-func commitChild(ctx context.Context, child Object) (cid.Cid, error) {
+func commitChild(ctx context.Context, child Object) (*snapshot, error) {
+	s := ctx.Value(scopeKey{}).(*commitScope)
 	if err := ctx.Err(); err != nil {
-		return cid.Undef, err
+		return nil, s.fail(err)
 	}
 	if err := checkObject(child); err != nil {
-		return cid.Undef, err
+		return nil, s.fail(err)
 	}
-	s := ctx.Value(scopeKey{}).(*commitScope)
 	if s.active[child] {
-		return cid.Undef, ErrCycle
+		return nil, s.fail(ErrCycle)
 	}
-	if root, ok := s.done[child]; ok {
-		return root, nil
+	if node, ok := s.done[child]; ok {
+		return node, nil
 	}
 	root, err := child.Commit(ctx)
 	if err != nil {
-		return cid.Undef, err
+		return nil, s.fail(err)
 	}
 	if !root.Defined() {
-		return cid.Undef, fmt.Errorf("%T.Commit returned an undefined CID", child)
+		return nil, s.fail(fmt.Errorf("%T.Commit returned an undefined CID", child))
 	}
-	s.done[child] = root
-	return root, nil
+	// A custom Object may delegate to a built-in Commit, or return an external
+	// CID. Only cooperating implementations expose bytes and descendants.
+	node := s.done[child]
+	if node != nil && !node.root.Equals(root) {
+		return nil, s.fail(errors.New("custom Commit returned a different CID from its staged snapshot"))
+	}
+	if node == nil {
+		node = s.byCID[root.KeyString()]
+	}
+	if node == nil {
+		node = &snapshot{root: root}
+	}
+	s.done[child] = node
+	return node, nil
 }

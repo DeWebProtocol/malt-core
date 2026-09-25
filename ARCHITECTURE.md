@@ -81,7 +81,7 @@ does not forward the SDK API.
 
 | Package | Responsibility |
 | --- | --- |
-| `sdk/object` | Object references, Map/List containers, tagged structs, and recursive child-first Commit |
+| `sdk/object` | Object references, Map/List containers, tagged structs, recursive Commit and local graph deltas |
 | `sdk/authentication` | Queries, independent verification, immutable writers, bounded sessions, and candidate batches |
 | `sdk/authentication/builtin` | Optional verification-only KZG and IPA engines |
 | `engine` | Apply Root-selected derivation and combine the tree with commitment capabilities |
@@ -128,17 +128,28 @@ returned proofs own their buffers, and a later query checks its own materializer
 Each Object is an application vertex: raw Immutable leaves return content CIDs,
 while authenticated containers return MALT Roots. Map keys, List indices and
 explicit struct tags describe references. Recursive Commit resolves child CIDs
-before constructing the parent ArcSet and retains a writer on each authenticated
-object. No object-specific encoding or payload-name interpretation enters
-`auth/tree`. See the [Object guide](docs/guides/objects.md) for the API, payload
-convention, complete example, and retention boundaries.
+before updating the parent ArcSet. Objects retain immutable snapshots of their
+Root, configuration, writer and exact child versions. One Commit stages all
+snapshots, then confirms them together on success; failure leaves their prior
+snapshots intact. No dirty tracking is needed to detect reference changes.
+
+`Delta(ctx)` is available on the built-in implementations and `Base`, without
+adding a method to the Object interface. It compares the last two committed
+graphs, collecting changed ArcSets and newly referenced local bytes, with
+separate external CID dependencies. ArcSet candidate export is explicit and
+uses the enclosing graph's previous child version as its baseline. No
+object-specific encoding or payload-name interpretation enters `auth/tree`.
+See the [Object guide](docs/guides/objects.md) for the API, payload convention,
+complete example, and local retention boundaries.
 
 `BuildWriter` constructs a new immutable ArcSet. `NewWriter` validates and owns
 a complete imported candidate. `Apply` checks expected-before bindings and
 copies changed paths while sharing immutable descendants. `Update` scans a
-complete desired state to derive that delta. `Root` is cheap; `Export` is an
-explicit complete input/node traversal. New or externally supplied nodes are
-validated, while unchanged owned nodes need no repeated commitment check.
+complete desired state to derive that delta; Objects reuse it while their
+configuration is unchanged. `Root` is cheap; `State` copies the labels, targets
+and configuration, while `Export` also traverses all nodes. New or externally
+supplied nodes are validated, while unchanged owned nodes need no repeated
+commitment check.
 
 `Session` bounds retained branches by handle count and conservative state
 charge. Handles are local capabilities, never Roots, receipts, or trust
