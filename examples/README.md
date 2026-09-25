@@ -9,15 +9,16 @@ package or running service to configure.
 
 Use Go 1.26.0 or newer and run the commands below from the repository root.
 Go downloads dependencies on the first build. The examples need no C compiler,
-Gateway, database, IPFS node, or external payload service. CI runs all four with
+Gateway, database, IPFS node, or external payload service. CI runs all examples with
 `CGO_ENABLED=0` on Linux amd64 and cross-compiles them for macOS amd64/arm64 and
 Windows amd64. Cross-compilation does not claim runtime coverage on those systems.
 
-All examples select the IPA256 commitment profile and `ipa.ProfileDirect` to
+The binding, traversal, range and update examples select IPA256 and `ipa.ProfileDirect` to
 avoid retaining a fixed-base precomputation table. This execution choice is
 independent of **coordinate derivation**: `derivation.SHA256` derives Prefix
 keys, while `derivation.Direct` accepts canonical key or index bytes. KZG is
 another supported backend; its implementation lives in `auth/commitment/kzg`.
+The Object example installs both IPA and KZG to compose a Map with a List.
 
 The commands execute source from this checkout. To use Core in your own Go
 module, follow the exact-release [installation instructions](../README.md#requirements-and-installation)
@@ -136,8 +137,38 @@ Updated binding verified
 operations do not publish or accept a Root. Verifying both states separately
 does not constitute a portable proof of an authorized state transition.
 
+## 5. Objects and collected graph changes
+
+```bash
+go run ./examples/objects
+```
+
+[Source](objects/main.go). Construct a Map → tagged Document → List → Immutable
+graph with ordinary Go references. Root Commit recursively commits every child.
+`root.Delta(ctx)` collects the new ArcSets and content bytes, so the caller can
+materialize the graph without enumerating its Objects. Replacing a List item
+and committing again updates the affected ArcSets and collects the new block.
+The example proves and independently verifies both versions, including their
+content CIDs.
+
+Expected output:
+
+```text
+Committed object graph, children before parents
+Collected 3 ArcSets and 1 content block
+Proved traversal to the content CID
+Updated 3 ArcSets; collected 1 new content block
+Verified both versions; rejected evidence for the wrong Root
+```
+
+The [Object guide](../docs/guides/objects.md) describes payloads, struct tags,
+failed Commit retries, external CID dependencies and delta retention. The
+example keeps application content bytes in a local map; Core adds no durable
+storage or publication behavior.
+
 ## Further reading
 
+- [Object construction and change collection](../docs/guides/objects.md)
 - [Authentication inputs and Roots](../docs/spec/authentication-inputs.md)
 - [Queries and independent verification](../docs/spec/authentication-contracts.md)
 - [Candidate batches and receipts](../docs/spec/authentication-batches.md)
