@@ -94,6 +94,7 @@ jobs:
           go run -p=6 ./examples/range
           go run -p=6 ./examples/query
           go run -p=6 ./examples/update
+          go run -p=6 ./examples/objects
 
       - name: Cross-build examples for macOS and Windows
         shell: bash

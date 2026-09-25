@@ -1,6 +1,9 @@
 package authentication_test
 
 import (
+	"context"
+	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
@@ -10,6 +13,39 @@ import (
 	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	cid "github.com/ipfs/go-cid"
 )
+
+func TestWriterStateOwnsLabelsAndPreservesMetadata(t *testing.T) {
+	state := engine.State{
+		Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256},
+		Entries:    []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}},
+		ChunkSize:  8, TotalSize: 3,
+	}
+	w, err := authentication.BuildWriter(t.Context(), pathEngine(t), state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := w.State(t.Context())
+	if err != nil || !reflect.DeepEqual(got, state) {
+		t.Fatalf("retained state = %+v, error = %v", got, err)
+	}
+	got.Entries[0].Label[0] = 0xff
+	got.Entries[0].Target = cid.Undef
+	got.TotalSize = 99
+	again, err := w.State(t.Context())
+	if err != nil || !reflect.DeepEqual(again, state) {
+		t.Fatalf("caller changed retained state: %+v, %v", again, err)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := w.State(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled state read: %v", err)
+	}
+	for _, uninitialized := range []*authentication.Writer{nil, {}} {
+		if _, err := uninitialized.State(t.Context()); err == nil {
+			t.Fatal("uninitialized writer returned state")
+		}
+	}
+}
 
 func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 	e := pathEngine(t)

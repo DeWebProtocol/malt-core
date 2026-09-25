@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.10-rc.3] - 2026-09-25
+
+### Added
+
+- Add `sdk/object` with a common Object interface, raw-byte Immutable leaves,
+  Prefix Maps, Positional Lists, and tagged custom structs. Recursive Commit
+  processes children first and supports either installed IPA or KZG profiles.
+- Retain exact committed graph snapshots and collect ArcSet changes, new local
+  content blocks, and external CID dependencies with `Delta(ctx)`. Shared
+  content is deduplicated and ArcSets are ordered children before parents.
+- Reuse retained writers for unchanged configurations and confirm all managed
+  snapshots only after the enclosing Commit succeeds. Failed or canceled
+  commits preserve the prior snapshots for retry; dirty tracking is deferred.
+- Expose `authentication.Writer.State(ctx)` to copy labels, targets and
+  configuration without exporting authentication vectors.
+
+### Changed
+
+- Teach Commit, Prove, Update and Verify with Object-based code in the README
+  and a complete basic example. Add a composed Map/List example and move the
+  serialized query walkthrough from `examples/binding` to `examples/query`.
+
+### Compatibility
+
+- This is an additive Go SDK release relative to `v0.0.10-rc.2`. Existing
+  authentication APIs, Root encoding, proof/schema profiles and the portable
+  conformance corpus are unchanged. Root V remains 0.
+- Object deltas are local write candidates, not portable transition proofs,
+  storage transactions or content-deletion instructions. Lists currently have
+  no independent payload. Downstreams can retain rc.2 until adopting new APIs.
+
+See [v0.0.10-rc.3 release notes](docs/releases/v0.0.10-rc.3.md).
+
 ## [0.0.10-rc.2] - 2026-09-24
 
 ### Fixed

@@ -1,4 +1,4 @@
-// Command basic demonstrates Commit, Prove, Update, and Verify.
+// Command basic demonstrates Commit, Prove, Update, and Verify with Objects.
 package main
 
 import (
@@ -8,12 +8,12 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
 	"github.com/dewebprotocol/malt-core/auth/commitment/ipa"
-	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/maltcid"
+	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
+	"github.com/dewebprotocol/malt-core/sdk/object"
 	cid "github.com/ipfs/go-cid"
-	mh "github.com/multiformats/go-multihash"
 )
 
 func main() {
@@ -24,9 +24,7 @@ func main() {
 
 func run() error {
 	ctx := context.Background()
-
-	// Configure an engine that can commit and prove. IPA's ProfileDirect is an
-	// execution choice; the labels below use SHA256 coordinate derivation.
+	// Configure an engine for local commitment and proof generation.
 	scheme, err := ipa.NewCommitterScheme(ipa.ProfileDirect)
 	if err != nil {
 		return err
@@ -37,69 +35,71 @@ func run() error {
 	}
 	e := engine.New(profiles)
 
-	// 1. Commit: describe the data, derive coordinates, and create its Root.
-	// Each entry links a label to a content identifier. Content bytes remain
-	// with the application; Commit retains authentication nodes for Prove.
-	state := engine.State{
-		Descriptor: maltcid.RootDescriptor{
-			Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256,
-		},
-	}
-	for _, document := range []struct{ name, content string }{
-		{"report.txt", "A locally verifiable report."},
-		{"summary.txt", "A short summary."},
-	} {
-		target, err := (cid.Prefix{Version: 1, Codec: cid.Raw, MhType: mh.SHA2_256, MhLength: -1}).Sum([]byte(document.content))
-		if err != nil {
-			return err
-		}
-		state.Entries = append(state.Entries, engine.Entry{Label: []byte(document.name), Target: target})
-	}
-	view, err := e.Interpret(state)
+	// 1. Commit: a Map refers to an ordinary immutable content block.
+	collection, err := object.NewMap(e, object.MapConfig(maltcid.IPA256))
 	if err != nil {
 		return err
 	}
-	nodes := memory.NewNodes()
-	root, err := e.Commit(ctx, view, nodes)
+	content, err := object.NewImmutable([]byte("A locally verifiable report."))
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Commit: Root = %s\n", root)
+	if err := collection.Set([]byte("report.txt"), content); err != nil {
+		return err
+	}
+	root, err := collection.Commit(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Commit: collection Root created")
 
-	// 2. Prove: use the selected Root and a one-step path to obtain a target
-	// and verification evidence. The prover reads the committed nodes.
+	// 2. Prove: collect this version and supply it to the local query store.
+	nodes := memory.NewNodes()
+	blocks := make(map[string][]byte)
+	delta, err := collection.Delta(ctx)
+	if err != nil {
+		return err
+	}
+	if err := materialize(ctx, e, nodes, blocks, delta); err != nil {
+		return err
+	}
 	label := []byte("report.txt")
 	result, err := e.Prove(ctx, root, label, nodes)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Prove: target = %s; evidence ready\n", result.Target)
+	fmt.Println("Prove: report.txt target and evidence produced")
 
-	// 3. Update: replace the report's target while preserving the original Root.
-	// Before comes from the locally committed data, not the unverified result.
-	replacement, err := (cid.Prefix{Version: 1, Codec: cid.Raw, MhType: mh.SHA2_256, MhLength: -1}).Sum([]byte("An updated report."))
+	// 3. Update: replace the child reference, then commit and collect changes.
+	replacement, err := object.NewImmutable([]byte("An updated report."))
 	if err != nil {
 		return err
 	}
-	updatedRoot, err := e.Apply(ctx, root, []engine.Change{{
-		Label: label, Before: state.Entries[0].Target, After: replacement,
-	}}, nodes, nodes)
+	if err := collection.Set(label, replacement); err != nil {
+		return err
+	}
+	updatedRoot, err := collection.Commit(ctx)
 	if err != nil {
+		return err
+	}
+	delta, err = collection.Delta(ctx)
+	if err != nil {
+		return err
+	}
+	if err := materialize(ctx, e, nodes, blocks, delta); err != nil {
 		return err
 	}
 	updatedResult, err := e.Prove(ctx, updatedRoot, label, nodes)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Update: %d ArcSet and %d new content block collected\n", len(delta.ArcSets), len(delta.Blocks))
 	if updatedRoot.Equals(root) {
 		return fmt.Errorf("expected a new Root for the changed report")
 	}
-	fmt.Println("Update: a new Root created; original Root preserved")
 
-	// 4. Verify: a separate verification-only engine checks the original Root
-	// and path against the result. It needs neither state nor nodes.
-	// This demo trusts the Root it built locally; a real client selects its
-	// trusted Root independently of an untrusted prover's response.
+	// 4. Verify: each result is checked against its independently selected Root.
+	// The verifier needs neither the mutable Objects nor the prover's nodes.
 	verifier, err := builtin.NewVerifier(maltcid.IPA256)
 	if err != nil {
 		return err
@@ -118,9 +118,41 @@ func run() error {
 	if !updatedValid || !updatedResult.Present {
 		return fmt.Errorf("invalid updated binding")
 	}
-	if !result.Target.Equals(state.Entries[0].Target) || !updatedResult.Target.Equals(replacement) {
+	if !result.Target.Equals(content.Payload()) || !updatedResult.Target.Equals(replacement.Payload()) {
 		return fmt.Errorf("unexpected target at the original or updated Root")
 	}
+	if valid, err := verifier.Verify(updatedRoot, label, result); err == nil && valid {
+		return fmt.Errorf("old evidence was accepted against the updated Root")
+	}
+	// Fetched content bytes are checked separately against the verified CIDs.
+	for _, target := range []cid.Cid{result.Target, updatedResult.Target} {
+		data, present := blocks[target.KeyString()]
+		actual, err := target.Prefix().Sum(data)
+		if err != nil || !present || !actual.Equals(target) {
+			return fmt.Errorf("content bytes do not match verified target %s", target)
+		}
+	}
 	fmt.Println("Verify: original and updated targets verified")
+	return nil
+}
+
+// materialize is example application code: retain content bytes and import
+// each collected ArcSet into the caller-owned node store. It performs no I/O.
+func materialize(ctx context.Context, e *engine.Engine, nodes *memory.Nodes, blocks map[string][]byte, delta object.Delta) error {
+	if len(delta.External) != 0 {
+		return fmt.Errorf("example has unresolved external CIDs: %v", delta.External)
+	}
+	for _, block := range delta.Blocks {
+		blocks[block.CID.KeyString()] = block.Bytes
+	}
+	for _, arcset := range delta.ArcSets {
+		candidate, err := arcset.Export(ctx)
+		if err != nil {
+			return err
+		}
+		if err := authentication.Materialize(ctx, e, candidate, nodes); err != nil {
+			return err
+		}
+	}
 	return nil
 }

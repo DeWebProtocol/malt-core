@@ -50,6 +50,8 @@ func TestProductionImportBoundaries(t *testing.T) {
 		},
 		{name: "typed authentication SDK", dir: filepath.Join(root, "sdk", "authentication"), recursive: true,
 			forbidden: []string{"artifact", "execution", "mutation", "auth/semantic", "auth/proof", "auth/verifier", "graph/runtime", "graph/resolver", "storage", "model", "api", "server", "logger"}},
+		{name: "object construction SDK", dir: filepath.Join(root, "sdk", "object"), recursive: true,
+			forbidden: []string{"artifact", "execution", "mutation", "graph", "storage", "model", "api", "server", "logger", "auth/commitment/ipa", "auth/commitment/kzg"}},
 
 		{
 			name:      "module facade",
