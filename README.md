@@ -41,6 +41,9 @@ Add MALT Core to an existing Go module:
 go get github.com/dewebprotocol/malt-core@v0.0.10-rc.3
 ```
 
+After copying an example into your module, run `go mod tidy` to resolve its
+imports.
+
 The Object API used below is available starting with `v0.0.10-rc.3`.
 For JavaScript or TypeScript, use
 [malt-ts](https://github.com/DeWebProtocol/malt-ts), which has its own API and
