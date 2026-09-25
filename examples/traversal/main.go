@@ -11,9 +11,8 @@ import (
 	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/maltcid"
-	"github.com/dewebprotocol/malt-core/protocol"
-	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
+	"github.com/dewebprotocol/malt-core/traversal"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
@@ -43,72 +42,67 @@ func run() error {
 		return err
 	}
 
-	// Construct the child before binding its complete Root into the parent.
-	child, err := authentication.Prepare(ctx, prover, engine.State{
+	// 1. Commit the child, then bind its complete Root into the parent.
+	// Both commits retain their nodes in the same in-memory materializer.
+	nodes := memory.NewNodes()
+	childView, err := prover.Interpret(engine.State{
 		Descriptor: descriptor,
 		Entries:    []engine.Entry{{Label: []byte("report.txt"), Target: target}},
 	})
 	if err != nil {
 		return err
 	}
-	childRoot, err := cid.Decode(child.Root)
+	childRoot, err := prover.Commit(ctx, childView, nodes)
 	if err != nil {
 		return err
 	}
-	parent, err := authentication.Prepare(ctx, prover, engine.State{
+	parentView, err := prover.Interpret(engine.State{
 		Descriptor: descriptor,
 		Entries:    []engine.Entry{{Label: []byte("docs"), Target: childRoot}},
 	})
 	if err != nil {
 		return err
 	}
-
-	// The demo supplies both Roots' nodes from one in-memory materializer.
-	// ExecuteWithRoots can instead obtain a separate lookup for each reached Root.
-	nodes := memory.NewNodes()
-	for _, candidate := range []protocol.AuthenticationCandidate{child, parent} {
-		if err := authentication.Materialize(ctx, prover, candidate, nodes); err != nil {
-			return err
-		}
-	}
-
-	// The client chooses its locally built parent Root and exact label steps.
-	// Core does not split "docs/report.txt" or infer a longest matching label.
-	request := protocol.AuthenticationRequest{
-		Profile: protocol.AuthenticationPathProfile, Root: parent.Root,
-		Steps: [][]byte{[]byte("docs"), []byte("report.txt")}, Operation: "resolve",
-	}
-	result, err := authentication.Execute(ctx, prover, request, nodes)
+	root, err := prover.Commit(ctx, parentView, nodes)
 	if err != nil {
 		return err
 	}
+	fmt.Println("Commit: child and parent Roots created")
+
+	// 2. Prove the selected path. ResolvePath composes binding proofs and
+	// returns both the final target and the ordered verification evidence.
+	steps := [][]byte{[]byte("docs"), []byte("report.txt")}
+	resolved, proof, err := traversal.ResolvePath(ctx, prover, root, steps, nodes)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Prove: target and traversal evidence produced")
+
+	// 3. Verify against the client's original Root and exact steps, using a
+	// separate verification-only engine with no access to the materializer.
 	verifier, err := builtin.NewVerifier(maltcid.IPA256)
 	if err != nil {
 		return err
 	}
-	if ok, err := authentication.Verify(verifier, request, result); err != nil || !ok {
+	if ok, err := traversal.Verify(verifier, root, steps, resolved, proof); err != nil || !ok {
 		return fmt.Errorf("traversal verification: valid=%t, error=%v", ok, err)
-	}
-	resolved, err := cid.Decode(result.Resolved)
-	if err != nil {
-		return err
 	}
 	if !resolved.Equals(target) {
 		return fmt.Errorf("unexpected traversal target")
 	}
-	fmt.Println("Traversal verified: docs -> report.txt -> content CID")
+	fmt.Println("Verify: docs -> report.txt -> content CID")
 
-	// A missing step is authenticated early termination. The suffix is not read.
-	missingRequest := request
-	missingRequest.Steps = [][]byte{[]byte("docs"), []byte("missing.txt"), []byte("unvisited")}
-	absence, err := authentication.Execute(ctx, prover, missingRequest, nodes)
+	// An additional Prove/Verify pair demonstrates authenticated early absence.
+	// Core does not evaluate the suffix after the missing second step.
+	missingSteps := [][]byte{[]byte("docs"), []byte("missing.txt"), []byte("unvisited")}
+	missingTarget, absence, err := traversal.ResolvePath(ctx, prover, root, missingSteps, nodes)
 	if err != nil {
 		return err
 	}
-	if ok, err := authentication.Verify(verifier, missingRequest, absence); err != nil || !ok {
+	if ok, err := traversal.VerifyPath(verifier, root, missingSteps, missingTarget, absence); err != nil || !ok {
 		return fmt.Errorf("path absence verification: valid=%t, error=%v", ok, err)
 	}
-	if absence.AbsentStep == nil || *absence.AbsentStep != 1 {
+	if missingTarget.Defined() || len(absence.Results) != 2 || absence.Results[1].Present {
 		return fmt.Errorf("expected absence at the second step")
 	}
 	fmt.Println("Missing second step verified; suffix not evaluated")

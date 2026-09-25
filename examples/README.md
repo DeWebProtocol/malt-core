@@ -1,143 +1,46 @@
 # MALT Core examples
 
-These standalone Go programs demonstrate the public Core API. Start with
-[binding](binding/main.go), then explore traversal, ranges, and retained writers.
-Each directory contains a complete `main.go`; there is no hidden example helper
-package or running service to configure.
-
-## Requirements and execution
-
-Use Go 1.26.0 or newer and run the commands below from the repository root.
-Go downloads dependencies on the first build. The examples need no C compiler,
-Gateway, database, IPFS node, or external payload service. CI runs all examples with
-`CGO_ENABLED=0` on Linux amd64 and cross-compiles them for macOS amd64/arm64 and
-Windows amd64. Cross-compilation does not claim runtime coverage on those systems.
-
-The binding, traversal, range and update examples select IPA256 and `ipa.ProfileDirect` to
-avoid retaining a fixed-base precomputation table. This execution choice is
-independent of **coordinate derivation**: `derivation.SHA256` derives Prefix
-keys, while `derivation.Direct` accepts canonical key or index bytes. KZG is
-another supported backend; its implementation lives in `auth/commitment/kzg`.
-The Object example installs both IPA and KZG to compose a Map with a List.
-
-The commands execute source from this checkout. To use Core in your own Go
-module, follow the exact-release [installation instructions](../README.md#requirements-and-installation)
-and copy the relevant example's imports and flow.
-
-## 1. Binding, absence, and independent verification
+Start with **Commit → Prove → Update → Verify** using Objects:
 
 ```bash
-go run ./examples/binding
+go run ./examples/basic
 ```
 
-[Source](binding/main.go). The program:
+Each directory contains a complete Go program with imports, configuration,
+sample data, and error handling. Run the commands from the repository root.
+The [README walkthrough](../README.md#quick-start) shows the basic program's
+four steps directly in code.
 
-1. Registers a commitment/proving backend and prepares a Prefix ArcSet with one
-   `report.txt → content CID` binding.
-2. Selects the locally constructed Root, then materializes authentication nodes
-   in a reference in-memory store.
-3. Constructs a binding request and obtains an executor's result.
-4. Serializes and strictly decodes that result, then uses a separate
-   verification-only engine to check it against the original request.
-5. Checks payload bytes against the authenticated CID, proves a missing label,
-   and demonstrates rejection of a tampered target.
+## 1. Commit, prove, update, and verify with Objects
+
+[Source](basic/main.go). Create an `Immutable` document, put it in a `Map`, and
+call the Map's `Commit`. `Delta(ctx)` collects its committed relationships and
+content bytes. The example's `materialize` helper retains those bytes in an
+application map and imports each ArcSet candidate into a reference in-memory
+node store. `engine.Prove` then returns the target and evidence for `report.txt`.
+
+To update the collection, replace its document reference with `Set`, Commit
+again, and collect the new delta. A separate verifier checks the original and
+updated results against their respective Roots. The program also rejects old
+evidence presented against the new Root and checks content bytes against the
+verified CIDs.
 
 Expected output:
 
 ```text
-Binding verified: report.txt
-Payload bytes match the authenticated CID
-Absence verified: missing.txt
-Tampered target rejected
+Commit: collection Root created
+Prove: report.txt target and evidence produced
+Update: 1 ArcSet and 1 new content block collected
+Verify: original and updated targets verified
 ```
 
-In an integration, the client must obtain its trusted Root independently of the
-untrusted executor. Decoding a result or receiving its declared Root does not
-establish trust. `Verify` returns whether evidence is valid; the verified
-binding's `Present` field distinguishes presence from absence.
+The example selects Roots it constructed locally. A client must select its
+trusted Root and query independently of an untrusted executor. Commit and Delta
+perform local computation; storage, publication, and root acceptance are
+application responsibilities. Save each delta until its writes are handled;
+the next successful Commit advances the local comparison baseline.
 
-## 2. Explicit traversal through composed Roots
-
-```bash
-go run ./examples/traversal
-```
-
-[Source](traversal/main.go). Construct the child ArcSet first, then bind its
-complete Root into the parent:
-
-```text
-parent Root --"docs"--> child Root --"report.txt"--> content CID
-```
-
-The client supplies two explicit labels. Core neither splits a path string nor
-searches for a longest matching prefix. The example also verifies a missing
-second step with an unevaluated suffix.
-
-Expected output:
-
-```text
-Traversal verified: docs -> report.txt -> content CID
-Missing second step verified; suffix not evaluated
-```
-
-Both Roots use one in-memory node lookup in this program. Services can instead
-use `ExecuteWithRoots` to supply materialization for each reached Root. This is
-application ArcSet organization; no flat/compositional flag is added to a Root.
-
-## 3. Integer labels and authenticated byte ranges
-
-```bash
-go run ./examples/range
-```
-
-[Source](range/main.go). Split `hello world` into `hell`, `o wo`, and `rld`.
-Bind their CIDs at dense indices 0, 1, and 2 in a Positional ArcSet with
-`ChunkSize=4` and `TotalSize=11`.
-
-`coordinate.EncodeIndex` produces exactly eight unsigned big-endian bytes for
-each label. `derivation.Direct` parses those bytes as the index; it does not
-parse decimal strings. The query's `[start, end)` offsets are byte positions,
-not binding indices.
-
-After checking the range proof, the client checks each returned segment's bytes
-against its authenticated CID and length, then assembles the selected slice.
-The in-memory payload map is example application code, separate from Core's
-authentication-node materializer.
-
-Expected output:
-
-```text
-Direct index labels: 0, 1, 2 (eight-byte big-endian)
-Range proof and all segment CIDs verified
-Bytes [3,9): lo wor
-```
-
-## 4. Immutable updates and complete export
-
-```bash
-go run ./examples/update
-```
-
-[Source](update/main.go). `BuildWriter` constructs retained local state. `Apply`
-checks the expected previous target and returns an independent writer for the
-new Root, preserving the base. `Export` explicitly produces each complete
-candidate; the program materializes and queries both versions, then verifies
-their respective bindings.
-
-Expected output:
-
-```text
-Original Root preserved; updated Root is distinct
-Original binding verified
-Updated binding verified
-```
-
-`NewWriter` is the entry point for importing an existing complete candidate;
-`BuildWriter` starts from application labels and targets. These local writer
-operations do not publish or accept a Root. Verifying both states separately
-does not constitute a portable proof of an authorized state transition.
-
-## 5. Objects and collected graph changes
+## 2. Compose Maps, Lists, and custom structs
 
 ```bash
 go run ./examples/objects
@@ -145,11 +48,10 @@ go run ./examples/objects
 
 [Source](objects/main.go). Construct a Map → tagged Document → List → Immutable
 graph with ordinary Go references. Root Commit recursively commits every child.
-`root.Delta(ctx)` collects the new ArcSets and content bytes, so the caller can
-materialize the graph without enumerating its Objects. Replacing a List item
-and committing again updates the affected ArcSets and collects the new block.
-The example proves and independently verifies both versions, including their
-content CIDs.
+`root.Delta(ctx)` collects the new ArcSets and content bytes without requiring
+the caller to enumerate its Objects. Replacing a List item and committing again
+updates the affected ArcSets and collects the new block. The example proves and
+independently verifies both versions, including their content CIDs.
 
 Expected output:
 
@@ -161,10 +63,124 @@ Updated 3 ArcSets; collected 1 new content block
 Verified both versions; rejected evidence for the wrong Root
 ```
 
-The [Object guide](../docs/guides/objects.md) describes payloads, struct tags,
-failed Commit retries, external CID dependencies and delta retention. The
-example keeps application content bytes in a local map; Core adds no durable
-storage or publication behavior.
+The [Object guide](../docs/guides/objects.md) covers payloads, struct tags, failed
+Commit retries, external CID dependencies and retained snapshots. This example
+uses IPA for the Map and Document, and KZG for the List.
+
+## 3. Traverse several Roots with the engine API
+
+```bash
+go run ./examples/traversal
+```
+
+[Source](traversal/main.go). Construct two ArcSets directly, commit the child
+first, and bind its complete Root into the parent:
+
+```text
+parent Root --"docs"--> child Root --"report.txt"--> content CID
+```
+
+`traversal.ResolvePath` follows explicit label steps and returns the target plus
+ordered binding evidence. `traversal.Verify` checks that evidence against the
+original Root and steps using a separate verification-only engine. Core does
+not split `docs/report.txt` or choose a longest matching label. Both Roots use
+the same in-memory node store here.
+
+Expected output:
+
+```text
+Commit: child and parent Roots created
+Prove: target and traversal evidence produced
+Verify: docs -> report.txt -> content CID
+Missing second step verified; suffix not evaluated
+```
+
+## 4. Prove a byte range
+
+```bash
+go run ./examples/range
+```
+
+[Source](range/main.go). Commit a Positional sequence, call `ProveRange`, then
+call `VerifyRange` against the same Root and byte interval. Only after proof
+verification does the application fetch, check, and assemble the payload bytes.
+
+The example splits `hello world` into `hell`, `o wo`, and `rld`, bound at indices
+0, 1, and 2 with `ChunkSize=4` and `TotalSize=11`. `coordinate.EncodeIndex`
+produces exactly eight unsigned big-endian bytes for each label. Direct
+derivation parses those bytes as an index; decimal strings are not index labels.
+The requested `[start, end)` offsets are byte positions, distinct from indices.
+
+Expected output:
+
+```text
+Commit: sequence Root created
+Prove: range evidence produced
+Verify: range evidence valid
+Direct index labels: 0, 1, 2 (eight-byte big-endian)
+Range proof and all segment CIDs verified
+Bytes [3,9): lo wor
+```
+
+## 5. Use serialized SDK queries
+
+```bash
+go run ./examples/query
+```
+
+[Source](query/main.go). `authentication.Prepare` builds a complete candidate;
+`Materialize` validates and imports its nodes. `authentication.Execute` produces
+evidence for a request. After JSON decoding, `authentication.Verify` checks the
+response against the client's original request using a separate verifier.
+The program also checks payload bytes, proves absence, and rejects tampering.
+
+Expected output:
+
+```text
+Binding verified: report.txt
+Payload bytes match the authenticated CID
+Absence verified: missing.txt
+Tampered target rejected
+```
+
+## 6. Use retained authentication writers directly
+
+```bash
+go run ./examples/update
+```
+
+[Source](update/main.go). `BuildWriter` constructs retained state. `Apply`
+checks expected previous targets and returns an independent writer for the new
+Root, preserving the base. `Export` produces a complete candidate. The program
+materializes both versions, then proves and verifies their respective bindings.
+`NewWriter` imports an existing complete candidate. These writer operations do
+not publish or accept a Root; separately verifying both versions is not a
+portable proof of an authorized state transition.
+
+Expected output:
+
+```text
+Original Root preserved; updated Root is distinct
+Original binding verified
+Updated binding verified
+```
+
+## Requirements and execution
+
+Use Go 1.26.0 or newer. Go downloads dependencies on the first build. The six
+examples need no C compiler, Gateway, database, IPFS node, or external payload
+service. CI runs all six with `CGO_ENABLED=0` on Linux amd64 and cross-compiles
+them for macOS amd64/arm64 and Windows amd64. Cross-compilation does not claim
+runtime coverage on those systems.
+
+The examples select IPA256 with `ipa.ProfileDirect`; the composed Object
+example also installs KZG4096. IPA's execution profile controls precomputation,
+independently of coordinate derivation. `derivation.SHA256` derives Prefix keys;
+`derivation.Direct` accepts canonical key or index bytes.
+
+These commands execute source from this checkout. Objects require
+`v0.0.10-rc.3` or later. To use Core in your own module, follow the exact-release
+[installation instructions](../README.md#requirements-and-installation).
 
 ## Further reading
 

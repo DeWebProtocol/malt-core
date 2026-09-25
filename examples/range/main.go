@@ -12,8 +12,6 @@ import (
 	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/engine"
 	"github.com/dewebprotocol/malt-core/maltcid"
-	"github.com/dewebprotocol/malt-core/protocol"
-	"github.com/dewebprotocol/malt-core/sdk/authentication"
 	"github.com/dewebprotocol/malt-core/sdk/authentication/builtin"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
@@ -37,7 +35,7 @@ func run() error {
 	}
 	prover := engine.New(profiles)
 
-	// The application chunks "hello world" into four-byte blocks. Only the last
+	// 1. Commit: the application chunks "hello world" into four-byte blocks. The last
 	// block may be shorter. Core authenticates the CIDs and the byte geometry.
 	chunks := [][]byte{[]byte("hell"), []byte("o wo"), []byte("rld")}
 	payloads := make(map[string][]byte)
@@ -58,40 +56,42 @@ func run() error {
 		})
 		payloads[target.String()] = chunk
 	}
-	candidate, err := authentication.Prepare(ctx, prover, state)
+	view, err := prover.Interpret(state)
 	if err != nil {
 		return err
 	}
 	nodes := memory.NewNodes()
-	if err := authentication.Materialize(ctx, prover, candidate, nodes); err != nil {
-		return err
-	}
-
-	// [start, end) is a byte interval, distinct from the index labels above.
-	start, end := uint64(3), uint64(9)
-	request := protocol.AuthenticationRequest{
-		Profile: protocol.AuthenticationPathProfile, Root: candidate.Root,
-		Steps: [][]byte{}, Operation: "range", Start: &start, End: &end,
-	}
-	result, err := authentication.Execute(ctx, prover, request, nodes)
+	root, err := prover.Commit(ctx, view, nodes)
 	if err != nil {
 		return err
 	}
+	fmt.Println("Commit: sequence Root created")
+
+	// 2. Prove: [start, end) is a byte interval, distinct from index labels.
+	start, end := uint64(3), uint64(9)
+	result, err := prover.ProveRange(ctx, root, start, &end, nodes)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Prove: range evidence produced")
+
+	// 3. Verify: check the original Root and byte interval without node lookup.
 	verifier, err := builtin.NewVerifier(maltcid.IPA256)
 	if err != nil {
 		return err
 	}
-	if ok, err := authentication.Verify(verifier, request, result); err != nil || !ok {
+	if ok, err := verifier.VerifyRange(root, start, &end, result); err != nil || !ok {
 		return fmt.Errorf("range verification: valid=%t, error=%v", ok, err)
 	}
+	fmt.Println("Verify: range evidence valid")
 
 	// Verification authenticates metadata and the ordered segment CIDs. Fetching,
 	// hashing, checking lengths, and assembling their bytes belong to the client.
 	// This tiny map stands in for untrusted content storage in the example.
-	meta := result.Range.Metadata
+	meta := result.Metadata
 	firstIndex := start / meta.ChunkSize
 	var assembled []byte
-	for offset, segment := range result.Range.Segments {
+	for offset, segment := range result.Segments {
 		body, found := payloads[segment.Target.String()]
 		if !found {
 			return fmt.Errorf("segment payload is unavailable")
