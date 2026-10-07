@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.10-rc.4] - 2026-10-07
+
+### Changed
+
+- Align the security policy with the current application-neutral Core boundary,
+  fail-closed verification, exact commitment profiles and external persistence.
+- Enforce evaluator ownership of comparison-only authentication baselines with
+  an architecture guard against restoring `auth/experimental/hashtrie`.
+
 ### Removed
 
 - Move the comparison-only `auth/experimental/hashtrie` algorithm, independent
@@ -13,6 +22,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `internal/baselines/hashtrie`. Its consumers must use the evaluator-owned
   baseline; Core does not retain a forwarding package. Native authentication
   APIs, Root V=0, ProofLists, schemas and conformance remain unchanged.
+
+### Compatibility
+
+- Relative to `v0.0.10-rc.3`, native Go APIs, authentication algorithms, Root
+  encoding, proof/schema profiles and portable conformance data are unchanged.
+  The experimental hash trie appeared only on intervening development commits;
+  consumers of that package must use the evaluator-owned implementation.
+- Root V remains 0. This source prerelease does not declare production readiness.
+
+See [v0.0.10-rc.4 release notes](docs/releases/v0.0.10-rc.4.md).
 
 ## [0.0.10-rc.3] - 2026-09-25
 
@@ -522,7 +541,11 @@ for the trusted CLI/daemon and UnixFS application, and
 - KZG verification rejects out-of-range proof indices and non-canonical proof
   lengths instead of allowing malformed input to panic or reuse a commitment.
 
-[Unreleased]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.9...HEAD
+[Unreleased]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.10-rc.4...HEAD
+[0.0.10-rc.4]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.10-rc.3...v0.0.10-rc.4
+[0.0.10-rc.3]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.10-rc.2...v0.0.10-rc.3
+[0.0.10-rc.2]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.10-rc.1...v0.0.10-rc.2
+[0.0.10-rc.1]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.9...v0.0.10-rc.1
 [0.0.9]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.8...v0.0.9
 [0.0.7]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.5...v0.0.7
 [0.0.7-rc.5]: https://github.com/DeWebProtocol/malt-core/compare/v0.0.7-rc.4...v0.0.7-rc.5
