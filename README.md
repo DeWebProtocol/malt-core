@@ -38,7 +38,7 @@ coverage.
 Add MALT Core to an existing Go module:
 
 ```bash
-go get github.com/dewebprotocol/malt-core@v0.0.10-rc.3
+go get github.com/dewebprotocol/malt-core@v0.0.10-rc.4
 ```
 
 After copying an example into your module, run `go mod tidy` to resolve its
@@ -175,7 +175,7 @@ The complete example also checks content bytes against those verified targets.
 Run the complete program from this release:
 
 ```bash
-git clone --branch v0.0.10-rc.3 https://github.com/DeWebProtocol/malt-core.git
+git clone --branch v0.0.10-rc.4 https://github.com/DeWebProtocol/malt-core.git
 cd malt-core
 go run ./examples/basic
 ```

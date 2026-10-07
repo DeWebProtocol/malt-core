@@ -13,13 +13,14 @@ untrusted caller-supplied evidence.
 | Version | Security support |
 | --- | --- |
 | `main` | Best-effort review of current integration code |
-| `v0.0.10-rc.3` | Current experimental Core release candidate |
+| `v0.0.10-rc.4` | Current experimental Core release candidate |
 | Earlier experimental versions | Historical contracts; no compatibility or backport guarantee |
 
-This release snapshot was checked on 2026-10-06. Pin an exact published release
+This release snapshot was checked on 2026-10-07. Pin an exact published release
 when evaluating Core; `main` is an integration branch. The current release is
-[`v0.0.10-rc.3`](https://github.com/DeWebProtocol/malt-core/releases/tag/v0.0.10-rc.3),
-at `6f16b13f3abe9cbd0992e83e1457663935e5a72f`.
+[`v0.0.10-rc.4`](https://github.com/DeWebProtocol/malt-core/releases/tag/v0.0.10-rc.4).
+Its exact source commit is recorded by the immutable release tag and GitHub
+release.
 
 Security fixes may require breaking API, proof, Root or wire-format changes.
 The [compatibility policy](docs/policy/compatibility.md) defines the current
