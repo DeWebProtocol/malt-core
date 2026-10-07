@@ -84,6 +84,8 @@ in Git history; do not relabel them or change CIDv1's container version.
   `DeWebProtocol/malt`.
 - Put executable benchmark runners, adapters, plans, and result schemas in
   `malt-evaluation/`.
+- Put comparison-only authentication implementations and their independent
+  experimental formats in `malt-evaluation/`; Core owns MALT's SDK contracts.
 - Put public tutorials and product narrative in `web/`, and research/paper
   material in `documents/`.
 
