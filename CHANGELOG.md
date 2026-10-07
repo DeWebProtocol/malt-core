@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Removed
+
+- Move the comparison-only `auth/experimental/hashtrie` algorithm, independent
+  experimental formats, tests and documentation to `malt-evaluation` under
+  `internal/baselines/hashtrie`. Its consumers must use the evaluator-owned
+  baseline; Core does not retain a forwarding package. Native authentication
+  APIs, Root V=0, ProofLists, schemas and conformance remain unchanged.
+
 ## [0.0.10-rc.3] - 2026-09-25
 
 ### Added
