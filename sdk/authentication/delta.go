@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/engine"
@@ -14,12 +13,12 @@ import (
 
 // Delta changes typed relations in an already verified retained ArcSet. Count
 // appends/truncates a Positional suffix; appended positions require bindings.
-// Measured length changes require an explicit TotalSize. Chunk geometry changes
-// use Update with complete state. This is not a stateless update witness.
+// PayloadCID changes only the opaque root payload: nil preserves it and a
+// pointer to cid.Undef removes it. This is not a stateless update witness.
 type Delta struct {
-	Changes   []engine.Change
-	Count     *uint64
-	TotalSize *uint64
+	Changes    []engine.Change
+	Count      *uint64
+	PayloadCID *cid.Cid
 }
 
 // Apply copies only changed input and authentication paths. The base remains
@@ -38,7 +37,7 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 	}
 	count := oldCount
 	positional := meta.Descriptor.Layout == maltcid.Positional
-	if !positional && (delta.Count != nil || delta.TotalSize != nil) {
+	if !positional && (delta.Count != nil || delta.PayloadCID != nil) {
 		return nil, errors.New("Prefix delta cannot carry sequence metadata")
 	}
 	if positional && delta.Count != nil {
@@ -47,16 +46,8 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 	if positional && count > oldCount && count-oldCount > uint64(len(delta.Changes)) {
 		return nil, errors.New("appended positions require complete bindings")
 	}
-	if positional {
-		if meta.ChunkSize == 0 && delta.TotalSize != nil {
-			return nil, errors.New("plain sequence cannot carry byte measurements")
-		}
-		if meta.ChunkSize > 0 && count != oldCount && delta.TotalSize == nil {
-			return nil, errors.New("measured length changes require total size")
-		}
-		if delta.TotalSize != nil {
-			meta.TotalSize = *delta.TotalSize
-		}
+	if positional && delta.PayloadCID != nil {
+		meta.PayloadCID = *delta.PayloadCID
 	}
 	bindings := w.bindings
 	if positional && count < oldCount {
@@ -114,20 +105,10 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if positional && count <= oldCount && (count != oldCount || meta.TotalSize != w.metadata.TotalSize) {
-		if meta.ChunkSize == 0 {
-			root, err = w.engine.Truncate(ctx, root, count, nodes, nodes)
-		} else {
-			root, err = w.engine.ResizeMeasured(ctx, root, count, meta.TotalSize, nodes, nodes)
-		}
+	if positional && count < oldCount {
+		root, err = w.engine.Truncate(ctx, root, count, nodes, nodes)
 	}
 	if err == nil && positional && count > oldCount {
-		if meta.ChunkSize > 0 {
-			if count-1 > math.MaxUint64/meta.ChunkSize {
-				return nil, errors.New("sequence size overflow")
-			}
-			root, err = w.engine.ResizeMeasured(ctx, root, oldCount, oldCount*meta.ChunkSize, nodes, nodes)
-		}
 		targets := make([]cid.Cid, 0, count-oldCount)
 		for i := oldCount; i < count; i++ {
 			if err := ctx.Err(); err != nil {
@@ -139,13 +120,12 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 			}
 			targets = append(targets, entry.entry.Target)
 		}
-		var total *uint64
-		if meta.ChunkSize > 0 {
-			total = &meta.TotalSize
-		}
 		if err == nil {
-			root, _, err = w.engine.AppendBatch(ctx, root, targets, total, nodes, nodes)
+			root, _, err = w.engine.AppendBatch(ctx, root, targets, nodes, nodes)
 		}
+	}
+	if err == nil && positional && !meta.PayloadCID.Equals(w.metadata.PayloadCID) {
+		root, err = w.engine.SetPayload(ctx, root, meta.PayloadCID, nodes, nodes)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("update authentication state: %w", err)

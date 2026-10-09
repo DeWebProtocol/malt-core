@@ -22,12 +22,12 @@ func TestAppendBatchGrowsMultipleLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Grow straight from height zero to height two.
-	targets := make([]cid.Cid, 255*255)
+	targets := make([]cid.Cid, 255*256)
 	for i := range targets {
 		targets[i] = value
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i + 1)), Target: value})
 	}
-	next, first, err := e.AppendBatch(t.Context(), root, targets, nil, nodes, nodes)
+	next, first, err := e.AppendBatch(t.Context(), root, targets, nodes, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,35 +48,25 @@ func TestAppendBatchGrowsMultipleLevels(t *testing.T) {
 
 func TestAppendBatchRejectsInvalidSuffixWithoutWrites(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 8, TotalSize: 8, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: target("before")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: target("before")}}}
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
 		targets []cid.Cid
-		size    uint64
 	}{
-		{nil, 8}, {[]cid.Cid{cid.Undef}, 16}, {[]cid.Cid{target("a"), target("b")}, 16},
+		{nil}, {[]cid.Cid{cid.Undef}},
 	} {
 		out := &rejectWrites{t: t}
-		if _, _, err := e.AppendBatch(t.Context(), root, tc.targets, &tc.size, nodes, out); err == nil {
+		if _, _, err := e.AppendBatch(t.Context(), root, tc.targets, nodes, out); err == nil {
 			t.Fatal("invalid suffix accepted")
 		}
 	}
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
-	size := uint64(16)
-	if _, _, err := e.AppendBatch(canceled, root, []cid.Cid{target("a")}, &size, nodes, &rejectWrites{t: t}); err == nil {
+	if _, _, err := e.AppendBatch(canceled, root, []cid.Cid{target("a")}, nodes, &rejectWrites{t: t}); err == nil {
 		t.Fatal("canceled append succeeded")
-	}
-	state.TotalSize = 7
-	partial, err := e.Build(t.Context(), state, nodes)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := e.AppendBatch(t.Context(), partial, []cid.Cid{target("a")}, &size, nodes, &rejectWrites{t: t}); err == nil {
-		t.Fatal("appended after partial chunk")
 	}
 }
 

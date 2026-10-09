@@ -8,17 +8,18 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-const AuthenticationDeltaProfile = "malt.authentication-delta/1"
+const AuthenticationDeltaProfile = "malt.authentication-delta/2"
 
 const MaxAuthenticationChanges = 1 << 20
 
 // AuthenticationDelta carries typed changes for a retained complete writer.
 // It is neither a base-state witness nor a state-transition proof.
 type AuthenticationDelta struct {
-	Profile   string                 `json:"profile"`
-	Changes   []AuthenticationChange `json:"changes"`
-	Count     *uint64                `json:"count,omitempty,string"`
-	TotalSize *uint64                `json:"total_size,omitempty,string"`
+	Profile string                 `json:"profile"`
+	Changes []AuthenticationChange `json:"changes"`
+	Count   *uint64                `json:"count,omitempty,string"`
+	// Absent preserves the payload; the empty string explicitly removes it.
+	PayloadCID *string `json:"payload_cid,omitempty"`
 }
 type AuthenticationChange struct {
 	Label  []byte  `json:"label"`
@@ -40,6 +41,9 @@ func (d AuthenticationDelta) CoreChanges() ([]engine.Change, error) {
 	}
 	if len(d.Changes) > MaxAuthenticationChanges {
 		return nil, errors.New("too many authentication changes")
+	}
+	if _, err := d.CorePayloadCID(); err != nil {
+		return nil, err
 	}
 	changes := make([]engine.Change, len(d.Changes))
 	for i, c := range d.Changes {
@@ -66,4 +70,19 @@ func (d AuthenticationDelta) CoreChanges() ([]engine.Change, error) {
 		}
 	}
 	return changes, nil
+}
+
+func (d AuthenticationDelta) CorePayloadCID() (*cid.Cid, error) {
+	if d.PayloadCID == nil {
+		return nil, nil
+	}
+	value := cid.Undef
+	if *d.PayloadCID != "" {
+		var err error
+		value, err = cid.Decode(*d.PayloadCID)
+		if err != nil {
+			return nil, fmt.Errorf("payload CID: %w", err)
+		}
+	}
+	return &value, nil
 }

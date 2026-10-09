@@ -13,7 +13,7 @@ import (
 )
 
 func TestAuthenticationV0Corpus(t *testing.T) {
-	raw, err := os.ReadFile("authentication-v2.json")
+	raw, err := os.ReadFile("authentication-v3.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestAuthenticationV0Corpus(t *testing.T) {
 	if err := json.Unmarshal(raw, &corpus); err != nil {
 		t.Fatal(err)
 	}
-	if corpus.Schema != "malt.conformance.authentication/2" || len(corpus.Vectors) == 0 {
+	if corpus.Schema != "malt.conformance.authentication/3" || len(corpus.Vectors) == 0 {
 		t.Fatal("invalid corpus")
 	}
 	verifier, err := authbuiltin.NewVerifier()

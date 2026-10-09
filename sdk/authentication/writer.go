@@ -176,17 +176,6 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if state.ChunkSize != w.metadata.ChunkSize {
-		next, err := BuildWriter(ctx, w.engine, state)
-		if err != nil {
-			return nil, err
-		}
-		next.previous = w.root.String()
-		if next.root.Equals(w.root) {
-			next.previous = w.previous
-		}
-		return next, nil
-	}
 	view, err := w.engine.Interpret(state)
 	if err != nil {
 		return nil, err
@@ -216,7 +205,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		delta.Changes = append(delta.Changes, change)
 	}
 	if state.Descriptor.Layout == maltcid.Prefix {
-		if state.ChunkSize != 0 || state.TotalSize != 0 {
+		if state.PayloadCID.Defined() {
 			return nil, errors.New("Prefix cannot carry sequence metadata")
 		}
 		if err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {
@@ -235,11 +224,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 				return nil, errors.New("Positional inputs must be contiguous")
 			}
 		}
-		if state.ChunkSize > 0 {
-			delta.TotalSize = &state.TotalSize
-		} else if state.TotalSize != 0 {
-			return nil, errors.New("plain sequence cannot carry total size")
-		}
+		delta.PayloadCID = &state.PayloadCID
 	}
 	return w.Apply(ctx, delta)
 }

@@ -14,7 +14,7 @@ func TestAuthenticationJSONExactFieldNamesAndValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prefix := fmt.Sprintf(`{"profile":"malt.authentication/3","root":%q,`, root.String())
+	prefix := fmt.Sprintf(`{"profile":"malt.authentication/5","root":%q,`, root.String())
 	for _, body := range []string{
 		`"operation":"resolve","start":null}`,
 		`"operation":"binding","input":{"kind":"index","number":"0","data":null}}`,
@@ -41,7 +41,7 @@ func TestAuthenticationJSONExactFieldNamesAndValues(t *testing.T) {
 	}
 
 	for _, raw := range []string{
-		`{"descriptor":{"layout":2,"vc_profile":2},"entries":[],"chunk_size":"01"}`,
+		`{"descriptor":{"layout":3,"vc_profile":2},"entries":[],"chunk_size":"01"}`,
 		`{"descriptor":{"Layout":2,"vc_profile":2},"entries":[]}`,
 	} {
 		if _, err := protocol.DecodeAuthenticationState([]byte(raw)); err == nil {

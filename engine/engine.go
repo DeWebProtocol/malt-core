@@ -30,8 +30,6 @@ type (
 
 const ProofFormat = tree.ProofFormat
 
-var ErrNotMeasured = tree.ErrNotMeasured
-
 func NewRegistry() *Registry { return tree.NewRegistry() }
 
 type Engine struct {
@@ -70,12 +68,11 @@ type Entry struct {
 
 // State stores the original labels so label-based persistence can reconstruct
 // a Root without pretending that labels and authentication keys are identical.
-// ChunkSize/TotalSize are zero for Prefix and for plain Positional state.
+// PayloadCID is an optional opaque Positional root payload; Prefix uses labels.
 type State struct {
 	Descriptor maltcid.RootDescriptor `json:"descriptor"`
 	Entries    []Entry                `json:"entries" schema:"optional,nullable"`
-	ChunkSize  uint64                 `json:"chunk_size,omitempty,string"`
-	TotalSize  uint64                 `json:"total_size,omitempty,string"`
+	PayloadCID cid.Cid                `json:"payload_cid" schema:"optional,nullable"`
 }
 
 func (e *Engine) coordinate(d maltcid.RootDescriptor, value []byte) (coordinate.Coordinate, error) {
@@ -97,7 +94,7 @@ func (e *Engine) Interpret(state State) (View, error) {
 	if err := e.check(state.Descriptor); err != nil {
 		return View{}, err
 	}
-	view := View{Descriptor: state.Descriptor, ChunkSize: state.ChunkSize, TotalSize: state.TotalSize, Bindings: make([]CoordinateBinding, len(state.Entries))}
+	view := View{Descriptor: state.Descriptor, PayloadCID: state.PayloadCID, Bindings: make([]CoordinateBinding, len(state.Entries))}
 	for i, entry := range state.Entries {
 		coordinate, err := e.coordinate(state.Descriptor, entry.Label)
 		if err != nil {

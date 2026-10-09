@@ -83,7 +83,7 @@ func TestExportOwnsRetainedInputs(t *testing.T) {
 func TestCandidateVerifiesSharedNodesOnce(t *testing.T) {
 	e, work := candidateEngine(t, maltcid.IPA256)
 	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
-	for i := uint64(0); i < 1020; i++ {
+	for i := uint64(0); i < 1024; i++ {
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: cid.MustParse("bafkqaaa")})
 	}
 	candidate, err := authentication.Prepare(t.Context(), e, state)
@@ -115,7 +115,7 @@ func TestBulkAppendCommitsEachChangedNodeOnce(t *testing.T) {
 	}{
 		{maltcid.IPA256, 0, 64, 1}, {maltcid.KZG4096, 0, 64, 1},
 		{maltcid.IPA256, 1, 254, 1}, {maltcid.IPA256, 254, 600, 4},
-		{maltcid.IPA256, 510, 520, 2}, {maltcid.KZG4096, 4094, 4097, 3},
+		{maltcid.IPA256, 512, 520, 2}, {maltcid.KZG4096, 4094, 4097, 3},
 	} {
 		t.Run(fmt.Sprintf("%d/%d-%d", tc.profile, tc.before, tc.after), func(t *testing.T) {
 			e, work := candidateEngine(t, tc.profile)
@@ -157,5 +157,43 @@ func TestBulkAppendCommitsEachChangedNodeOnce(t *testing.T) {
 				t.Fatal("base writer mutated")
 			}
 		})
+	}
+}
+
+func TestPayloadDeltaPreservesClearsAndDoesNotConsumeAnIndex(t *testing.T) {
+	e, _ := candidateEngine(t, maltcid.IPA256)
+	payload := cid.MustParse("bafkqaaa")
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256}, PayloadCID: payload}
+	base, err := authentication.BuildWriter(t.Context(), e, state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := uint64(1)
+	next, err := base.Apply(t.Context(), authentication.Delta{Count: &count, Changes: []engine.Change{{Label: coordinate.EncodeIndex(0), After: payload}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err := next.State(t.Context())
+	if err != nil || len(snapshot.Entries) != 1 || !snapshot.PayloadCID.Equals(payload) {
+		t.Fatal("append changed payload or index", err)
+	}
+	clear := cid.Undef
+	cleared, err := next.Apply(t.Context(), authentication.Delta{PayloadCID: &clear})
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err = cleared.State(t.Context())
+	if err != nil || len(snapshot.Entries) != 1 || snapshot.PayloadCID.Defined() {
+		t.Fatal("clear changed items", err)
+	}
+	if cleared.Root().Equals(next.Root()) {
+		t.Fatal("payload is not authenticated")
+	}
+	snapshot, err = next.State(t.Context())
+	if err != nil || !snapshot.PayloadCID.Equals(payload) {
+		t.Fatal("base branch mutated", err)
+	}
+	if err := authentication.ValidateCandidate(t.Context(), e, cleared.Candidate()); err != nil {
+		t.Fatal(err)
 	}
 }

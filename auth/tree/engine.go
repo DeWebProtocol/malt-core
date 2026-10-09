@@ -6,10 +6,8 @@ package tree
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 	"sort"
 	"sync"
@@ -110,8 +108,7 @@ func checkCoordinate(d maltcid.RootDescriptor, k coordinate.Coordinate) (coordin
 type View struct {
 	Descriptor maltcid.RootDescriptor
 	Bindings   []CoordinateBinding
-	ChunkSize  uint64
-	TotalSize  uint64
+	PayloadCID cid.Cid
 }
 type CoordinateBinding struct {
 	Coordinate coordinate.Coordinate
@@ -149,7 +146,7 @@ func (e *Engine) Commit(ctx context.Context, state View, out materializer.NodeUp
 	build := builder{registry: e.Profiles, ctx: ctx, descriptor: state.Descriptor, profile: p, scheme: committer, out: out}
 	var ref maltcid.NodeRef
 	if state.Descriptor.Layout == maltcid.Prefix {
-		if state.ChunkSize != 0 || state.TotalSize != 0 {
+		if state.PayloadCID.Defined() {
 			return cid.Undef, errors.New("Prefix cannot carry sequence metadata")
 		}
 		sort.Slice(items, func(i, j int) bool { return bytes.Compare(items[i].coordinate.Key[:], items[j].coordinate.Key[:]) < 0 })
@@ -166,14 +163,7 @@ func (e *Engine) Commit(ctx context.Context, state View, out materializer.NodeUp
 				return cid.Undef, errors.New("Positional indices must be dense and unique")
 			}
 		}
-		meta := Metadata{Count: uint64(len(items)), ChunkSize: state.ChunkSize, TotalSize: state.TotalSize}
-		if err := meta.validate(); err != nil {
-			return cid.Undef, err
-		}
-		meta.Height, err = height(meta.Count, uint64(p.Slots-1))
-		if err != nil {
-			return cid.Undef, err
-		}
+		meta := Metadata{Count: uint64(len(items)), PayloadCID: state.PayloadCID}
 		ref, err = build.positional(items, meta)
 	}
 	if err != nil {
@@ -297,108 +287,6 @@ func (b *builder) prefix(items []binding, depth int) (maltcid.NodeRef, error) {
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
-		}
-	}
-	return b.commit(cells)
-}
-
-// Metadata is structural sequence information. It contains no system binding.
-type Metadata struct {
-	Height    uint64 `json:"height,string"`
-	Count     uint64 `json:"count,string"`
-	ChunkSize uint64 `json:"chunk_size,string"`
-	TotalSize uint64 `json:"total_size,string"`
-}
-
-func (m Metadata) validate() error {
-	if m.ChunkSize == 0 {
-		if m.TotalSize != 0 {
-			return errors.New("plain sequence has a total byte size")
-		}
-		return nil
-	}
-	if m.Count == 0 {
-		if m.TotalSize != 0 {
-			return errors.New("empty measured sequence has content")
-		}
-		return nil
-	}
-	if m.Count-1 > math.MaxUint64/m.ChunkSize || m.TotalSize <= (m.Count-1)*m.ChunkSize || (m.TotalSize-1)/m.ChunkSize != m.Count-1 {
-		return errors.New("measured size does not match chunk count")
-	}
-	return nil
-}
-func (m Metadata) cell() commitment.Cell {
-	data := commitment.Cell{metadataCell}
-	for _, v := range []uint64{m.Height, m.Count, m.ChunkSize, m.TotalSize} {
-		data = binary.BigEndian.AppendUint64(data, v)
-	}
-	return data
-}
-func parseMetadata(data commitment.Cell) (Metadata, error) {
-	if len(data) != 33 || data[0] != metadataCell {
-		return Metadata{}, errors.New("invalid Positional metadata")
-	}
-	m := Metadata{binary.BigEndian.Uint64(data[1:9]), binary.BigEndian.Uint64(data[9:17]), binary.BigEndian.Uint64(data[17:25]), binary.BigEndian.Uint64(data[25:33])}
-	return m, m.validate()
-}
-func height(count, branch uint64) (uint64, error) {
-	if branch < 2 {
-		return 0, errors.New("invalid Positional geometry")
-	}
-	h := uint64(0)
-	capacity := branch
-	for count > capacity {
-		h++
-		if capacity > math.MaxUint64/branch {
-			return h, nil
-		}
-		capacity *= branch
-	}
-	return h, nil
-}
-func subtreeSpan(h, branch uint64) (uint64, error) {
-	span := uint64(1)
-	for i := uint64(0); i < h; i++ {
-		if span > math.MaxUint64/branch {
-			return 0, errors.New("Positional span overflow")
-		}
-		span *= branch
-	}
-	return span, nil
-}
-func (b *builder) positional(items []binding, meta Metadata) (maltcid.NodeRef, error) {
-	cells := make([]commitment.Cell, b.profile.Slots)
-	cells[0] = meta.cell()
-	if meta.Height == 0 {
-		for i, item := range items {
-			cells[i+1] = append(commitment.Cell{positionalLeaf}, item.target.Bytes()...)
-		}
-		return b.commit(cells)
-	}
-	span, err := subtreeSpan(meta.Height, uint64(b.profile.Slots-1))
-	if err != nil {
-		return maltcid.NodeRef{}, err
-	}
-	for start, slot := uint64(0), 1; start < uint64(len(items)); start, slot = start+span, slot+1 {
-		end := min(start+span, uint64(len(items)))
-		child := meta
-		child.Height--
-		child.Count = end - start
-		if meta.ChunkSize > 0 {
-			remaining := meta.TotalSize - start*meta.ChunkSize
-			child.TotalSize = remaining
-			if child.Count <= remaining/meta.ChunkSize {
-				child.TotalSize = child.Count * meta.ChunkSize
-			}
-		}
-		ref, err := b.positional(items[start:end], child)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		cells[slot], err = childCell(ref)
-		if err != nil {
-			return maltcid.NodeRef{}, err
 		}
 	}
 	return b.commit(cells)

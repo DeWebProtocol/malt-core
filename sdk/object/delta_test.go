@@ -289,7 +289,7 @@ func TestObjectReusesWriterForNoOpAndUpdates(t *testing.T) {
 	l, err := object.NewList(e, object.ListConfig(maltcid.IPA256))
 	must(t, err)
 	first, next := leaf(t, "first"), leaf(t, "next")
-	for i := 0; i < 256; i++ {
+	for i := 0; i < 257; i++ {
 		must(t, l.Append(first))
 	}
 	commit(t, l)

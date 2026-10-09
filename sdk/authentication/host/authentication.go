@@ -101,7 +101,11 @@ func (c *Computer) ApplyAuthentication(ctx context.Context, handle string, data 
 	if _, err := c.authenticationEngine(); err != nil {
 		return nil, err
 	}
-	h, err := c.authSession.Apply(ctx, handle, authentication.Delta{Changes: changes, Count: delta.Count, TotalSize: delta.TotalSize})
+	payload, err := delta.CorePayloadCID()
+	if err != nil {
+		return nil, err
+	}
+	h, err := c.authSession.Apply(ctx, handle, authentication.Delta{Changes: changes, Count: delta.Count, PayloadCID: payload})
 	if err != nil {
 		return nil, err
 	}

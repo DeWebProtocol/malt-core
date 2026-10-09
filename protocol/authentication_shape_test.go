@@ -20,9 +20,9 @@ func TestAuthenticationResultRequiredFieldsAndNulls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prefix := fmt.Sprintf(`{"profile":"malt.authentication/3","resolved":%q,`, root.String())
-	binding := `{"present":false,"target":null,"proof":{"format":"malt.binding/0","nodes":[{}]}}`
-	rangeResult := `{"metadata":{"height":"0","count":"0","chunk_size":"1","total_size":"0"},"metadata_evidence":` + binding + `,"segments":[]}`
+	prefix := fmt.Sprintf(`{"profile":"malt.authentication/5","resolved":%q,`, root.String())
+	binding := `{"present":false,"target":null,"proof":{"format":"malt.binding/1","nodes":[{}]}}`
+	rangeResult := `{"metadata":{"count":"0","payload_cid":null},"metadata_evidence":` + binding + `,"segments":[]}`
 	valid := prefix + `"traversal":{"results":[]},"range":` + rangeResult + `}`
 	for _, raw := range []string{
 		prefix + `"traversal":{"results":[]}}`,
@@ -41,7 +41,7 @@ func TestAuthenticationResultRequiredFieldsAndNulls(t *testing.T) {
 		prefix + `"traversal":{"results":null}}`,
 		prefix + `"traversal":{"results":[null]}}`,
 		prefix + `"traversal":{"results":[]},"binding":` + strings.ReplaceAll(binding, `"present":false,`, "") + `}`,
-		strings.Replace(valid, `"height":"0",`, "", 1),
+		strings.Replace(valid, `"count":"0",`, "", 1),
 		strings.Replace(valid, `"segments":[]`, `"segments":null`, 1),
 		strings.Replace(valid, `"nodes":[{}]`, `"nodes":null`, 1),
 		strings.Replace(valid, `"nodes":[{}]`, `"nodes":[null]`, 1),
@@ -83,9 +83,9 @@ func TestAuthenticationCandidateNullCellsAndOptionalDefaults(t *testing.T) {
 		t.Fatal("accepted null entry")
 	}
 	for _, state := range []string{
-		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2}}`,
-		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2},"entries":null}`,
-		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2},"entries":[]}`,
+		`{"descriptor":{"layout":3,"derivation_profile":3,"vc_profile":2}}`,
+		`{"descriptor":{"layout":3,"derivation_profile":3,"vc_profile":2},"entries":null}`,
+		`{"descriptor":{"layout":3,"derivation_profile":3,"vc_profile":2},"entries":[]}`,
 	} {
 		if _, err := protocol.DecodeAuthenticationState([]byte(state)); err != nil {
 			t.Fatal("schema defaults rejected", state, err)

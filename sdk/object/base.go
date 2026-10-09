@@ -38,6 +38,9 @@ func checkConfig(e *engine.Engine, config CommitConfig, layout maltcid.Layout) e
 
 func (a *authenticated) commit(ctx context.Context, self Object, config CommitConfig, entries []engine.Entry, children []*snapshot) (*snapshot, error) {
 	state := engine.State{Descriptor: config.Authentication, Entries: entries}
+	if config.Authentication.Layout == maltcid.Positional {
+		state.PayloadCID = self.Payload()
+	}
 	var w *authentication.Writer
 	var err error
 	if a.after != nil && a.after.config == config {

@@ -11,7 +11,7 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-func (u *nodeEdit) sequence(ref maltcid.NodeRef, expected *Metadata) ([]commitment.Cell, Metadata, error) {
+func (u *nodeEdit) sequence(ref maltcid.NodeRef) ([]commitment.Cell, Metadata, error) {
 	if u.descriptor.Layout != maltcid.Positional {
 		return nil, Metadata{}, errors.New("sequence operation requires Positional")
 	}
@@ -23,25 +23,22 @@ func (u *nodeEdit) sequence(ref maltcid.NodeRef, expected *Metadata) ([]commitme
 	if err != nil {
 		return nil, meta, err
 	}
-	return cells, meta, checkMetadata(meta, expected, u.profile.Slots)
+	return cells, meta, checkPosition(cells, rootPosition(meta.Count, u.profile.Slots), u.profile.Slots)
 }
 
-// Append adds one position and copies only its path. A measured sequence
-// requires the new total size and a previously full final chunk. A plain
-// sequence requires nil totalSize. It returns the new candidate and index.
-func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
-	return e.AppendBatch(ctx, root, []cid.Cid{target}, totalSize, source, out)
+// Append preserves the opaque payload reference and returns the new index.
+func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
+	return e.AppendBatch(ctx, root, []cid.Cid{target}, source, out)
 }
 
-// AppendBatch adds a nonempty contiguous suffix, committing each changed or
-// new node once. It has the same measurement requirements as Append and returns
-// the first appended index. Unchanged subtrees retain their references.
-func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Cid, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
+// AppendBatch builds each final affected node once, including growth across
+// multiple levels. Unchanged descendant vectors retain their references.
+func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Cid, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
 	u, ref, err := e.edit(ctx, root, source, out)
 	if err != nil {
 		return cid.Undef, 0, err
 	}
-	_, meta, err := u.sequence(ref, nil)
+	_, meta, err := u.sequence(ref)
 	if err != nil {
 		return cid.Undef, 0, err
 	}
@@ -58,108 +55,75 @@ func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Ci
 		}
 		items[i] = binding{target: target}
 	}
-	next := meta
-	next.Count += uint64(len(items))
-	if meta.ChunkSize == 0 {
-		if totalSize != nil {
-			return cid.Undef, 0, ErrNotMeasured
-		}
-	} else {
-		if totalSize == nil {
-			return cid.Undef, 0, errors.New("measured append requires new total size")
-		}
-		if meta.Count > math.MaxUint64/meta.ChunkSize || meta.TotalSize != meta.Count*meta.ChunkSize {
-			return cid.Undef, 0, errors.New("cannot append after a partial measured chunk")
-		}
-		next.TotalSize = *totalSize
-	}
-	if err := next.validate(); err != nil {
-		return cid.Undef, 0, err
-	}
-	next.Height, err = height(next.Count, uint64(u.profile.Slots-1))
-	if err != nil {
-		return cid.Undef, 0, err
-	}
+	first := meta.Count
+	old := rootPosition(first, u.profile.Slots)
+	meta.Count += uint64(len(items))
+	next := rootPosition(meta.Count, u.profile.Slots)
 	b := u.builder
 	b.out = u
-	ref, err = u.appendNode(&b, ref, meta, next, items)
+	ref, err = u.appendNode(&b, ref, old, next, meta, items)
 	if err != nil {
 		return cid.Undef, 0, err
 	}
 	root, err = u.finish(ref)
-	return root, meta.Count, err
+	return root, first, err
 }
-func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next Metadata, items []binding) (maltcid.NodeRef, error) {
+
+func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next position, meta Metadata, items []binding) (maltcid.NodeRef, error) {
 	if old == next {
 		return ref, nil
 	}
-	if old.Count == 0 {
-		return b.positional(items, next)
+	if old.count == 0 {
+		return b.positionalNode(items, next, meta)
 	}
-	var cells []commitment.Cell
-	var err error
-	if next.Height == old.Height {
-		cells, _, err = u.sequence(ref, &old)
+	cells := make([]commitment.Cell, u.profile.Slots)
+	var previous []commitment.Cell
+	if old.height == next.height {
+		var err error
+		previous, err = u.GetNode(u.ctx, ref)
 		if err != nil {
 			return maltcid.NodeRef{}, err
 		}
-	} else {
-		// A batch may grow several levels. Recurse into the first child with
-		// the old root until its existing height is reached.
-		cells = make([]commitment.Cell, u.profile.Slots)
+		if err := checkPosition(previous, old, u.profile.Slots); err != nil {
+			return maltcid.NodeRef{}, err
+		}
+		// Demoting a root reclaims slot zero and shifts only this vector.
+		copy(cells[next.base():], previous[old.base():])
 	}
-	cells[0] = next.cell()
-	if next.Height == 0 {
+	if next.root {
+		cells[0] = meta.cell()
+	}
+	if next.height == 0 {
 		for i, item := range items {
-			slot := int(old.Count) + i + 1
-			if len(cells[slot]) != 0 {
-				return maltcid.NodeRef{}, errors.New("nonempty Positional append slot")
-			}
-			cells[slot] = append(commitment.Cell{positionalLeaf}, item.target.Bytes()...)
+			cells[next.base()+int(old.count)+i] = append(commitment.Cell{positionalLeaf}, item.target.Bytes()...)
 		}
 		return b.commit(cells)
 	}
-	span, err := subtreeSpan(next.Height, uint64(u.profile.Slots-1))
-	if err != nil {
-		return maltcid.NodeRef{}, err
-	}
-	for slot := 1; slot < len(cells); slot++ {
-		if uint64(slot-1) > next.Count/span || uint64(slot-1)*span >= next.Count {
-			break
-		}
-		start := uint64(slot-1) * span
-		childMeta, _, err := childMetadata(next, start, u.profile.Slots)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
+	for digit := 0; digit < next.used(u.profile.Slots); digit++ {
+		childPos, start := next.child(digit, u.profile.Slots)
 		var child maltcid.NodeRef
-		if start >= old.Count {
-			if len(cells[slot]) != 0 {
-				return maltcid.NodeRef{}, errors.New("nonempty Positional append slot")
-			}
-			child, err = b.positional(items[:childMeta.Count], childMeta)
-			items = items[childMeta.Count:]
+		var err error
+		if start >= old.count {
+			child, err = b.positionalNode(items[:childPos.count], childPos, Metadata{})
+			items = items[childPos.count:]
 		} else {
 			oldChild := old
 			child = ref
-			if next.Height == old.Height {
-				child, err = parseChild(cells[slot], ref)
+			if next.height == old.height {
+				child, err = parseChild(previous[old.base()+digit], ref)
 				if err != nil {
 					return maltcid.NodeRef{}, err
 				}
-				oldChild, _, err = childMetadata(old, start, u.profile.Slots)
-				if err != nil {
-					return maltcid.NodeRef{}, err
-				}
+				oldChild, _ = old.child(digit, u.profile.Slots)
 			}
-			added := childMeta.Count - oldChild.Count
-			child, err = u.appendNode(b, child, oldChild, childMeta, items[:added])
+			added := childPos.count - oldChild.count
+			child, err = u.appendNode(b, child, oldChild, childPos, Metadata{}, items[:added])
 			items = items[added:]
 		}
 		if err != nil {
 			return maltcid.NodeRef{}, err
 		}
-		cells[slot], err = childCell(child)
+		cells[next.base()+digit], err = childCell(child)
 		if err != nil {
 			return maltcid.NodeRef{}, err
 		}
@@ -167,121 +131,113 @@ func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next Metadat
 	return b.commit(cells)
 }
 
-// Truncate removes a suffix from a plain sequence. Measured truncation needs
-// an application-level payload decision and is intentionally not inferred.
+// Truncate removes a suffix and preserves PayloadCID, including at count zero.
 func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
-	return e.resize(ctx, root, count, nil, source, out)
-}
-
-// ResizeMeasured removes a suffix or changes the final chunk's measured size.
-// The application must explicitly supply the new size and update any changed
-// payload target separately; the engine never infers content bytes.
-func (e *Engine) ResizeMeasured(ctx context.Context, root cid.Cid, count, totalSize uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
-	return e.resize(ctx, root, count, &totalSize, source, out)
-}
-
-func (e *Engine) resize(ctx context.Context, root cid.Cid, count uint64, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	u, ref, err := e.edit(ctx, root, source, out)
 	if err != nil {
 		return cid.Undef, err
 	}
-	_, old, err := u.sequence(ref, nil)
+	_, meta, err := u.sequence(ref)
 	if err != nil {
 		return cid.Undef, err
 	}
-	if (old.ChunkSize != 0) != (totalSize != nil) {
-		return cid.Undef, errors.New("truncate requires a plain Positional sequence")
-	}
-	if count > old.Count {
+	if count > meta.Count {
 		return cid.Undef, errors.New("truncate cannot extend a sequence")
 	}
-	if count == old.Count && (totalSize == nil || *totalSize == old.TotalSize) {
+	if count == meta.Count {
 		return root, nil
 	}
-	next := Metadata{Count: count, ChunkSize: old.ChunkSize}
-	if totalSize != nil {
-		next.TotalSize = *totalSize
-	}
-	if err := next.validate(); err != nil {
-		return cid.Undef, err
-	}
-	next.Height, err = height(count, uint64(u.profile.Slots-1))
-	if err != nil {
-		return cid.Undef, err
-	}
+	old := rootPosition(meta.Count, u.profile.Slots)
+	meta.Count = count
+	next := rootPosition(count, u.profile.Slots)
 	b := u.builder
 	b.out = u
 	if count == 0 {
-		ref, err = b.positional(nil, next)
+		ref, err = b.positional(nil, meta)
 	} else {
-		for old.Height > next.Height {
-			cells, _, loadErr := u.sequence(ref, &old)
+		for old.height > next.height {
+			cells, loadErr := u.GetNode(ctx, ref)
 			if loadErr != nil {
 				return cid.Undef, loadErr
 			}
-			child, childErr := parseChild(cells[1], ref)
-			if childErr != nil {
-				return cid.Undef, childErr
+			if err := checkPosition(cells, old, u.profile.Slots); err != nil {
+				return cid.Undef, err
 			}
-			old, _, err = childMetadata(old, 0, u.profile.Slots)
+			ref, err = parseChild(cells[old.base()], ref)
 			if err != nil {
 				return cid.Undef, err
 			}
-			ref = child
+			old, _ = old.child(0, u.profile.Slots)
 		}
-		ref, err = u.truncateNode(&b, ref, old, next)
+		ref, err = u.truncateNode(&b, ref, old, next, meta)
 	}
 	if err != nil {
 		return cid.Undef, err
 	}
 	return u.finish(ref)
 }
-func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next Metadata) (maltcid.NodeRef, error) {
-	cells, _, err := u.sequence(ref, &old)
-	if err != nil {
-		return maltcid.NodeRef{}, err
-	}
+
+func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next position, meta Metadata) (maltcid.NodeRef, error) {
 	if old == next {
 		return ref, nil
 	}
-	cells[0] = next.cell()
-	span, err := subtreeSpan(old.Height, uint64(u.profile.Slots-1))
+	previous, err := u.GetNode(u.ctx, ref)
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	for slot := 1; slot < len(cells); slot++ {
-		// Division avoids overflow for a maximal-height virtual sequence.
-		if uint64(slot-1) > next.Count/span || uint64(slot-1)*span >= next.Count {
-			cells[slot] = nil
-			continue
+	if err := checkPosition(previous, old, u.profile.Slots); err != nil {
+		return maltcid.NodeRef{}, err
+	}
+	cells := make([]commitment.Cell, u.profile.Slots)
+	if next.root {
+		cells[0] = meta.cell()
+	}
+	for digit := 0; digit < next.used(u.profile.Slots); digit++ {
+		cell := previous[old.base()+digit]
+		if next.height > 0 {
+			oldChild, _ := old.child(digit, u.profile.Slots)
+			nextChild, _ := next.child(digit, u.profile.Slots)
+			if oldChild != nextChild {
+				child, err := parseChild(cell, ref)
+				if err != nil {
+					return maltcid.NodeRef{}, err
+				}
+				child, err = u.truncateNode(b, child, oldChild, nextChild, Metadata{})
+				if err != nil {
+					return maltcid.NodeRef{}, err
+				}
+				cell, err = childCell(child)
+				if err != nil {
+					return maltcid.NodeRef{}, err
+				}
+			}
 		}
-		start := uint64(slot-1) * span
-		if old.Height == 0 {
-			continue
-		}
-		child, err := parseChild(cells[slot], ref)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		oldChild, _, err := childMetadata(old, start, u.profile.Slots)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		nextChild, _, err := childMetadata(next, start, u.profile.Slots)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		if oldChild == nextChild {
-			continue
-		}
-		child, err = u.truncateNode(b, child, oldChild, nextChild)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		cells[slot], err = childCell(child)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
+		cells[next.base()+digit] = cell
 	}
 	return b.commit(cells)
+}
+
+// SetPayload changes only the root's opaque payload reference. Undef removes
+// it; a defined CID of empty content remains distinct from no payload.
+func (e *Engine) SetPayload(ctx context.Context, root cid.Cid, payload cid.Cid, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
+	u, ref, err := e.edit(ctx, root, source, out)
+	if err != nil {
+		return cid.Undef, err
+	}
+	cells, meta, err := u.sequence(ref)
+	if err != nil {
+		return cid.Undef, err
+	}
+	if meta.PayloadCID.Equals(payload) {
+		return root, nil
+	}
+	meta.PayloadCID = payload
+	cells[0] = meta.cell()
+	b := u.builder
+	b.out = u
+	ref, err = b.commit(cells)
+	if err != nil {
+		return cid.Undef, err
+	}
+	return u.finish(ref)
 }

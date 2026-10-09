@@ -87,7 +87,7 @@ func TestPositionalPathUpdatesMatchRebuildAndRange(t *testing.T) {
 		nodes.reads = 0
 		nodes.writes = 0
 		v := target(fmt.Sprint(i))
-		next, index, err := e.Append(ctx, root, v, nil, nodes, nodes)
+		next, index, err := e.Append(ctx, root, v, nodes, nodes)
 		if err != nil || index != uint64(i) {
 			t.Fatalf("append %d: %v", i, err)
 		}
@@ -123,30 +123,25 @@ func TestPositionalPathUpdatesMatchRebuildAndRange(t *testing.T) {
 		}
 		root = next
 	}
-	state.ChunkSize = 4
-	state.TotalSize = 8
+	state.PayloadCID = target("file manifest")
 	state.Entries = []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: target("first")}, {Label: coordinate.EncodeIndex(1), Target: target("second")}}
 	root, err = e.Build(ctx, state, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	total := uint64(10)
-	root, _, err = e.Append(ctx, root, target("last"), &total, nodes, nodes)
+	root, _, err = e.Append(ctx, root, target("last"), nodes, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := e.ProveRange(ctx, root, 3, nil, nodes)
+	result, err := e.ProveRange(ctx, root, 0, nil, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ok, err := e.VerifyRange(root, 3, nil, result); err != nil || !ok || len(result.Segments) != 3 {
+	if ok, err := e.VerifyRange(root, 0, nil, result); err != nil || !ok || len(result.Segments) != 3 {
 		t.Fatalf("range %v %v", ok, err)
 	}
 	result.Segments[1].Target = cid.Undef
-	if ok, _ := e.VerifyRange(root, 3, nil, result); ok {
+	if ok, _ := e.VerifyRange(root, 0, nil, result); ok {
 		t.Fatal("tampered range verified")
-	}
-	if _, _, err = e.Append(ctx, root, target("invalid"), &total, nodes, nodes); err == nil {
-		t.Fatal("append after partial chunk")
 	}
 }
