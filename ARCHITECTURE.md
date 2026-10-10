@@ -11,11 +11,13 @@ opaque bytes; targets are CIDs, which can themselves be MALT Roots. Applications
 and Gateway-owned ArcTables retain the submitted label–target bindings for
 recovery and future writes.
 
-Authentication derives a coordinate from each label and binds it to the target:
+Authentication derives a routing coordinate from each label and authenticates
+the label–target binding. Prefix leaves include the exact original label;
+Positional labels are canonical indices that select each slot:
 
 ```text
-application label --coordinate derivation--> coordinate
-coordinate + target --authentication layout + commitment--> Root
+application label --coordinate derivation--> routing coordinate
+label + target --layout at derived coordinate + commitment--> Root
 ```
 
 | Choice | Meaning |
@@ -31,9 +33,11 @@ as `"42"` is not an encoded index. Prefix accepts Direct or SHA256 derivation;
 Positional requires Direct index labels.
 
 The Root identifies the derivation profile, authentication layout, and exact
-commitment profile. Coordinate derivation belongs outside `auth`; authentication
-trees operate on coordinates. The Root format remains experimental `V=0`,
-independently of the SDK version and CIDv1's container version.
+commitment profile. Coordinate derivation policy and implementation belong
+outside `auth`; `auth/tree` receives an injected derivation capability and checks
+original labels against their supplied coordinates. The Root format remains
+experimental `V=0`, independently of the SDK version and CIDv1's container
+version.
 
 Traversal accepts explicit label steps. A slash or `@payload` inside a label has
 no built-in meaning. Applications currently assume a single valid resolution
@@ -55,10 +59,12 @@ derivation -> auth/coordinate -> auth/tree -> auth/commitment
 ```
 
 `auth/tree` owns canonical Prefix/Positional node construction, affected-path
-updates, snapshots, and binding/range evidence. It receives coordinates and
-installed exact VC profiles and operation-specific capabilities; it knows no label grammar, application graph, payload
-selector, or persistent store policy. `engine` applies the Root's coordinate derivation
-profile before entering the tree. Every traversal hop uses the descriptor of the
+updates, snapshots, and binding/range evidence. It receives original identity
+bytes, coordinates, installed exact VC profiles and a pure coordinate derivation
+capability. Prefix leaves authenticate exact labels and targets; the tree knows
+no label grammar, application graph, payload selector or persistent store policy.
+`engine` fixes derivation profile dispatch; the tree checks coordinates and leaf
+routes through the injected capability. Every traversal hop uses the descriptor of the
 Root reached by the preceding authenticated binding.
 
 `maltcid` is the shared lower-level package for Root descriptors, exact VC
@@ -87,7 +93,7 @@ does not forward the SDK API.
 | `engine` | Apply Root-selected derivation and combine the tree with commitment capabilities |
 | `derivation` | Deterministic conversion of application label bytes to coordinates |
 | `auth/coordinate` | Coordinate types and canonical key/index encodings |
-| `auth/tree` | Coordinate-only Prefix/Positional construction, updates, and proofs |
+| `auth/tree` | Label-authenticated Prefix leaves, coordinate routing, Positional construction, updates and proofs |
 | `auth/commitment` | Separate commitment, proving, and verification capabilities; KZG and IPA backends |
 | `auth/arcset/materializer` | Narrow injected lookup/update/snapshot capabilities and an in-memory reference implementation |
 | `traversal` | Compose explicit authenticated steps across Roots |
@@ -179,10 +185,11 @@ callers that exercise those ports. It has no root-retention or reachability-GC
 policy. SDK sessions retain immutable tree materializations directly and apply
 their own handle and memory limits.
 
-Physical node identity is layout/profile qualified and independent of input
-preimages. Complete outer Roots retain their derivation profile. Caller-owned stores
-may share identical immutable vectors but must not conflate query semantics or
-use commitment equality as interchangeable Root identity.
+Physical node identity is determined by the authentication layout, exact
+commitment profile, and node commitment. Prefix leaf commitments include the
+exact original labels. Complete outer Roots also identify the derivation profile.
+Caller-owned stores may share identical immutable vectors but must not conflate
+query semantics or use commitment equality as interchangeable Root identity.
 
 Core defines no ArcTable/KV/CAS persistence, transactions, HTTP, recovery
 records, UnixFS, managed account, authoritative head, or trusted-root policy.

@@ -191,8 +191,11 @@ Both Prefix and Positional evidence serialize `engine.Proof` as JSON:
 ```
 
 Empty byte fields are omitted. Prefix proofs carry only the selected cell and
-opening at each node. A terminal empty cell or a routed leaf for another key
-proves absence. Positional proofs open slot-zero metadata only at the root;
+opening at each node. Prefix leaves authenticate canonical original label bytes
+and target CIDs. A terminal empty cell or a routed leaf for another full coordinate
+proves absence. A distinct label at the same full coordinate is an explicit
+collision error, never a valid membership or absence result. Positional proofs
+open slot-zero metadata only at the root;
 a root-level out-of-range result contains only metadata evidence. All supplied
 nodes must be consumed. Metadata, leaf, and internal child framing follow
 [authentication inputs and Roots](./authentication-inputs.md).

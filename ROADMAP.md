@@ -1,7 +1,8 @@
 # MALT Core roadmap
 
 The current source provides one typed authentication chain: deterministic input
-rules, a coordinate-only Prefix/Positional tree, exact KZG/IPA profiles,
+rules, original-label Prefix authentication with coordinate routing, Positional
+index authentication, exact KZG/IPA profiles,
 explicit graph traversal, independent local verification, immutable writers,
 and ordered candidate batches with exact materialization receipts.
 

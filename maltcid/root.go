@@ -18,7 +18,9 @@ const RootVersion uint8 = 0
 type Layout uint8
 
 const (
-	Prefix Layout = 1
+	// Layout 1 is retired: it authenticated coordinates instead of original
+	// labels. Layout 4 binds canonical label bytes and targets in Prefix leaves.
+	Prefix Layout = 4
 	// Layout 2 is retired. Root-only metadata and full-capacity descendants
 	// have a distinct interpretation while the pre-production Root stays V=0.
 	Positional Layout = 3

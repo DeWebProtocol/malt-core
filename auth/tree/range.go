@@ -17,6 +17,10 @@ type RangeResult struct {
 	Segments         []Result `json:"segments"`
 }
 
+func indexSelector(index uint64) Selector {
+	return Selector{Coordinate: coordinate.At(index), Label: coordinate.EncodeIndex(index)}
+}
+
 // ReadMetadata uses the always-out-of-range uint64 maximum index to obtain a
 // root metadata opening. Metadata stays structural: there is no system arc.
 func (e *Engine) ReadMetadata(ctx context.Context, root cid.Cid, source materializer.NodeLookup) (Metadata, Result, error) {
@@ -31,7 +35,7 @@ func (e *Engine) readMetadata(ctx context.Context, root cid.Cid, work *proofWork
 	if d.Layout != maltcid.Positional {
 		return Metadata{}, Result{}, errors.New("metadata requires Positional")
 	}
-	result, err := e.prove(ctx, root, coordinate.At(math.MaxUint64), work)
+	result, err := e.prove(ctx, root, indexSelector(math.MaxUint64), work)
 	if err != nil {
 		return Metadata{}, Result{}, err
 	}
@@ -66,7 +70,7 @@ func (e *Engine) ProveRange(ctx context.Context, root cid.Cid, start uint64, end
 	}
 	result := RangeResult{Metadata: meta, MetadataEvidence: evidence, Segments: []Result{}}
 	for offset := uint64(0); offset < count; offset++ {
-		segment, err := e.prove(ctx, root, coordinate.At(first+offset), work)
+		segment, err := e.prove(ctx, root, indexSelector(first+offset), work)
 		if err != nil {
 			return RangeResult{}, err
 		}
@@ -85,7 +89,7 @@ func (e *Engine) VerifyRange(root cid.Cid, start uint64, end *uint64, result Ran
 	if d.Layout != maltcid.Positional {
 		return false, errors.New("range requires Positional")
 	}
-	valid, err := e.Verify(root, coordinate.At(math.MaxUint64), result.MetadataEvidence)
+	valid, err := e.Verify(root, indexSelector(math.MaxUint64), result.MetadataEvidence)
 	if err != nil || !valid {
 		return valid, err
 	}
@@ -107,7 +111,7 @@ func (e *Engine) VerifyRange(root cid.Cid, start uint64, end *uint64, result Ran
 		if !segment.Present {
 			return false, nil
 		}
-		valid, err := e.Verify(root, coordinate.At(first+uint64(offset)), segment)
+		valid, err := e.Verify(root, indexSelector(first+uint64(offset)), segment)
 		if err != nil || !valid {
 			return valid, err
 		}

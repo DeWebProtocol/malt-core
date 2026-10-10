@@ -14,7 +14,7 @@ their original identifiers.
 | Ordered candidate submission | `malt.authentication-batch/2` |
 | Exact materialization acknowledgement | `malt.authentication-receipt/2` |
 | Primitive binding evidence | `malt.binding/1` |
-| Root | Self-describing V0, exact layout/derivation profile/VC profile |
+| Root | Self-describing V0, Prefix layout 4 / Positional layout 3, exact derivation and VC profiles |
 | Go SDK | `sdk/authentication` and optional `sdk/object`, experimental source APIs |
 | Browser ABI | Complete current typed exports; exact backend/profile required |
 
@@ -23,6 +23,8 @@ artifact, and aggregate materializer Store interfaces are retired. Root V2/V3
 readers and automatic update-view migration are removed. Rebuild experimental
 state and dependent parents from current inputs; changing a CID prefix cannot
 convert old nodes or proofs. Payload CIDs remain reusable.
+Coordinate-only Prefix layout 1 is retired. Rebuild Prefix state and dependent
+parents to authenticate original labels; replacing a layout byte is not migration.
 
 The `sdk/object` Map/List constructors added in `v0.0.10-rc.3` build on the
 current authentication API. They do not restore the retired facade or introduce

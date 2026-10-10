@@ -9,7 +9,7 @@ It is independent of CIDv1, package versions and operation-profile suffixes.
 
 ```text
 application label --coordinate derivation--> authentication coordinate
-coordinate bindings --authentication layout + exact VC profile--> commitment
+original labels + targets + routing coordinates --layout + exact VC profile--> commitment
 Root descriptor + commitment --> CIDv1 Root
 ```
 
@@ -45,7 +45,7 @@ permission to execute it. No fallback derivation or backend inference is used.
 
 | L | Authentication layout | Permitted inputs |
 | --- | --- | --- |
-| 1 | Prefix | AA-derived 32-byte keys |
+| 4 | Prefix | Original labels routed by AA-derived 32-byte keys |
 | 3 | Positional | AA=3, unsigned 64-bit indices |
 
 | Profile | Algorithm and parameters | Commitment bytes | VC slots |
@@ -107,7 +107,9 @@ accepted by the current engine. New profiles require immutable specifications,
 implementation and conformance vectors; unsupported IDs fail closed. The Root
 codec parses profile IDs structurally without importing derivation. `engine`
 checks supported profiles and layout compatibility even for empty state and
-empty traversal. `auth/tree` handles only coordinates, layout and commitments.
+empty traversal. `auth/tree` authenticates original label bytes and targets,
+uses coordinates for routing, and consumes a pure injected derivation capability.
+It does not import the derivation package or interpret application labels.
 
 ## Authentication layout and internal node identity
 
@@ -117,11 +119,19 @@ groups bindings across Roots. That application choice is not a Root field;
 the same ArcSet may be used in either organization or a mixture of them.
 
 Prefix routes over all 256 key bits (12 bits per KZG level, 8 per IPA level;
-the final KZG digit is zero-padded). Terminal cells bind the full key and target
-CID. An empty slot or a different full key proves absence. Native keys are not
-rehash inputs. Collisions and duplicate coordinates are rejected. Cell encodings
-are defined in `maltcid/node_cells.go` and `auth/tree`; changing them must
-not silently reuse an existing descriptor's interpretation.
+the final KZG digit is zero-padded). Layout 4 terminal cells contain
+`0x01 || uvarint(label byte length) || original label bytes || targetCID`.
+The length is minimal, the label is opaque (including empty bytes), and the
+target is the complete canonical binary CID. The routing key is recomputed
+from the authenticated label under the selected Root's AA; it is not duplicated
+in the cell. Membership compares exact original label bytes and the target.
+An empty slot or a routed terminal label with a different full coordinate proves
+absence. Distinct labels at the same full coordinate return
+`ErrCoordinateCollision`, including during proof generation, membership/absence
+verification, construction, updates and recovery. Duplicate labels are rejected.
+Native keys are not rehash inputs. Layout 1 is retired and rejected; Root `V`
+remains zero. Cell encodings are defined in `maltcid/node_cells.go` and
+`auth/tree`; changing them must not silently reuse a descriptor's interpretation.
 
 Positional consumes dense indices `[0,count)` using canonical index labels.
 Only root slot 0 stores metadata: count and an optional opaque payload CID.
@@ -138,8 +148,11 @@ interpreted with its layout and exact VC profile. Application-valued targets
 retain complete Roots/CIDs, including the target Root's AA. Each explicit
 traversal step uses the AA of the Root reached by the preceding verified step.
 
-Equal normalized coordinates and targets can therefore reuse commitments and
-internal nodes across AA modes, while the complete Roots remain distinct.
+Equal coordinates and targets do not establish interchangeable Prefix leaves:
+their original labels must also match. In particular, an opaque SHA256 label
+and its Direct key encoding authenticate different leaf bytes. Reuse across
+AA modes requires identical authenticated vectors and valid routing under each
+selected Root; complete Roots remain distinct.
 Caches validate the node identity, full vector and exact profile before reuse.
 `EqualCommitment` does not establish interchangeable Root/query semantics.
 
@@ -180,15 +193,16 @@ byte interval into element indices. Heterogeneous lists need no byte geometry.
 
 ## State, writes and proofs
 
-The authenticated view contains coordinates, not original label preimages.
-`engine.State` retains application labels for interpretation; applications or
-Gateway-owned ArcTable records preserve label–target bindings for enumeration
-and future writes. Deltas, tombstones, checkpoints and lineage recovery operate
-on labels. Coordinates and authentication nodes are rebuildable indexes:
-recover labels, derive coordinates, materialize the tree, and check the exact Root.
-`ValidateState` derives coordinates again and checks them against root-bound
-materialization. Proofs authenticate derived coordinates and targets; retaining labels does not
-turn a hash into a proof of a unique preimage. Duplicate derived keys in one state fail.
+The authenticated view contains original labels, targets and their checked
+routing coordinates. `engine.State` retains application labels for construction;
+applications or Gateway-owned ArcTable records may independently retain the
+same label–target bindings for enumeration and writes. Prefix recovery reads
+labels from authenticated cells; Positional recovery reconstructs canonical
+index labels. Deltas, tombstones, checkpoints and lineage recovery operate on
+labels. `ValidateState` and `MatchView` compare exact labels, coordinates and
+targets against root-bound materialization. A query never accepts a distinct
+label merely because its coordinate matches. Coordinate collisions are explicit
+errors and do not create collision buckets or overwrite existing bindings.
 
 `PrefixApply` and Positional replacement/append/truncation reuse unchanged
 subtrees. Updates check expected bindings before exposing a result Root. I/O
@@ -267,8 +281,11 @@ changed final chunks and their metadata together before publishing a candidate.
 
 ## Independent tree and explicit export
 
-`auth/tree` implements single-ArcSet authentication over `auth/coordinate`
-values. The typed `engine` supplies coordinate derivation; `traversal`
+`auth/tree` implements single-ArcSet authentication over original labels and
+their `auth/coordinate` routing values. `tree.New` requires an exact VC registry
+and a pure derivation capability; low-level selectors and bindings carry both
+original label bytes and checked coordinates. The typed `engine` supplies
+Root-selected coordinate derivation; `traversal`
 composes proofs across Roots. These are separate from application flat/rooted
 organization and from Gateway relation persistence.
 

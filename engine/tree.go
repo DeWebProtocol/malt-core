@@ -19,7 +19,7 @@ func (e *Engine) Prove(ctx context.Context, root cid.Cid, query []byte, source m
 	if err != nil {
 		return Result{}, err
 	}
-	return e.Tree.Prove(ctx, root, k, source)
+	return e.Tree.Prove(ctx, root, tree.Selector{Coordinate: k, Label: query}, source)
 }
 func (e *Engine) Verify(root cid.Cid, query []byte, result Result) (bool, error) {
 	if err := e.CheckRoot(root); err != nil {
@@ -30,7 +30,7 @@ func (e *Engine) Verify(root cid.Cid, query []byte, result Result) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	return e.Tree.Verify(root, k, result)
+	return e.Tree.Verify(root, tree.Selector{Coordinate: k, Label: query}, result)
 }
 func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	if err := e.CheckRoot(root); err != nil {
@@ -43,7 +43,7 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 		if err != nil {
 			return cid.Undef, err
 		}
-		derived[i] = tree.Change{Coordinate: k, Before: c.Before, After: c.After}
+		derived[i] = tree.Change{Coordinate: k, Label: c.Label, Before: c.Before, After: c.After}
 	}
 	return e.Tree.Apply(ctx, root, derived, source, out)
 }

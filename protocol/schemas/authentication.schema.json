@@ -17,8 +17,8 @@
         },
         "layout": {
           "enum": [
-            1,
-            3
+            3,
+            4
           ]
         },
         "derivation_profile": {

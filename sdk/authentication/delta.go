@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -53,7 +54,7 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 	if positional && count < oldCount {
 		bindings = bindingBefore(bindings, bindingKey(coordinate.At(count)))
 	}
-	seen := make(map[coordinate.Coordinate]bool, len(delta.Changes))
+	seen := make(map[coordinate.Coordinate][]byte, len(delta.Changes))
 	replacements := make([]engine.Change, 0, len(delta.Changes))
 	for _, change := range delta.Changes {
 		if err := ctx.Err(); err != nil {
@@ -64,15 +65,21 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 			return nil, err
 		}
 		c := view.Bindings[0].Coordinate
-		if seen[c] {
+		if previous, exists := seen[c]; exists {
+			if !bytes.Equal(previous, change.Label) {
+				return nil, engine.ErrCoordinateCollision
+			}
 			return nil, errors.New("duplicate delta coordinate")
 		}
-		seen[c] = true
+		seen[c] = bytes.Clone(change.Label)
 		if !change.Before.Defined() && !change.After.Defined() {
 			return nil, errors.New("empty binding change")
 		}
 		key := bindingKey(c)
 		old := bindingGet(w.bindings, key)
+		if old != nil && !bytes.Equal(old.entry.Label, change.Label) {
+			return nil, engine.ErrCoordinateCollision
+		}
 		if old == nil && change.Before.Defined() || old != nil && !old.entry.Target.Equals(change.Before) {
 			return nil, errors.New("old target does not match retained state")
 		}

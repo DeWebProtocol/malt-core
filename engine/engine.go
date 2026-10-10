@@ -1,4 +1,4 @@
-// Package engine binds application labels to the coordinate-only authentication tree.
+// Package engine installs Root-bound coordinate derivation for label-authenticated trees.
 package engine
 
 import (
@@ -30,6 +30,8 @@ type (
 
 const ProofFormat = tree.ProofFormat
 
+var ErrCoordinateCollision = tree.ErrCoordinateCollision
+
 func NewRegistry() *Registry { return tree.NewRegistry() }
 
 type Engine struct {
@@ -37,7 +39,9 @@ type Engine struct {
 }
 
 func New(profiles *Registry) *Engine {
-	return &Engine{Tree: tree.New(profiles)}
+	return &Engine{Tree: tree.New(profiles, func(profile uint8, label []byte) (coordinate.Coordinate, error) {
+		return derivation.Derive(derivation.ProfileID(profile), label)
+	})}
 }
 func (e *Engine) check(d maltcid.RootDescriptor) error {
 	if e == nil || e.Tree == nil {
@@ -100,7 +104,7 @@ func (e *Engine) Interpret(state State) (View, error) {
 		if err != nil {
 			return View{}, fmt.Errorf("entry %d: %w", i, err)
 		}
-		view.Bindings[i] = CoordinateBinding{Coordinate: coordinate, Target: entry.Target}
+		view.Bindings[i] = CoordinateBinding{Coordinate: coordinate, Label: append([]byte{}, entry.Label...), Target: entry.Target}
 	}
 	return view, nil
 }

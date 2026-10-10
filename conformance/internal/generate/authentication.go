@@ -1,7 +1,9 @@
 package generate
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 
@@ -47,7 +49,7 @@ func GenerateAuthentication() ([]byte, error) {
 		}
 		e := engine.New(profiles)
 		nodes := memory.NewNodes()
-		state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, Entries: []engine.Entry{{Label: []byte("a/b"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte("@payload"), Target: cid.MustParse("bafkqaaa")}}}
+		state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, Entries: []engine.Entry{{Label: []byte("a/b"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte("@payload"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte{}, Target: cid.MustParse("bafkqaaa")}}}
 		root, err := e.Build(ctx, state, nodes)
 		if err != nil {
 			return nil, err
@@ -68,16 +70,37 @@ func GenerateAuthentication() ([]byte, error) {
 			corpus.Vectors = append(corpus.Vectors, vector{fmt.Sprintf("profile-%d.%s", profile, name), value, true})
 			return nil
 		}
+		bindingStart := len(corpus.Vectors)
 		for _, query := range []struct {
 			name  string
 			value []byte
-		}{{"opaque-label", []byte("a/b")}, {"system-payload", []byte("@payload")}, {"literal-at-payload-absent", []byte("@payload")}, {"missing", []byte("absent")}} {
+		}{{"opaque-label", []byte("a/b")}, {"system-payload", []byte("@payload")}, {"literal-at-payload-absent", []byte("@payload")}, {"missing", []byte("absent")}, {"empty-label", []byte{}}} {
 			value := query.value
 			q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Steps: [][]byte{}, Operation: "binding", Label: &value}
 			if err := add(query.name, q); err != nil {
 				return nil, err
 			}
 		}
+		badLabel := corpus.Vectors[bindingStart]
+		badLabel.ID = fmt.Sprintf("profile-%d.tampered-original-label", profile)
+		binding := *badLabel.Verification.Result.Binding
+		binding.Proof.Nodes = append([]engine.NodeOpening{}, binding.Proof.Nodes...)
+		last := len(binding.Proof.Nodes) - 1
+		cell := bytes.Clone(binding.Proof.Nodes[last].Cell)
+		_, n := binary.Uvarint(cell[1:])
+		if n <= 0 || 1+n >= len(cell) {
+			return nil, fmt.Errorf("missing label-bound conformance leaf")
+		}
+		cell[1+n] ^= 1
+		binding.Proof.Nodes[last].Cell = cell
+		badLabel.Verification.Result.Binding = &binding
+		badLabel.Valid = false
+		corpus.Vectors = append(corpus.Vectors, badLabel)
+		retiredRoot := corpus.Vectors[bindingStart]
+		retiredRoot.ID = fmt.Sprintf("profile-%d.retired-coordinate-root", profile)
+		retiredRoot.Verification.Request.Root = cid.NewCidV1(0x300104, root.Hash()).String()
+		retiredRoot.Valid = false
+		corpus.Vectors = append(corpus.Vectors, retiredRoot)
 		path := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: [][]byte{[]byte("missing"), []byte("suffix")}}
 		if err := add("path-absence", path); err != nil {
 			return nil, err

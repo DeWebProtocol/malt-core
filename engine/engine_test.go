@@ -40,7 +40,7 @@ func setup(t *testing.T, id maltcid.ProfileID) (*engine.Engine, *memory.Nodes) {
 	return engine.New(r), memory.NewNodes()
 }
 
-func TestLabelNativeEquivalenceAndProofs(t *testing.T) {
+func TestOriginalLabelIdentityAndProofs(t *testing.T) {
 	for _, id := range []maltcid.ProfileID{maltcid.IPA256, maltcid.KZG4096} {
 		t.Run(string(rune(id+'0')), func(t *testing.T) {
 			e, nodes := setup(t, id)
@@ -67,8 +67,8 @@ func TestLabelNativeEquivalenceAndProofs(t *testing.T) {
 			}
 			a, _ := maltcid.ExtractCommitment(root)
 			b, _ := maltcid.ExtractCommitment(other)
-			if root.Equals(other) || !bytes.Equal(a, b) || nodes.Len() != nodeCount {
-				t.Fatal("normalized state failed to reuse commitment/materialization")
+			if root.Equals(other) || bytes.Equal(a, b) || nodes.Len() <= nodeCount {
+				t.Fatal("distinct original labels reused a coordinate-only commitment")
 			}
 			for _, entry := range state.Entries {
 				result, err := e.Prove(ctx, root, entry.Label, nodes)
