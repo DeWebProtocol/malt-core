@@ -123,11 +123,13 @@ rehash inputs. Collisions and duplicate coordinates are rejected. Cell encodings
 are defined in `maltcid/node_cells.go` and `auth/tree`; changing them must
 not silently reuse an existing descriptor's interpretation.
 
-Positional consumes dense indices `[0,count)`. Slot 0 contains structural
-height/count/chunk-size/total-size metadata; the remaining `slots-1` cells are
-entries or child references. Metadata is authenticated, including absence
-beyond count and fixed-chunk range boundaries. Positional labels use canonical index bytes. To associate payload/metadata content with a sequence, a containing
-Prefix binds the sequence Root and the content CID as separate targets.
+Positional consumes dense indices `[0,count)` using canonical index labels.
+Only root slot 0 stores metadata: count and an optional opaque payload CID.
+The root has `slots-1` entry/child slots; descendants use all `slots` positions.
+Count authenticates sequence bounds and determines tree height and occupancy.
+Core range queries select element indices. Applications may bind byte geometry
+through the root payload CID, verify its content, and translate byte ranges
+into those indices as described below.
 
 Internal references are `"MN" || 0x00 || byte(L) || multicommitment`.
 They identify authentication nodes, not application vertices, and omit AA.

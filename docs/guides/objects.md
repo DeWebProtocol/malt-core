@@ -124,11 +124,12 @@ derivation. Map.Set and struct tags cannot overwrite that reserved binding.
 This is a convention of `sdk/object`; the authentication engine continues to
 treat these labels as ordinary bytes.
 
-This first List implementation has no independent payload: its Payload method
-returns `cid.Undef`. It authenticates only the dense item references, using the
-existing Positional encoding. Nonempty List payloads need a separate encoding
-decision; no hidden wrapper vertex, reserved list index, or metadata extension
-is introduced here.
+For List, `SetPayload(cid)` binds an optional content CID in Positional root
+slot 0 alongside the item count. It consumes no item index, and `Payload()`
+returns the selected CID. Passing `cid.Undef` clears it; removing all items
+preserves it. Commit authenticates this reference, while applications own
+storage, fetching and interpretation of the referenced bytes. Descendant
+vectors contain only item or child-reference cells.
 
 ## Commit, prove, update, verify
 
