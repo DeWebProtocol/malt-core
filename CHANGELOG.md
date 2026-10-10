@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Replace coordinate-only Prefix layout 1 with original-label layout 4. Leaves
+  authenticate canonical label bytes and target CIDs; coordinates select slots.
+  Reject distinct-label coordinate collisions in construction, proofs, updates,
+  recovery and retained writers with `ErrCoordinateCollision`. Root V remains 0.
 - Replace Positional layout 2 with layout 3: only the root reserves slot zero
   for count and an optional opaque payload CID; descendants use all 256/4096
   positions. Derive height and routing with power-of-two radix digits.

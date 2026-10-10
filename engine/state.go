@@ -69,7 +69,10 @@ func matchView(expected, actual View) error {
 	})
 	for i, b := range expected.Bindings {
 		a := actual.Bindings[i]
-		if a.Coordinate != b.Coordinate || !a.Target.Equals(b.Target) {
+		if a.Coordinate == b.Coordinate && !bytes.Equal(a.Label, b.Label) {
+			return fmt.Errorf("state binding %d: %w", i, ErrCoordinateCollision)
+		}
+		if a.Coordinate != b.Coordinate || !bytes.Equal(a.Label, b.Label) || !a.Target.Equals(b.Target) {
 			return fmt.Errorf("state binding %d differs from Root", i)
 		}
 	}

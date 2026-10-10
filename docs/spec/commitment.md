@@ -60,7 +60,9 @@ derivation profile, and profile-qualified commitment. Existing-root operations s
 the profile from that Root. A process default applies only to new construction.
 Each step in a cross-root traversal performs its own profile selection.
 
-Prefix leaves bind a derived key to target CID bytes. Positional leaves bind
+Prefix leaves bind original label bytes to target CID bytes; derived coordinates
+select routing slots and distinct-label coordinate collisions are rejected.
+Positional leaves bind
 a stable index to a target, with authenticated structural metadata in slot
 zero. The former Map/List and flat binding-CID commitment wrappers are removed. See
 [commitment and proof encoding](./commitment-proof-encoding.md).

@@ -34,7 +34,7 @@ func TestProductionImportBoundaries(t *testing.T) {
 	}{
 		{name: "Root identity and encoding", dir: filepath.Join(root, "maltcid"), recursive: true,
 			forbidden: []string{"auth", "derivation", "engine", "traversal", "protocol", "sdk"}},
-		{name: "coordinate-only authentication tree", dir: filepath.Join(root, "auth", "tree"), recursive: true,
+		{name: "label authentication with injected coordinate derivation", dir: filepath.Join(root, "auth", "tree"), recursive: true,
 			forbidden: []string{"derivation", "engine", "traversal", "graph", "protocol", "sdk", "mutation", "execution"}},
 		{
 			name:      "authentication kernel",

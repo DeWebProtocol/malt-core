@@ -16,8 +16,8 @@ func TestCurrentRootClassification(t *testing.T) {
 		derivation derivation.ProfileID
 		name       string
 	}{
-		{maltcid.Prefix, derivation.SHA256, "malt-v0-layout1-derivation04"},
-		{maltcid.Prefix, derivation.Direct, "malt-v0-layout1-derivation03"},
+		{maltcid.Prefix, derivation.SHA256, "malt-v0-layout4-derivation04"},
+		{maltcid.Prefix, derivation.Direct, "malt-v0-layout4-derivation03"},
 		{maltcid.Positional, derivation.Direct, "malt-v0-layout3-derivation03"},
 	} {
 		for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {

@@ -18,6 +18,7 @@ import (
 // the caller; an output failure can leave unreachable immutable nodes.
 type nodeEdit struct {
 	builder
+	tree     *Engine
 	verifier Profile
 	source   materializer.NodeLookup
 	loaded   map[string][]commitment.Cell
@@ -44,7 +45,7 @@ func (e *Engine) edit(ctx context.Context, root cid.Cid, source materializer.Nod
 	if source == nil || out == nil {
 		return nil, ref, errors.New("node lookup and updater are required")
 	}
-	u := &nodeEdit{builder: builder{registry: e.Profiles, ctx: ctx, descriptor: d, profile: p, scheme: committer, out: out}, verifier: s, source: source, loaded: make(map[string][]commitment.Cell)}
+	u := &nodeEdit{builder: builder{registry: e.Profiles, ctx: ctx, descriptor: d, profile: p, scheme: committer, out: out}, tree: e, verifier: s, source: source, loaded: make(map[string][]commitment.Cell)}
 	return u, ref, nil
 }
 func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitment.Cell, error) {
@@ -89,6 +90,7 @@ func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
 
 type coordinateChange struct {
 	key           coordinate.Coordinate
+	label         []byte
 	before, after cid.Cid
 }
 
@@ -103,23 +105,26 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 	b := u.builder
 	b.out = u
 	items := make([]coordinateChange, 0, len(changes))
-	seen := make(map[coordinate.Coordinate]bool)
+	seen := make(map[coordinate.Coordinate][]byte)
 	for _, change := range changes {
-		k, err := checkCoordinate(u.descriptor, change.Coordinate)
+		k, err := e.selector(u.descriptor, Selector{Coordinate: change.Coordinate, Label: change.Label})
 		if err != nil {
 			return cid.Undef, err
 		}
-		if seen[k] {
+		if label, exists := seen[k]; exists {
+			if !bytes.Equal(label, change.Label) {
+				return cid.Undef, ErrCoordinateCollision
+			}
 			return cid.Undef, errors.New("duplicate coordinate in update batch")
 		}
-		seen[k] = true
+		seen[k] = bytes.Clone(change.Label)
 		if !change.Before.Defined() && !change.After.Defined() {
 			return cid.Undef, errors.New("empty update")
 		}
 		if u.descriptor.Layout == maltcid.Positional && (!change.Before.Defined() || !change.After.Defined()) {
 			return cid.Undef, errors.New("Positional Apply requires replacement; use Append or Truncate for length changes")
 		}
-		items = append(items, coordinateChange{k, change.Before, change.After})
+		items = append(items, coordinateChange{key: k, label: bytes.Clone(change.Label), before: change.Before, after: change.After})
 	}
 	if len(items) == 0 {
 		return root, nil
@@ -214,30 +219,38 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 			}
 			continue
 		}
-		entries := make(map[[32]byte]cid.Cid)
+		entries := make(map[[32]byte]binding)
 		if len(old) > 0 {
-			key, target, err := parsePrefix(old)
+			label, target, err := parsePrefix(old)
 			if err != nil {
 				return nil, err
 			}
-			if err := checkLeafRoute(key, group[0].key.Key, depth, u.profile.Slots); err != nil {
+			key, err := u.tree.labelCoordinate(u.descriptor, label)
+			if err != nil {
 				return nil, err
 			}
-			entries[key] = target
+			if err := checkLeafRoute(key.Key, group[0].key.Key, depth, u.profile.Slots); err != nil {
+				return nil, err
+			}
+			entries[key.Key] = binding{coordinate: key, label: label, target: target}
 		}
 		for _, item := range group {
-			if err := expect(entries[item.key.Key], item); err != nil {
+			actual, exists := entries[item.key.Key]
+			if exists && !bytes.Equal(actual.label, item.label) {
+				return nil, ErrCoordinateCollision
+			}
+			if err := expect(actual.target, item); err != nil {
 				return nil, err
 			}
 			if item.after.Defined() {
-				entries[item.key.Key] = item.after
+				entries[item.key.Key] = binding{coordinate: item.key, label: item.label, target: item.after}
 			} else {
 				delete(entries, item.key.Key)
 			}
 		}
 		bindings := make([]binding, 0, len(entries))
-		for key, target := range entries {
-			bindings = append(bindings, binding{coordinate: coordinate.Coordinate{Kind: coordinate.Key, Key: key}, target: target})
+		for _, entry := range entries {
+			bindings = append(bindings, entry)
 		}
 		sort.Slice(bindings, func(i, j int) bool {
 			return bytes.Compare(bindings[i].coordinate.Key[:], bindings[j].coordinate.Key[:]) < 0

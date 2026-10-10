@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -12,9 +13,9 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// Snapshot reconstructs the complete authenticated-coordinate view. It cannot
-// recover original labels from keys. Label enumeration needs retained inputs
-// in the caller-owned relation store. Every vector is checked against its ref.
+// Snapshot reconstructs original Prefix labels and their checked coordinates.
+// Positional labels are reconstructed from canonical index bytes. Every vector
+// is checked against its ref, and Prefix labels must follow their routing paths.
 func (e *Engine) Snapshot(ctx context.Context, root cid.Cid, source materializer.NodeLookup) (View, error) {
 	return e.SnapshotBounded(ctx, root, source, ^uint64(0))
 }
@@ -36,6 +37,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 	view := View{Descriptor: d}
 	work := newProofWork(source)
 	visiting := make(map[string]bool)
+	seen := make(map[[32]byte][]byte)
 	var walk func(maltcid.NodeRef, int, *position, []int) error
 	walk = func(node maltcid.NodeRef, depth int, expected *position, path []int) error {
 		if err := ctx.Err(); err != nil {
@@ -102,7 +104,8 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 					if err != nil {
 						return err
 					}
-					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.Coordinate{Kind: coordinate.Index, Index: uint64(len(view.Bindings))}, Target: target})
+					index := uint64(len(view.Bindings))
+					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.At(index), Label: coordinate.EncodeIndex(index), Target: target})
 				} else {
 					child, err := parseChild(cell, node)
 					if err != nil {
@@ -118,21 +121,34 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 					continue
 				}
 				if cell[0] == prefixLeaf {
-					key, target, err := parsePrefix(cell)
+					label, target, err := parsePrefix(cell)
 					if err != nil {
 						return err
 					}
+					key, err := e.labelCoordinate(d, label)
+					if err != nil {
+						return err
+					}
+					if previous, exists := seen[key.Key]; exists {
+						if !bytes.Equal(previous, label) {
+							return ErrCoordinateCollision
+						}
+					}
 					route := append(append([]int(nil), path...), slot)
 					for level, want := range route {
-						got, err := digit(key, level, p.Slots)
+						got, err := digit(key.Key, level, p.Slots)
 						if err != nil || got != want {
 							return errors.New("leaf is outside its routing prefix")
 						}
 					}
+					if _, exists := seen[key.Key]; exists {
+						return errors.New("duplicate authentication label")
+					}
+					seen[key.Key] = label
 					if uint64(len(view.Bindings)) >= maxBindings {
 						return fmt.Errorf("snapshot exceeds binding bound %d", maxBindings)
 					}
-					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.Coordinate{Kind: coordinate.Key, Key: key}, Target: target})
+					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: key, Label: label, Target: target})
 				} else {
 					child, err := parseChild(cell, node)
 					if err != nil {
@@ -159,10 +175,11 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 	return view, nil
 }
 
-// Change supplies an expected old target at a derived authentication coordinate.
+// Change supplies an original label and expected old target at its coordinate.
 // Undefined Before means insert; undefined After means delete.
 type Change struct {
 	Coordinate coordinate.Coordinate
+	Label      []byte
 	Before     cid.Cid
 	After      cid.Cid
 }

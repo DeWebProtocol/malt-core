@@ -7,7 +7,6 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -49,13 +48,13 @@ func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []b
 	return verifier.VerifyIndex(root, index, commitment.NewCell(cell), bytes.Clone(proof))
 }
 
-// Prove opens only the supplied coordinate. Storage errors are never converted
-// into authenticated absence. The caller derives the coordinate from its input.
-func (e *Engine) Prove(ctx context.Context, root cid.Cid, query coordinate.Coordinate, source materializer.NodeLookup) (Result, error) {
+// Prove authenticates the original label at its checked routing coordinate.
+// Storage errors and coordinate collisions are never authenticated absence.
+func (e *Engine) Prove(ctx context.Context, root cid.Cid, query Selector, source materializer.NodeLookup) (Result, error) {
 	return e.prove(ctx, root, query, newProofWork(source))
 }
 
-func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coordinate, work *proofWork) (Result, error) {
+func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *proofWork) (Result, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
 		return Result{}, err
@@ -64,7 +63,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coord
 	if err != nil {
 		return Result{}, err
 	}
-	k, err := checkCoordinate(d, query)
+	k, err := e.selector(d, query)
 	if err != nil {
 		return Result{}, err
 	}
@@ -120,14 +119,21 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coord
 			return result, nil
 		}
 		if d.Layout == maltcid.Prefix && opening.Cell[0] == prefixLeaf {
-			key, target, err := parsePrefix(opening.Cell)
+			label, target, err := parsePrefix(opening.Cell)
 			if err != nil {
 				return Result{}, err
 			}
-			if err := checkLeafRoute(key, k.Key, depth, p.Slots); err != nil {
+			leaf, err := e.labelCoordinate(d, label)
+			if err != nil {
 				return Result{}, err
 			}
-			result.Present = key == k.Key
+			if err := checkLeafRoute(leaf.Key, k.Key, depth, p.Slots); err != nil {
+				return Result{}, err
+			}
+			if leaf.Key == k.Key && !bytes.Equal(label, query.Label) {
+				return Result{}, ErrCoordinateCollision
+			}
+			result.Present = bytes.Equal(label, query.Label)
 			if result.Present {
 				result.Target = target
 			}
@@ -154,9 +160,9 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coord
 	return Result{}, errors.New("authentication path exceeds maximum depth")
 }
 
-// Verify binds evidence to the caller's full Root and authentication coordinate.
-// It consumes no node materializer; callers must derive their own coordinates.
-func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result) (bool, error) {
+// Verify binds evidence to the caller's full Root and exact original label.
+// Coordinates select openings, but cannot substitute for label identity.
+func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, error) {
 	ref, d, err := maltcid.RootNode(root)
 	if err != nil {
 		return false, err
@@ -165,7 +171,7 @@ func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result
 	if err != nil {
 		return false, err
 	}
-	k, err := checkCoordinate(d, query)
+	k, err := e.selector(d, query)
 	if err != nil {
 		return false, err
 	}
@@ -216,20 +222,27 @@ func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result
 			return d.Layout == maltcid.Prefix && last && !result.Present, nil
 		}
 		if d.Layout == maltcid.Prefix && opening.Cell[0] == prefixLeaf {
-			key, target, err := parsePrefix(opening.Cell)
+			label, target, err := parsePrefix(opening.Cell)
 			if err != nil {
 				return false, err
 			}
-			if err := checkLeafRoute(key, k.Key, depth, p.Slots); err != nil {
+			leaf, err := e.labelCoordinate(d, label)
+			if err != nil {
+				return false, err
+			}
+			if err := checkLeafRoute(leaf.Key, k.Key, depth, p.Slots); err != nil {
 				return false, err
 			}
 			if !last {
 				return false, nil
 			}
-			if result.Present {
-				return key == k.Key && target.Equals(result.Target), nil
+			if leaf.Key == k.Key && !bytes.Equal(label, query.Label) {
+				return false, ErrCoordinateCollision
 			}
-			return key != k.Key, nil
+			if result.Present {
+				return bytes.Equal(label, query.Label) && target.Equals(result.Target), nil
+			}
+			return !bytes.Equal(label, query.Label) && leaf.Key != k.Key, nil
 		}
 		if d.Layout == maltcid.Positional && pos.height == 0 {
 			target, err := parsePositional(opening.Cell)

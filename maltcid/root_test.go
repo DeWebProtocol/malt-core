@@ -24,7 +24,7 @@ func TestSelfDescribingRoot(t *testing.T) {
 		if err != nil || got != d || !bytes.Equal(c, value) {
 			t.Fatalf("round trip %v", err)
 		}
-		if root.Prefix().Codec != 0x300104 || maltcid.VersionIDOf(root) != 0 || !maltcid.IsMaltCid(root) {
+		if root.Prefix().Codec != 0x300404 || maltcid.VersionIDOf(root) != 0 || !maltcid.IsMaltCid(root) {
 			t.Fatal("wrong Root codec")
 		}
 		ref, _, _ := maltcid.RootNode(root)
@@ -42,11 +42,31 @@ func TestSelfDescribingRoot(t *testing.T) {
 		}
 		bad := append([]byte{byte(id) | 128, 0, byte(p.CommitmentSize)}, c...)
 		hash, _ := mh.Encode(bad, mh.IDENTITY)
-		if _, _, err := maltcid.ParseRoot(cid.NewCidV1(0x300104, hash)); err == nil {
+		if _, _, err := maltcid.ParseRoot(cid.NewCidV1(0x300404, hash)); err == nil {
 			t.Fatal("nonminimal profile ID accepted")
 		}
 	}
 	if _, err := maltcid.NewRoot(maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Version: 1, Layout: maltcid.Prefix, Profile: maltcid.IPA256}, make([]byte, 32)); err == nil {
 		t.Fatal("production V=1 enabled")
+	}
+}
+
+func TestCoordinateOnlyPrefixLayoutIsRetired(t *testing.T) {
+	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
+		p, _ := maltcid.Profile(profile)
+		commitment := make([]byte, p.CommitmentSize)
+		mc, err := maltcid.Multicommitment(profile, commitment)
+		if err != nil {
+			t.Fatal(err)
+		}
+		hash, _ := mh.Encode(mc, mh.IDENTITY)
+		root := cid.NewCidV1(0x300104, hash)
+		if _, _, err := maltcid.ParseRoot(root); err == nil || maltcid.IsMaltCid(root) {
+			t.Fatal("coordinate-only Root accepted as label-authenticated state")
+		}
+		ref := append([]byte{'M', 'N', 0, 1}, mc...)
+		if _, err := maltcid.ParseNodeRef(ref); err == nil {
+			t.Fatal("coordinate-only internal node accepted")
+		}
 	}
 }

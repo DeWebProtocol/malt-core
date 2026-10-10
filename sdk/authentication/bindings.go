@@ -146,7 +146,10 @@ func bindingsFromState(ctx context.Context, e *engine.Engine, state engine.State
 		if !b.Target.Defined() {
 			return nil, engine.View{}, errors.New("undefined binding target")
 		}
-		if bindingGet(root, bindingKey(b.Coordinate)) != nil {
+		if previous := bindingGet(root, bindingKey(b.Coordinate)); previous != nil {
+			if !bytes.Equal(previous.entry.Label, b.Label) {
+				return nil, engine.View{}, engine.ErrCoordinateCollision
+			}
 			return nil, engine.View{}, errors.New("duplicate authentication coordinate")
 		}
 		root = bindingSet(root, b.Coordinate, state.Entries[i])

@@ -4,6 +4,8 @@ Current MALT Roots use CIDv1 with codec
 `0x300000 | (V << 12) | (L << 8) | AA`, abbreviated `0x30VLAA`.
 `V=0` is required throughout pre-production. `L` selects the Prefix or Positional
 authentication layout; `AA` selects the coordinate derivation profile.
+Current layouts are Prefix `L=4` (original-label leaves) and Positional `L=3`.
+Coordinate-only Prefix `L=1` and former Positional `L=2` are retired and rejected.
 Flat/compositional ArcSet organization is not encoded in the Root.
 The codec integer is a minimal unsigned
 varint, not a fixed four-byte prefix.

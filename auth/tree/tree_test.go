@@ -24,27 +24,34 @@ func newTree(t *testing.T) *tree.Engine {
 	if err := r.Register(s); err != nil {
 		t.Fatal(err)
 	}
-	return tree.New(r)
+	return tree.New(r, func(profile uint8, label []byte) (coordinate.Coordinate, error) {
+		return derivation.Derive(derivation.ProfileID(profile), label)
+	})
 }
-func TestTreeConsumesCoordinatesWithoutDerivationProfiles(t *testing.T) {
+func TestTreeConsumesInjectedDerivationWithoutInstallingProfiles(t *testing.T) {
 	e := newTree(t)
+	e = tree.New(e.Profiles, func(_ uint8, label []byte) (coordinate.Coordinate, error) {
+		return coordinate.Parse(label)
+	})
 	nodes := memory.NewNodes()
 	target := cid.MustParse("bafkqaaa")
-	// The tree does not install or execute application interpretation rule 240.
+	// The tree consumes a pure capability; the outer engine owns profile dispatch.
 	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: 240, Profile: maltcid.IPA256}
 	k := coordinate.Coordinate{Kind: coordinate.Key, Key: [32]byte{1}}
-	root, err := e.Commit(t.Context(), tree.View{Descriptor: d, Bindings: []tree.CoordinateBinding{{Coordinate: k, Target: target}}}, nodes)
+	label := coordinate.EncodeKey(k.Key)
+	query := tree.Selector{Coordinate: k, Label: label}
+	root, err := e.Commit(t.Context(), tree.View{Descriptor: d, Bindings: []tree.CoordinateBinding{{Coordinate: k, Label: label, Target: target}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	proof, err := e.Prove(t.Context(), root, k, nodes)
+	proof, err := e.Prove(t.Context(), root, query, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ok, err := e.Verify(root, k, proof); err != nil || !ok {
+	if ok, err := e.Verify(root, query, proof); err != nil || !ok {
 		t.Fatal("coordinate proof", err)
 	}
-	if _, err := e.Prove(t.Context(), root, coordinate.At(0), nodes); err == nil {
+	if _, err := e.Prove(t.Context(), root, tree.Selector{Coordinate: coordinate.At(0), Label: coordinate.EncodeIndex(0)}, nodes); err == nil {
 		t.Fatal("wrong coordinate kind accepted")
 	}
 }
@@ -74,7 +81,7 @@ func TestMaterializerCannotRewriteSelectedCommitment(t *testing.T) {
 	e := newTree(t)
 	nodes := memory.NewNodes()
 	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}
-	state := tree.View{Descriptor: d, Bindings: []tree.CoordinateBinding{{Coordinate: coordinate.At(0), Target: cid.MustParse("bafkqaaa")}}}
+	state := tree.View{Descriptor: d, Bindings: []tree.CoordinateBinding{{Coordinate: coordinate.At(0), Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 	root, err := e.Commit(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +122,7 @@ func TestWrappingOwnedMaterializationDoesNotGrantVerificationBypass(t *testing.T
 	nodes := memory.NewNodes()
 	original := cid.MustParse("bafkqaaa")
 	forged := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
-	root, err := e.Commit(t.Context(), tree.View{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Bindings: []tree.CoordinateBinding{{Coordinate: coordinate.At(0), Target: original}}}, nodes)
+	root, err := e.Commit(t.Context(), tree.View{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Bindings: []tree.CoordinateBinding{{Coordinate: coordinate.At(0), Label: coordinate.EncodeIndex(0), Target: original}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +135,7 @@ func TestWrappingOwnedMaterializationDoesNotGrantVerificationBypass(t *testing.T
 		t.Fatal(err)
 	}
 	source := forgedWorkspace{Workspace: work, target: forged}
-	if _, err := e.Apply(t.Context(), root, []tree.Change{{Coordinate: coordinate.At(0), Before: forged, After: original}}, source, work); err == nil {
+	if _, err := e.Apply(t.Context(), root, []tree.Change{{Coordinate: coordinate.At(0), Label: coordinate.EncodeIndex(0), Before: forged, After: original}}, source, work); err == nil {
 		t.Fatal("foreign wrapper inherited trusted-source status")
 	}
 }

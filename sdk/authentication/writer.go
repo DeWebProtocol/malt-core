@@ -180,21 +180,27 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 	if err != nil {
 		return nil, err
 	}
-	desired := make(map[coordinate.Coordinate]bool, len(view.Bindings))
+	desired := make(map[coordinate.Coordinate][]byte, len(view.Bindings))
 	delta := Delta{}
 	for i, b := range view.Bindings {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		if desired[b.Coordinate] {
+		if previous, exists := desired[b.Coordinate]; exists {
+			if !bytes.Equal(previous, b.Label) {
+				return nil, engine.ErrCoordinateCollision
+			}
 			return nil, errors.New("duplicate desired coordinate")
 		}
 		if !b.Target.Defined() {
 			return nil, errors.New("undefined desired target")
 		}
-		desired[b.Coordinate] = true
+		desired[b.Coordinate] = b.Label
 		old := bindingGet(w.bindings, bindingKey(b.Coordinate))
 		entry := state.Entries[i]
+		if old != nil && !bytes.Equal(old.entry.Label, entry.Label) {
+			return nil, engine.ErrCoordinateCollision
+		}
 		if old != nil && old.entry.Target.Equals(b.Target) && bytes.Equal(old.entry.Label, entry.Label) {
 			continue
 		}
@@ -209,7 +215,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 			return nil, errors.New("Prefix cannot carry sequence metadata")
 		}
 		if err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {
-			if !desired[n.coordinate] {
+			if _, exists := desired[n.coordinate]; !exists {
 				delta.Changes = append(delta.Changes, engine.Change{Label: n.entry.Label, Before: n.entry.Target})
 			}
 			return nil
@@ -220,7 +226,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		count := uint64(len(state.Entries))
 		delta.Count = &count
 		for i := uint64(0); i < count; i++ {
-			if !desired[coordinate.Coordinate{Kind: coordinate.Index, Index: i}] {
+			if _, exists := desired[coordinate.Coordinate{Kind: coordinate.Index, Index: i}]; !exists {
 				return nil, errors.New("Positional inputs must be contiguous")
 			}
 		}
