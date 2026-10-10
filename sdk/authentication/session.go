@@ -136,6 +136,11 @@ func (s *Session) Clear() {
 }
 func (w *Writer) stateCharge() uint64 {
 	total := w.nodes.StateCharge()
+	payloadBytes := uint64(len(w.metadata.PayloadCID.Bytes()))
+	if math.MaxUint64-total < payloadBytes {
+		return math.MaxUint64
+	}
+	total += payloadBytes
 	if w.bindings != nil {
 		if math.MaxUint64-total < w.bindings.charge {
 			return math.MaxUint64

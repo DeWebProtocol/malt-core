@@ -28,7 +28,7 @@ func GenerateAuthentication() ([]byte, error) {
 	corpus := struct {
 		Schema  string   `json:"schema"`
 		Vectors []vector `json:"vectors"`
-	}{Schema: "malt.conformance.authentication/2", Vectors: []vector{}}
+	}{Schema: "malt.conformance.authentication/3", Vectors: []vector{}}
 	ctx := context.Background()
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		var scheme engine.Profile
@@ -105,14 +105,14 @@ func GenerateAuthentication() ([]byte, error) {
 		if err := add("native-key", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: nativeRoot.String(), Steps: [][]byte{}, Operation: "binding", Label: &key}); err != nil {
 			return nil, err
 		}
-		sequence := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: profile}, ChunkSize: 8, TotalSize: 5, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
+		sequence := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: profile}, PayloadCID: cid.MustParse("bafkqaaa"), Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 		listRoot, err := e.Build(ctx, sequence, nodes)
 		if err != nil {
 			return nil, err
 		}
-		start := uint64(1)
-		end := uint64(4)
-		if err := add("measured-range", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: [][]byte{}, Operation: "range", Start: &start, End: &end}); err != nil {
+		start := uint64(0)
+		end := uint64(1)
+		if err := add("index-range", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: listRoot.String(), Steps: [][]byte{}, Operation: "range", Start: &start, End: &end}); err != nil {
 			return nil, err
 		}
 		maximum := coordinate.EncodeIndex(^uint64(0))

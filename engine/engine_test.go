@@ -152,7 +152,7 @@ func TestNativePrefixDepthAndMixedRootTraversal(t *testing.T) {
 func TestPositionalMetadataAndOpaqueDirectLabels(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
 	ctx := context.Background()
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 10, TotalSize: 2553}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, PayloadCID: target("metadata")}
 	for i := 0; i < 256; i++ {
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target("chunk")})
 	}

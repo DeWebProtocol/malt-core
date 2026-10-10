@@ -52,7 +52,7 @@ func TestRangeReusesVerifiedNodeWork(t *testing.T) {
 	}{
 		{"ipa leaf", maltcid.IPA256, 8, 0, 8, 1, 9, true},
 		{"kzg leaf", maltcid.KZG4096, 8, 0, 8, 1, 9, true},
-		{"ipa crossing children", maltcid.IPA256, 258, 253, 257, 3, 9, true},
+		{"ipa crossing children", maltcid.IPA256, 258, 253, 257, 3, 7, true},
 		{"prover without preparation", maltcid.IPA256, 8, 0, 8, 1, 9, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestRangeReusesVerifiedNodeWork(t *testing.T) {
 			}
 			e := engine.New(profiles)
 			store := memory.NewNodes()
-			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: tc.profile}, ChunkSize: 1, TotalSize: tc.count}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: tc.profile}}
 			for i := uint64(0); i < tc.count; i++ {
 				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: target(fmt.Sprint(i))})
 			}

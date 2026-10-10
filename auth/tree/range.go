@@ -11,8 +11,6 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-var ErrNotMeasured = errors.New("Positional state has no byte measurements")
-
 type RangeResult struct {
 	Metadata         Metadata `json:"metadata"`
 	MetadataEvidence Result   `json:"metadata_evidence"`
@@ -41,23 +39,21 @@ func (e *Engine) readMetadata(ctx context.Context, root cid.Cid, work *proofWork
 	return meta, result, err
 }
 func rangeBounds(meta Metadata, start uint64, end *uint64) (uint64, uint64, error) {
-	if meta.ChunkSize == 0 {
-		return 0, 0, ErrNotMeasured
-	}
-	stop := meta.TotalSize
+	stop := meta.Count
 	if end != nil {
 		stop = *end
 	}
-	if start > stop || stop > meta.TotalSize {
-		return 0, 0, errors.New("byte range is outside authenticated length")
+	if start > stop || stop > meta.Count {
+		return 0, 0, errors.New("index range is outside authenticated count")
 	}
 	if start == stop {
 		return 0, 0, nil
 	}
-	first := start / meta.ChunkSize
-	count := (stop-1)/meta.ChunkSize - first + 1
-	return first, count, nil
+	return start, stop - start, nil
 }
+
+// ProveRange authenticates the ordered bindings in the half-open index interval
+// [start,end). A nil end selects Count. Byte interpretation belongs to callers.
 func (e *Engine) ProveRange(ctx context.Context, root cid.Cid, start uint64, end *uint64, source materializer.NodeLookup) (RangeResult, error) {
 	work := newProofWork(source)
 	meta, evidence, err := e.readMetadata(ctx, root, work)

@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	AuthenticationBatchProfile    = "malt.authentication-batch/1"
-	AuthenticationReceiptProfile  = "malt.authentication-receipt/1"
+	AuthenticationBatchProfile    = "malt.authentication-batch/2"
+	AuthenticationReceiptProfile  = "malt.authentication-receipt/2"
 	MaxAuthenticationBatchObjects = 4096
 )
 
@@ -100,6 +100,9 @@ func (b AuthenticationBatch) Validate() error {
 			if j, ok := positions[entry.Target.String()]; ok && j >= i {
 				return errors.New("authentication candidates must precede their parents")
 			}
+		}
+		if j, ok := positions[c.State.PayloadCID.String()]; ok && j >= i {
+			return errors.New("authentication payload candidates must precede their parents")
 		}
 	}
 	return nil

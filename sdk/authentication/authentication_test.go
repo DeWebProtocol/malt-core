@@ -109,7 +109,7 @@ func TestTypedWireRejectsAmbiguousInputs(t *testing.T) {
 	if err := json.Unmarshal(data, &round); err != nil || !bytes.Equal(round, index) {
 		t.Fatal(err)
 	}
-	if _, err := protocol.DecodeAuthenticationRequest([]byte(`{"profile":"malt.authentication/3","profile":"malt.authentication/3"}`)); err == nil {
+	if _, err := protocol.DecodeAuthenticationRequest([]byte(`{"profile":"malt.authentication/5","profile":"malt.authentication/5"}`)); err == nil {
 		t.Fatal("duplicate field accepted")
 	}
 }

@@ -361,3 +361,27 @@ func TestInvalidObjectConfigurations(t *testing.T) {
 		t.Fatal("verification-only backend committed an object")
 	}
 }
+
+func TestListPayloadIsRootMetadataAndAppearsInGraphDelta(t *testing.T) {
+	list, err := object.NewList(engineFor(t), object.ListConfig(maltcid.IPA256))
+	must(t, err)
+	metadata := leaf(t, "{\"type\":\"heterogeneous\"}")
+	list.SetPayload(metadata.Payload())
+	must(t, list.Append(leaf(t, "first")))
+	before := commit(t, list)
+	state, err := retained(t, list).State(t.Context())
+	must(t, err)
+	if list.Len() != 1 || !state.PayloadCID.Equals(metadata.Payload()) {
+		t.Fatal("payload consumed an element")
+	}
+	delta, err := list.Delta(t.Context())
+	must(t, err)
+	if len(delta.External) != 1 || !delta.External[0].Equals(metadata.Payload()) {
+		t.Fatal("payload missing from graph closure")
+	}
+	list.SetPayload(cid.Undef)
+	after := commit(t, list)
+	if after.Equals(before) || list.Len() != 1 {
+		t.Fatal("clear lost binding or kept old Root")
+	}
+}

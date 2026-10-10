@@ -1,18 +1,18 @@
 {
-  "schema": "malt.conformance.authentication/2",
+  "schema": "malt.conformance.authentication/3",
   "vectors": [
     {
       "id": "profile-1.opaque-label",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [],
           "operation": "binding",
           "label": "YS9i"
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "traversal": {
             "results": []
@@ -23,7 +23,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AUpP4gTEWIEpcctAi8qPK1MCK5ZrbHenzrb0i7ROZJoMAVUAAA==",
@@ -40,14 +40,14 @@
       "id": "profile-1.system-payload",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [],
           "operation": "binding",
           "label": "QHBheWxvYWQ="
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "traversal": {
             "results": []
@@ -58,7 +58,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AVhtkShuxVQxtaAyOOYV1ihwr8vcvrFAtvJdJTHMQfJHAVUAAA==",
@@ -75,14 +75,14 @@
       "id": "profile-1.literal-at-payload-absent",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [],
           "operation": "binding",
           "label": "QHBheWxvYWQ="
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "traversal": {
             "results": []
@@ -93,7 +93,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AVhtkShuxVQxtaAyOOYV1ihwr8vcvrFAtvJdJTHMQfJHAVUAAA==",
@@ -110,14 +110,14 @@
       "id": "profile-1.missing",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [],
           "operation": "binding",
           "label": "YWJzZW50"
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "traversal": {
             "results": []
@@ -126,7 +126,7 @@
             "present": false,
             "target": null,
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "proof": "oSv+g58iDGpoxsO7Yl+SM3IBDnBiIrEWKUmpRSXGmBwlkYE7XKLwDULkzJXRyd7sb8Mc729ensxnwhzAj83hHtPwneFknTdNpJWZHHhSuFQAAAMW"
@@ -142,7 +142,7 @@
       "id": "profile-1.path-absence",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [
             "bWlzc2luZw==",
@@ -152,7 +152,7 @@
         },
         "result": {
           "absent_step": "0",
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "",
           "traversal": {
             "results": [
@@ -160,7 +160,7 @@
                 "present": false,
                 "target": null,
                 "proof": {
-                  "format": "malt.binding/0",
+                  "format": "malt.binding/1",
                   "nodes": [
                     {
                       "proof": "tDIyDicE0rDPI+kQag1xLhQ9KJEuwiSA0I+XHmmev7tO5NY9VzXls5Upc61ClY4Ab8Mc729ensxnwhzAj83hHtPwneFknTdNpJWZHHhSuFQAAA5B"
@@ -178,7 +178,7 @@
       "id": "profile-1.path-wrong-prefix",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [
             "YS9i",
@@ -188,7 +188,7 @@
         },
         "result": {
           "absent_step": "0",
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "",
           "traversal": {
             "results": [
@@ -196,7 +196,7 @@
                 "present": false,
                 "target": null,
                 "proof": {
-                  "format": "malt.binding/0",
+                  "format": "malt.binding/1",
                   "nodes": [
                     {
                       "proof": "tDIyDicE0rDPI+kQag1xLhQ9KJEuwiSA0I+XHmmev7tO5NY9VzXls5Upc61ClY4Ab8Mc729ensxnwhzAj83hHtPwneFknTdNpJWZHHhSuFQAAA5B"
@@ -214,14 +214,14 @@
       "id": "profile-1.native-key",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagbyfqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [],
           "operation": "binding",
           "label": "Sk/iBMRYgSlxy0CLyo8rUwIrlmtsd6fOtvSLtE5kmgw="
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagbyfqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "traversal": {
             "results": []
@@ -232,7 +232,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AUpP4gTEWIEpcctAi8qPK1MCK5ZrbHenzrb0i7ROZJoMAVUAAA==",
@@ -246,38 +246,38 @@
       "valid": true
     },
     {
-      "id": "profile-1.measured-range",
+      "id": "profile-1.index-range",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
-          "root": "bagbyjqabaazacmep4r33pu4x44a724lsw6kdro4pm3pj44jcpczhaskr6fswharstia7uxasgilkkp26z3ibxvcelqfq",
+          "profile": "malt.authentication/5",
+          "root": "bagbynqabaazacmfayxi3uujg3r5atu6bysgwhs7zjvyfvfbpaopsoz23lym7pstqpiadcfgruiwqc3e3elket6sw4cma",
           "steps": [],
           "operation": "range",
-          "start": "1",
-          "end": "4"
+          "start": "0",
+          "end": "1"
         },
         "result": {
-          "profile": "malt.authentication/3",
-          "resolved": "bagbyjqabaazacmep4r33pu4x44a724lsw6kdro4pm3pj44jcpczhaskr6fswharstia7uxasgilkkp26z3ibxvcelqfq",
+          "profile": "malt.authentication/5",
+          "resolved": "bagbynqabaazacmfayxi3uujg3r5atu6bysgwhs7zjvyfvfbpaopsoz23lym7pstqpiadcfgruiwqc3e3elket6sw4cma",
           "traversal": {
             "results": []
           },
           "range": {
             "metadata": {
-              "height": "0",
               "count": "1",
-              "chunk_size": "8",
-              "total_size": "5"
+              "payload_cid": {
+                "/": "bafkqaaa"
+              }
             },
             "metadata_evidence": {
               "present": false,
               "target": null,
               "proof": {
-                "format": "malt.binding/0",
+                "format": "malt.binding/1",
                 "nodes": [
                   {
-                    "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                    "metadata_proof": "gdCoG3ejLuTLcUCsnYZ2cjnSxHFbiQaQ5ZIIwE2gTS4a1XsyEv9KqESdNaVwiB5oZgTHMN2uijoPi5iyzkJ3GSIc9S0gTW43hTiaTfNriYIAAAAA"
+                    "metadata": "BAAAAAAAAAABAVUAAA==",
+                    "metadata_proof": "tDLIjcFRMQv8PmblkeOPubXSRA8JUa/36niAVbr192GuwXyLQ3k0yCH91vZvjWOjaG2JvsVkmiWGbTi2MoohfQnYij6/eALvfaee0Ds/LokAAAAA"
                   }
                 ]
               }
@@ -289,13 +289,13 @@
                   "/": "bafkqaaa"
                 },
                 "proof": {
-                  "format": "malt.binding/0",
+                  "format": "malt.binding/1",
                   "nodes": [
                     {
                       "cell": "AwFVAAA=",
-                      "proof": "hxiD2PT161yCU5FBXWFG8Stn1Q6v+CPMBpLHYyMuNy9zarGk2VwVxn6a/8KLcWA6SYgxv5oSCIfei3mAAJBbEi/uD5REKgivU7C8OExSdz0AAAAB",
-                      "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                      "metadata_proof": "gdCoG3ejLuTLcUCsnYZ2cjnSxHFbiQaQ5ZIIwE2gTS4a1XsyEv9KqESdNaVwiB5oZgTHMN2uijoPi5iyzkJ3GSIc9S0gTW43hTiaTfNriYIAAAAA"
+                      "proof": "pAvrab7e8VdxSsFK07bPCY1eJvA5f8JNQelxsLteF2WjSqjV8I4EwiCn2whKnVLMSYgxv5oSCIfei3mAAJBbEi/uD5REKgivU7C8OExSdz0AAAAB",
+                      "metadata": "BAAAAAAAAAABAVUAAA==",
+                      "metadata_proof": "tDLIjcFRMQv8PmblkeOPubXSRA8JUa/36niAVbr192GuwXyLQ3k0yCH91vZvjWOjaG2JvsVkmiWGbTi2MoohfQnYij6/eALvfaee0Ds/LokAAAAA"
                     }
                   ]
                 }
@@ -310,15 +310,15 @@
       "id": "profile-1.max-index-absence",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
-          "root": "bagbyjqabaazacmep4r33pu4x44a724lsw6kdro4pm3pj44jcpczhaskr6fswharstia7uxasgilkkp26z3ibxvcelqfq",
+          "profile": "malt.authentication/5",
+          "root": "bagbynqabaazacmfayxi3uujg3r5atu6bysgwhs7zjvyfvfbpaopsoz23lym7pstqpiadcfgruiwqc3e3elket6sw4cma",
           "steps": [],
           "operation": "binding",
           "label": "//////////8="
         },
         "result": {
-          "profile": "malt.authentication/3",
-          "resolved": "bagbyjqabaazacmep4r33pu4x44a724lsw6kdro4pm3pj44jcpczhaskr6fswharstia7uxasgilkkp26z3ibxvcelqfq",
+          "profile": "malt.authentication/5",
+          "resolved": "bagbynqabaazacmfayxi3uujg3r5atu6bysgwhs7zjvyfvfbpaopsoz23lym7pstqpiadcfgruiwqc3e3elket6sw4cma",
           "traversal": {
             "results": []
           },
@@ -326,11 +326,11 @@
             "present": false,
             "target": null,
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
-                  "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                  "metadata_proof": "gdCoG3ejLuTLcUCsnYZ2cjnSxHFbiQaQ5ZIIwE2gTS4a1XsyEv9KqESdNaVwiB5oZgTHMN2uijoPi5iyzkJ3GSIc9S0gTW43hTiaTfNriYIAAAAA"
+                  "metadata": "BAAAAAAAAAABAVUAAA==",
+                  "metadata_proof": "tDLIjcFRMQv8PmblkeOPubXSRA8JUa/36niAVbr192GuwXyLQ3k0yCH91vZvjWOjaG2JvsVkmiWGbTi2MoohfQnYij6/eALvfaee0Ds/LokAAAAA"
                 }
               ]
             }
@@ -343,15 +343,15 @@
       "id": "profile-1.wrong-root",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaazacmeizvisw6kvl7mjas3zpl24qor7c2bxoj4v6bmpma3pljbjxu7baeuiwm2icd7mri4rlhnqaciuxkka",
           "steps": [],
           "operation": "binding",
           "label": "//////////8="
         },
         "result": {
-          "profile": "malt.authentication/3",
-          "resolved": "bagbyjqabaazacmep4r33pu4x44a724lsw6kdro4pm3pj44jcpczhaskr6fswharstia7uxasgilkkp26z3ibxvcelqfq",
+          "profile": "malt.authentication/5",
+          "resolved": "bagbynqabaazacmfayxi3uujg3r5atu6bysgwhs7zjvyfvfbpaopsoz23lym7pstqpiadcfgruiwqc3e3elket6sw4cma",
           "traversal": {
             "results": []
           },
@@ -359,11 +359,11 @@
             "present": false,
             "target": null,
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
-                  "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                  "metadata_proof": "gdCoG3ejLuTLcUCsnYZ2cjnSxHFbiQaQ5ZIIwE2gTS4a1XsyEv9KqESdNaVwiB5oZgTHMN2uijoPi5iyzkJ3GSIc9S0gTW43hTiaTfNriYIAAAAA"
+                  "metadata": "BAAAAAAAAAABAVUAAA==",
+                  "metadata_proof": "tDLIjcFRMQv8PmblkeOPubXSRA8JUa/36niAVbr192GuwXyLQ3k0yCH91vZvjWOjaG2JvsVkmiWGbTi2MoohfQnYij6/eALvfaee0Ds/LokAAAAA"
                 }
               ]
             }
@@ -376,14 +376,14 @@
       "id": "profile-2.opaque-label",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [],
           "operation": "binding",
           "label": "YS9i"
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "traversal": {
             "results": []
@@ -394,7 +394,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AUpP4gTEWIEpcctAi8qPK1MCK5ZrbHenzrb0i7ROZJoMAVUAAA==",
@@ -411,14 +411,14 @@
       "id": "profile-2.system-payload",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [],
           "operation": "binding",
           "label": "QHBheWxvYWQ="
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "traversal": {
             "results": []
@@ -429,7 +429,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AVhtkShuxVQxtaAyOOYV1ihwr8vcvrFAtvJdJTHMQfJHAVUAAA==",
@@ -446,14 +446,14 @@
       "id": "profile-2.literal-at-payload-absent",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [],
           "operation": "binding",
           "label": "QHBheWxvYWQ="
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "traversal": {
             "results": []
@@ -464,7 +464,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AVhtkShuxVQxtaAyOOYV1ihwr8vcvrFAtvJdJTHMQfJHAVUAAA==",
@@ -481,14 +481,14 @@
       "id": "profile-2.missing",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [],
           "operation": "binding",
           "label": "YWJzZW50"
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "traversal": {
             "results": []
@@ -497,7 +497,7 @@
             "present": false,
             "target": null,
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "proof": "AAAACBOWwPfPQxjJSbQSuZNYH14wraHmYR6M6Oq7WMCFdwsmQwUFc90rg5E8gZc/IFGHMY3Mwl4eNT3dLpzqZtzHa0gsj8ME1kMbFMlwKNCX8CGBEczEoj2zShYkIDGz5XXuQEJxxbKX2mII1/ontSy7icR0iOuIYnem1zC90XPLCV1kT5gdvHwqKiVM9BjHo1u8oPHvyEUK/dYsQdDF1C84u1NGSoA9aca9imKzUIT9mKZC3IYpGVX3J9AOWIo+dOGAICMCLH5ksKY1dIhkOKFy+Mx/1zsE1t9GY7tNSG9ZQypFPHK5QkInZX/pYYuf8wTnA/EhHIvQ1luo1YYcU8f5o+ZS0CFv/69IaNoU+xwSQjnkQGRHJSpvk2s3aOqfdl5dy0qqfl4aW2GYYcnY57cqRvrWYAjv5YUiPioeEAdoZXFIcvGQ0r1HF8z5wimqLULIfnWMle1oFHr6SIGrfoPkXFo+U0WU69UTyu8vzqPSDJW9p5Vx+KV/elF5hD5IJD9/cnGr8+QmlcJ0ph1sgYYaTOgfrODjPww7UJrR9bkfxso7A8bBZi8+LRKxgEE2CJQztt2QD3CkVbHtWWIjz4Ef+a8iX9myVtETrPDvNt08gqpJp9iCpVCdK9wUFlHp6KMrlBmJgUaBFyJ0zsVusueg96wvDyNcMyC80fkg303PuZuF5DhxzEsit6voVdxvdHNjM/PQkRTOYQkkvpshGvSq/BgAAAAx"
@@ -513,7 +513,7 @@
       "id": "profile-2.path-absence",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [
             "bWlzc2luZw==",
@@ -523,7 +523,7 @@
         },
         "result": {
           "absent_step": "0",
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "",
           "traversal": {
             "results": [
@@ -531,7 +531,7 @@
                 "present": false,
                 "target": null,
                 "proof": {
-                  "format": "malt.binding/0",
+                  "format": "malt.binding/1",
                   "nodes": [
                     {
                       "proof": "AAAACBsVxmDV/VOxUWncSFLsvtRtT4ZgNXbMObaXD602TudMOFxlarE8TgysNRUqSuD5UWfEPKxAKVk/5drA3DW0+IgvaQjU8oj927VbraA1kIKIlO68MOWa39ASU/O9gs8bo0fMyNanso2NsDasqqY8krz50Q69D6ue6sybCkgPLNRuZ1Ufx8STqI3MSbC3oOdS7AwVRNvtSVJPKvC3hc3y1eseZ4j1yzF6TAC6sdPGT7TYOOZpwaMQCA0oNdIpIYa5PGFgxGhz7hnjFgghlxhtS496DW7apd5OYQnMd2UFNOgCS4fSEaAQlXtOSvuieq3ZPoB4REwy6jdAnsWdTlGuq5QicOPmFw51xToIz/spRuwnZ9TKi0g7XsrsMVwRARS99guJ47EC8LTtrpD211gNr3UFIXTjOJnL6foB0qTqvbxeAA54jyZ2PjQLksE/lB896yO1tjaknBEWWtGRGj3uGRcj37/dfT9K2Mek/PtYJMxMsjClvr/FnJxxWY1aOtkgeVWjJ9m24e2amN1CWmt5/RcFD0xZEYu5Q1S59JQdbHdCK22gmNZPWW/5O/2AwuWhQKdDd3cO8TXPEbzPVDVprY0/xl0lm3mlUOBq/Kj0GNXBBW9k/JOVPjxd0sVm4iM8/0jhlaPEG4mGCMWKFiOe12DklVfwhvrqLV2pBLk6dzXT//oh9sFZCu61iz/AiY4mA485N2TD57SbYgSFKC8yCxMAAADk"
@@ -549,7 +549,7 @@
       "id": "profile-2.path-wrong-prefix",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [
             "YS9i",
@@ -559,7 +559,7 @@
         },
         "result": {
           "absent_step": "0",
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "",
           "traversal": {
             "results": [
@@ -567,7 +567,7 @@
                 "present": false,
                 "target": null,
                 "proof": {
-                  "format": "malt.binding/0",
+                  "format": "malt.binding/1",
                   "nodes": [
                     {
                       "proof": "AAAACBsVxmDV/VOxUWncSFLsvtRtT4ZgNXbMObaXD602TudMOFxlarE8TgysNRUqSuD5UWfEPKxAKVk/5drA3DW0+IgvaQjU8oj927VbraA1kIKIlO68MOWa39ASU/O9gs8bo0fMyNanso2NsDasqqY8krz50Q69D6ue6sybCkgPLNRuZ1Ufx8STqI3MSbC3oOdS7AwVRNvtSVJPKvC3hc3y1eseZ4j1yzF6TAC6sdPGT7TYOOZpwaMQCA0oNdIpIYa5PGFgxGhz7hnjFgghlxhtS496DW7apd5OYQnMd2UFNOgCS4fSEaAQlXtOSvuieq3ZPoB4REwy6jdAnsWdTlGuq5QicOPmFw51xToIz/spRuwnZ9TKi0g7XsrsMVwRARS99guJ47EC8LTtrpD211gNr3UFIXTjOJnL6foB0qTqvbxeAA54jyZ2PjQLksE/lB896yO1tjaknBEWWtGRGj3uGRcj37/dfT9K2Mek/PtYJMxMsjClvr/FnJxxWY1aOtkgeVWjJ9m24e2amN1CWmt5/RcFD0xZEYu5Q1S59JQdbHdCK22gmNZPWW/5O/2AwuWhQKdDd3cO8TXPEbzPVDVprY0/xl0lm3mlUOBq/Kj0GNXBBW9k/JOVPjxd0sVm4iM8/0jhlaPEG4mGCMWKFiOe12DklVfwhvrqLV2pBLk6dzXT//oh9sFZCu61iz/AiY4mA485N2TD57SbYgSFKC8yCxMAAADk"
@@ -585,14 +585,14 @@
       "id": "profile-2.native-key",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagbyfqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [],
           "operation": "binding",
           "label": "Sk/iBMRYgSlxy0CLyo8rUwIrlmtsd6fOtvSLtE5kmgw="
         },
         "result": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "resolved": "bagbyfqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "traversal": {
             "results": []
@@ -603,7 +603,7 @@
               "/": "bafkqaaa"
             },
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
                   "cell": "AUpP4gTEWIEpcctAi8qPK1MCK5ZrbHenzrb0i7ROZJoMAVUAAA==",
@@ -617,38 +617,38 @@
       "valid": true
     },
     {
-      "id": "profile-2.measured-range",
+      "id": "profile-2.index-range",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
-          "root": "bagbyjqabaaraeibqcyzxx6mn7hf3mpudbaqnofd42cak57tjgzhpfy3znnx44lbgqe",
+          "profile": "malt.authentication/5",
+          "root": "bagbynqabaaraeicgkktggfwe2znnv4y34pu37hjvy7nirkxo4copltc47mwqfpdoly",
           "steps": [],
           "operation": "range",
-          "start": "1",
-          "end": "4"
+          "start": "0",
+          "end": "1"
         },
         "result": {
-          "profile": "malt.authentication/3",
-          "resolved": "bagbyjqabaaraeibqcyzxx6mn7hf3mpudbaqnofd42cak57tjgzhpfy3znnx44lbgqe",
+          "profile": "malt.authentication/5",
+          "resolved": "bagbynqabaaraeicgkktggfwe2znnv4y34pu37hjvy7nirkxo4copltc47mwqfpdoly",
           "traversal": {
             "results": []
           },
           "range": {
             "metadata": {
-              "height": "0",
               "count": "1",
-              "chunk_size": "8",
-              "total_size": "5"
+              "payload_cid": {
+                "/": "bafkqaaa"
+              }
             },
             "metadata_evidence": {
               "present": false,
               "target": null,
               "proof": {
-                "format": "malt.binding/0",
+                "format": "malt.binding/1",
                 "nodes": [
                   {
-                    "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                    "metadata_proof": "AAAACEyO2z1KSO5Zao+qAtTEknzHefQWt1chFxdz1Rhv/yMGS9YfpRJuDM8FCgmgXkkK4TwRLD+5XRsBgP32PHug/7BpjEuVlSK+kyyFCDYW/mSSvJHIg6tO89efdPuG6oxq0ThXSF6SWxu7h5s38nk0M6SmFHExeI0LPk54AX1TQLETT3OOhnboClH8I1U96HybXFKPSKQqw7Er9pGlaiiqlu9qpAJhMAW8HfQ2RVxbDQsEQwrEx1+JZAlXtjmFCu0UGSQk0DppSjUwnzNDXwnkZWWGnssS2lOdX3PbZcBQwAkAKRku+iJTZR5tCHBZg/Ku8/S2Lrcg/esJGKuoVQUEa2QRlZRB3JrESrzsEgXgAk7RAB74eCoGteay9gkGezRvtUcGhg+B/uOhInzeEBIeBKDfxrNYZQJVNVbju+afxIOGN90/RgMN1qd+IG5Jsa8uwjuCCol+kMk1YnQmPpSvT51JN7R6Br25/9S5/kE7yv+3b3Hx2oS84w4/JYhqxEErsQkO9oR/InXwZAwwME+MRuj54TiCM63co2kYNtsNNlgiAUuDJCJgaO/zGLFE8FqdoB3TCRcwUCOENDc/rCwR/B0H+UMuNKfAIoyvxEobxAviqlnfz7bQzUj93wHWKStSvDCNMoC2AR7qEyocH0GLfBhtsyzjwEhdjD85q8q51c/Y/2842j/pfoZAVCXh/UC4TNaeZp9DJXsSwlk5GGZjMgQAAAAA"
+                    "metadata": "BAAAAAAAAAABAVUAAA==",
+                    "metadata_proof": "AAAACD6qXlun6qUzr+iEeouZklwaSI5Dp2zW+wNelzP+LT1bQ3e4f2aPRtGs+hFw8TDMNLFzeXeVBtiORPw2+IWMEvgA6Oo72J+UkJyaIo9qxkGciU3raqBA9IEI2Wiexdzv726/0sDiuDYjsZoho/XMTocXuP12iY7kn3OfFVSERQoqcnikRKGwkWm0XAVqMDTadzOBYKoiHb5C+ytFElzXMsozwkV3Ez4fQ43Pxlj1lOE+KmjVetxy2h9EAuiEe0CXUjj8zi4v5vSBfHgHNge+7W+JSvpeEdHqfYHZrFzg95xkW4gyatNtkNmsQ3Iyi2k2Sj8oxnT2e81m3ROPkuGGTzI4J6JOEknrEWDkvbyRBr5zXkZbsI7M2pt+8kbkS7/OIQpuGoV6/1NDlXAMQE1Vlk5kqogrIvQO7ApfbuConzDEUYl2eOBN8UTc9xjVFPVcMp0MvguWTJVUqHHZE7jrw2cTap0/pz6ZaTAzeZaQaU2vN/CmNJTYmQIIf0HnfcKeQT7SPFI8dSrbsptebS5WgjXGgdoIdsvE7pvAeq43d4voPPUGyll+UUYPx6oAzAfouciDcJ9yQoIGJBNpOo7UGuVOeCTz+ABtViP1Sig/GaPX9IOAt2hLOOOxAyEGpT6ArmI9rCoKAUguoE0+zYNk5uKxG999D8i3VZEsYX4DvGIRylGpV1lP5LIh6wyeFIxh8BB76gpnqxleqXf6a1s71wsAAAAA"
                   }
                 ]
               }
@@ -660,13 +660,13 @@
                   "/": "bafkqaaa"
                 },
                 "proof": {
-                  "format": "malt.binding/0",
+                  "format": "malt.binding/1",
                   "nodes": [
                     {
                       "cell": "AwFVAAA=",
-                      "proof": "AAAACCIwHJdSzFzyVM25LGx875qlqqzcwwwxop9MTpX6eAwIVQt0MP4h0UaQo+XdqVOp5PofkiuWHSIPu6SQ4v6vUz9BtZafjWLsS2OtFR/efEbsDZiQUy1GbuhzmDaCG/ZhpxfyyLOSaZZIbs1/iMcMLUcbTB+zPv9qDE43zxRrXsELNrR6JKkZlTWcpDtKQxq2OKExEH7p4xUv0XBUFFOdQXUz/w3RbT3ltKcocXZHkFLc0dKAuMaWdqZ/53fJWerGY2oU8U32xcmO7S5XC9E6ieEc7GpP3Zt8z90AGa/BOg5sStyLuj09o3Oa9UyjSvCgJxugXF8KUPJfOHU6U3QI280RlZRB3JrESrzsEgXgAk7RAB74eCoGteay9gkGezRvtSs4vBHLmUSJzP9WPKWc09RqUYvM+osw20Pq8lnddSg5NLB0Wo4nC+OTw8X8uLqbHN3o7ennvYE8PowgucnPMVZKZwoI1CuZCXWQ1d1knvro7otfayn3xBqiHNyf/tgOr2Cgshqs/5DrOCt7cwupiY0CLaL4/gZZOeCVtCqlRR8mTcQY/mZMB9lW62CWGoUbH85UXJQ8RcaURpxB/FU53+IBwjLtSQc+xCKwDH8GDwHkAKaTCihlE21RYjUpyeqExWio8XS5FmNUM1iSvrS1leuINMgraW2PJt+v8bydNFOD9CdLsr1ggXdX8PmLPNdlLJ1tvO65Qx9cGhtUwOxLqg0AAAAB",
-                      "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                      "metadata_proof": "AAAACEyO2z1KSO5Zao+qAtTEknzHefQWt1chFxdz1Rhv/yMGS9YfpRJuDM8FCgmgXkkK4TwRLD+5XRsBgP32PHug/7BpjEuVlSK+kyyFCDYW/mSSvJHIg6tO89efdPuG6oxq0ThXSF6SWxu7h5s38nk0M6SmFHExeI0LPk54AX1TQLETT3OOhnboClH8I1U96HybXFKPSKQqw7Er9pGlaiiqlu9qpAJhMAW8HfQ2RVxbDQsEQwrEx1+JZAlXtjmFCu0UGSQk0DppSjUwnzNDXwnkZWWGnssS2lOdX3PbZcBQwAkAKRku+iJTZR5tCHBZg/Ku8/S2Lrcg/esJGKuoVQUEa2QRlZRB3JrESrzsEgXgAk7RAB74eCoGteay9gkGezRvtUcGhg+B/uOhInzeEBIeBKDfxrNYZQJVNVbju+afxIOGN90/RgMN1qd+IG5Jsa8uwjuCCol+kMk1YnQmPpSvT51JN7R6Br25/9S5/kE7yv+3b3Hx2oS84w4/JYhqxEErsQkO9oR/InXwZAwwME+MRuj54TiCM63co2kYNtsNNlgiAUuDJCJgaO/zGLFE8FqdoB3TCRcwUCOENDc/rCwR/B0H+UMuNKfAIoyvxEobxAviqlnfz7bQzUj93wHWKStSvDCNMoC2AR7qEyocH0GLfBhtsyzjwEhdjD85q8q51c/Y/2842j/pfoZAVCXh/UC4TNaeZp9DJXsSwlk5GGZjMgQAAAAA"
+                      "proof": "AAAACFAOMKWfEn4nAIDM83+1SupNpNmJRw4Z3lO9nuq5ytFxRUrNQLYd8OvWFHpVzbLPRjiWAU7gAcY4LfZSuso/IQdn23G8PuzBOeZkreCoZ2HbRquvOljWoPAGl+TBchiZlU/UoA7fuc5BEyQqGyA4/KFHAy990hGaE2eqn8zSlzPuLTLHmwxNrLN35X4VG+P21uUceuDnNH8B2SbIMTvI+psh+dLkxAMtQ16VvNGgDncOSMu/xFH2xJImMYmw47hBG0lT5P8hge+AVezjMyV6YaEumySDnGchASXEHB7p03UJBS+NfhlS+k44haDNUxH0hg9v8GmWKKAW58nIK+t3qc04J6JOEknrEWDkvbyRBr5zXkZbsI7M2pt+8kbkS7/OISCp7VjVRlFNEpK3q+A9KWK5qHQIw+Z2UxFdc2CY4Hq2HDcR5aWA4v4HcfO4ebANMuwGxk7CnilXOUT554G6WP9u1VUzGE3m4JEzPqGQ3TpMYkMEjr4hk7C4HFMrXopHnGH9LrAM/eYYFkwbO5N1J2lq2oFinDvimktQ1v2mMwGZc9NZ279bopyZWGrXjuQWOniZ0A3DxmLsCsge9+kDX64TxDcvGRftBbcw4gdUrhNHv92r7Hn9zAJ+asFBNWwI6i6X19K+6nyUGs50jcJq/ygsEuDUnp4s6qN+dWCkJb2Vvajdnc9t+98u1RIPtF3nLbPHMkfXLhB/CDVgE+K+zxsAAAAB",
+                      "metadata": "BAAAAAAAAAABAVUAAA==",
+                      "metadata_proof": "AAAACD6qXlun6qUzr+iEeouZklwaSI5Dp2zW+wNelzP+LT1bQ3e4f2aPRtGs+hFw8TDMNLFzeXeVBtiORPw2+IWMEvgA6Oo72J+UkJyaIo9qxkGciU3raqBA9IEI2Wiexdzv726/0sDiuDYjsZoho/XMTocXuP12iY7kn3OfFVSERQoqcnikRKGwkWm0XAVqMDTadzOBYKoiHb5C+ytFElzXMsozwkV3Ez4fQ43Pxlj1lOE+KmjVetxy2h9EAuiEe0CXUjj8zi4v5vSBfHgHNge+7W+JSvpeEdHqfYHZrFzg95xkW4gyatNtkNmsQ3Iyi2k2Sj8oxnT2e81m3ROPkuGGTzI4J6JOEknrEWDkvbyRBr5zXkZbsI7M2pt+8kbkS7/OIQpuGoV6/1NDlXAMQE1Vlk5kqogrIvQO7ApfbuConzDEUYl2eOBN8UTc9xjVFPVcMp0MvguWTJVUqHHZE7jrw2cTap0/pz6ZaTAzeZaQaU2vN/CmNJTYmQIIf0HnfcKeQT7SPFI8dSrbsptebS5WgjXGgdoIdsvE7pvAeq43d4voPPUGyll+UUYPx6oAzAfouciDcJ9yQoIGJBNpOo7UGuVOeCTz+ABtViP1Sig/GaPX9IOAt2hLOOOxAyEGpT6ArmI9rCoKAUguoE0+zYNk5uKxG999D8i3VZEsYX4DvGIRylGpV1lP5LIh6wyeFIxh8BB76gpnqxleqXf6a1s71wsAAAAA"
                     }
                   ]
                 }
@@ -681,15 +681,15 @@
       "id": "profile-2.max-index-absence",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
-          "root": "bagbyjqabaaraeibqcyzxx6mn7hf3mpudbaqnofd42cak57tjgzhpfy3znnx44lbgqe",
+          "profile": "malt.authentication/5",
+          "root": "bagbynqabaaraeicgkktggfwe2znnv4y34pu37hjvy7nirkxo4copltc47mwqfpdoly",
           "steps": [],
           "operation": "binding",
           "label": "//////////8="
         },
         "result": {
-          "profile": "malt.authentication/3",
-          "resolved": "bagbyjqabaaraeibqcyzxx6mn7hf3mpudbaqnofd42cak57tjgzhpfy3znnx44lbgqe",
+          "profile": "malt.authentication/5",
+          "resolved": "bagbynqabaaraeicgkktggfwe2znnv4y34pu37hjvy7nirkxo4copltc47mwqfpdoly",
           "traversal": {
             "results": []
           },
@@ -697,11 +697,11 @@
             "present": false,
             "target": null,
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
-                  "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                  "metadata_proof": "AAAACEyO2z1KSO5Zao+qAtTEknzHefQWt1chFxdz1Rhv/yMGS9YfpRJuDM8FCgmgXkkK4TwRLD+5XRsBgP32PHug/7BpjEuVlSK+kyyFCDYW/mSSvJHIg6tO89efdPuG6oxq0ThXSF6SWxu7h5s38nk0M6SmFHExeI0LPk54AX1TQLETT3OOhnboClH8I1U96HybXFKPSKQqw7Er9pGlaiiqlu9qpAJhMAW8HfQ2RVxbDQsEQwrEx1+JZAlXtjmFCu0UGSQk0DppSjUwnzNDXwnkZWWGnssS2lOdX3PbZcBQwAkAKRku+iJTZR5tCHBZg/Ku8/S2Lrcg/esJGKuoVQUEa2QRlZRB3JrESrzsEgXgAk7RAB74eCoGteay9gkGezRvtUcGhg+B/uOhInzeEBIeBKDfxrNYZQJVNVbju+afxIOGN90/RgMN1qd+IG5Jsa8uwjuCCol+kMk1YnQmPpSvT51JN7R6Br25/9S5/kE7yv+3b3Hx2oS84w4/JYhqxEErsQkO9oR/InXwZAwwME+MRuj54TiCM63co2kYNtsNNlgiAUuDJCJgaO/zGLFE8FqdoB3TCRcwUCOENDc/rCwR/B0H+UMuNKfAIoyvxEobxAviqlnfz7bQzUj93wHWKStSvDCNMoC2AR7qEyocH0GLfBhtsyzjwEhdjD85q8q51c/Y/2842j/pfoZAVCXh/UC4TNaeZp9DJXsSwlk5GGZjMgQAAAAA"
+                  "metadata": "BAAAAAAAAAABAVUAAA==",
+                  "metadata_proof": "AAAACD6qXlun6qUzr+iEeouZklwaSI5Dp2zW+wNelzP+LT1bQ3e4f2aPRtGs+hFw8TDMNLFzeXeVBtiORPw2+IWMEvgA6Oo72J+UkJyaIo9qxkGciU3raqBA9IEI2Wiexdzv726/0sDiuDYjsZoho/XMTocXuP12iY7kn3OfFVSERQoqcnikRKGwkWm0XAVqMDTadzOBYKoiHb5C+ytFElzXMsozwkV3Ez4fQ43Pxlj1lOE+KmjVetxy2h9EAuiEe0CXUjj8zi4v5vSBfHgHNge+7W+JSvpeEdHqfYHZrFzg95xkW4gyatNtkNmsQ3Iyi2k2Sj8oxnT2e81m3ROPkuGGTzI4J6JOEknrEWDkvbyRBr5zXkZbsI7M2pt+8kbkS7/OIQpuGoV6/1NDlXAMQE1Vlk5kqogrIvQO7ApfbuConzDEUYl2eOBN8UTc9xjVFPVcMp0MvguWTJVUqHHZE7jrw2cTap0/pz6ZaTAzeZaQaU2vN/CmNJTYmQIIf0HnfcKeQT7SPFI8dSrbsptebS5WgjXGgdoIdsvE7pvAeq43d4voPPUGyll+UUYPx6oAzAfouciDcJ9yQoIGJBNpOo7UGuVOeCTz+ABtViP1Sig/GaPX9IOAt2hLOOOxAyEGpT6ArmI9rCoKAUguoE0+zYNk5uKxG999D8i3VZEsYX4DvGIRylGpV1lP5LIh6wyeFIxh8BB76gpnqxleqXf6a1s71wsAAAAA"
                 }
               ]
             }
@@ -714,15 +714,15 @@
       "id": "profile-2.wrong-root",
       "verification": {
         "request": {
-          "profile": "malt.authentication/3",
+          "profile": "malt.authentication/5",
           "root": "bagcifqabaaraeibilw5ubbbdvzfio23n6bixonzcq4mgcahebcv6cr4xp33gw33gvu",
           "steps": [],
           "operation": "binding",
           "label": "//////////8="
         },
         "result": {
-          "profile": "malt.authentication/3",
-          "resolved": "bagbyjqabaaraeibqcyzxx6mn7hf3mpudbaqnofd42cak57tjgzhpfy3znnx44lbgqe",
+          "profile": "malt.authentication/5",
+          "resolved": "bagbynqabaaraeicgkktggfwe2znnv4y34pu37hjvy7nirkxo4copltc47mwqfpdoly",
           "traversal": {
             "results": []
           },
@@ -730,11 +730,11 @@
             "present": false,
             "target": null,
             "proof": {
-              "format": "malt.binding/0",
+              "format": "malt.binding/1",
               "nodes": [
                 {
-                  "metadata": "BAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAF",
-                  "metadata_proof": "AAAACEyO2z1KSO5Zao+qAtTEknzHefQWt1chFxdz1Rhv/yMGS9YfpRJuDM8FCgmgXkkK4TwRLD+5XRsBgP32PHug/7BpjEuVlSK+kyyFCDYW/mSSvJHIg6tO89efdPuG6oxq0ThXSF6SWxu7h5s38nk0M6SmFHExeI0LPk54AX1TQLETT3OOhnboClH8I1U96HybXFKPSKQqw7Er9pGlaiiqlu9qpAJhMAW8HfQ2RVxbDQsEQwrEx1+JZAlXtjmFCu0UGSQk0DppSjUwnzNDXwnkZWWGnssS2lOdX3PbZcBQwAkAKRku+iJTZR5tCHBZg/Ku8/S2Lrcg/esJGKuoVQUEa2QRlZRB3JrESrzsEgXgAk7RAB74eCoGteay9gkGezRvtUcGhg+B/uOhInzeEBIeBKDfxrNYZQJVNVbju+afxIOGN90/RgMN1qd+IG5Jsa8uwjuCCol+kMk1YnQmPpSvT51JN7R6Br25/9S5/kE7yv+3b3Hx2oS84w4/JYhqxEErsQkO9oR/InXwZAwwME+MRuj54TiCM63co2kYNtsNNlgiAUuDJCJgaO/zGLFE8FqdoB3TCRcwUCOENDc/rCwR/B0H+UMuNKfAIoyvxEobxAviqlnfz7bQzUj93wHWKStSvDCNMoC2AR7qEyocH0GLfBhtsyzjwEhdjD85q8q51c/Y/2842j/pfoZAVCXh/UC4TNaeZp9DJXsSwlk5GGZjMgQAAAAA"
+                  "metadata": "BAAAAAAAAAABAVUAAA==",
+                  "metadata_proof": "AAAACD6qXlun6qUzr+iEeouZklwaSI5Dp2zW+wNelzP+LT1bQ3e4f2aPRtGs+hFw8TDMNLFzeXeVBtiORPw2+IWMEvgA6Oo72J+UkJyaIo9qxkGciU3raqBA9IEI2Wiexdzv726/0sDiuDYjsZoho/XMTocXuP12iY7kn3OfFVSERQoqcnikRKGwkWm0XAVqMDTadzOBYKoiHb5C+ytFElzXMsozwkV3Ez4fQ43Pxlj1lOE+KmjVetxy2h9EAuiEe0CXUjj8zi4v5vSBfHgHNge+7W+JSvpeEdHqfYHZrFzg95xkW4gyatNtkNmsQ3Iyi2k2Sj8oxnT2e81m3ROPkuGGTzI4J6JOEknrEWDkvbyRBr5zXkZbsI7M2pt+8kbkS7/OIQpuGoV6/1NDlXAMQE1Vlk5kqogrIvQO7ApfbuConzDEUYl2eOBN8UTc9xjVFPVcMp0MvguWTJVUqHHZE7jrw2cTap0/pz6ZaTAzeZaQaU2vN/CmNJTYmQIIf0HnfcKeQT7SPFI8dSrbsptebS5WgjXGgdoIdsvE7pvAeq43d4voPPUGyll+UUYPx6oAzAfouciDcJ9yQoIGJBNpOo7UGuVOeCTz+ABtViP1Sig/GaPX9IOAt2hLOOOxAyEGpT6ArmI9rCoKAUguoE0+zYNk5uKxG999D8i3VZEsYX4DvGIRylGpV1lP5LIh6wyeFIxh8BB76gpnqxleqXf6a1s71wsAAAAA"
                 }
               ]
             }

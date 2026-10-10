@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Replace Positional layout 2 with layout 3: only the root reserves slot zero
+  for count and an optional opaque payload CID; descendants use all 256/4096
+  positions. Derive height and routing with power-of-two radix digits.
+- Preserve application metadata through growth/truncation, support explicit
+  payload replacement/clearing, and authenticate element-index ranges. Byte
+  geometry belongs to CID-bound application documents.
+- Advance candidates to authentication/4, queries to authentication/5,
+  binding evidence to binding/1, delta/batch/receipt to /2, and conformance to /3.
+  Old experimental Positional roots and wire profiles are rejected.
+
 ## [0.0.10-rc.4] - 2026-10-07
 
 ### Changed

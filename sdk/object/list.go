@@ -13,10 +13,11 @@ import (
 
 // List is a Positional Object with dense, zero-based references. Removing an
 // item shifts its successors down by one; replacing an item preserves its index.
-// This initial container has no independent payload; Payload returns cid.Undef.
+// Optional payload content is bound in the Positional root metadata.
 type List struct {
 	authenticated
-	items []Object
+	items   []Object
+	payload cid.Cid
 }
 
 func NewList(e *engine.Engine, config CommitConfig) (*List, error) {
@@ -28,7 +29,11 @@ func NewList(e *engine.Engine, config CommitConfig) (*List, error) {
 }
 
 func (l *List) Config() CommitConfig { return l.config }
-func (l *List) Payload() cid.Cid     { return cid.Undef }
+func (l *List) Payload() cid.Cid     { return l.payload }
+
+// SetPayload binds already encoded application content without consuming an index.
+// Undef clears the payload. Truncating items does not clear it.
+func (l *List) SetPayload(payload cid.Cid) { l.payload = payload }
 
 // CID is the last successful Commit result, not a dirty-state check.
 func (l *List) CID() cid.Cid { return l.cid() }
@@ -94,6 +99,9 @@ func (l *List) Commit(ctx context.Context) (cid.Cid, error) {
 			}
 			entries[i] = engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target.root}
 			children[i] = target
+		}
+		if l.payload.Defined() {
+			children = append(children, &snapshot{root: l.payload})
 		}
 		return l.authenticated.commit(ctx, l, l.Config(), entries, children)
 	})

@@ -46,7 +46,7 @@ permission to execute it. No fallback derivation or backend inference is used.
 | L | Authentication layout | Permitted inputs |
 | --- | --- | --- |
 | 1 | Prefix | AA-derived 32-byte keys |
-| 2 | Positional | AA=3, unsigned 64-bit indices |
+| 3 | Positional | AA=3, unsigned 64-bit indices |
 
 | Profile | Algorithm and parameters | Commitment bytes | VC slots |
 | --- | --- | ---: | ---: |
@@ -141,6 +141,41 @@ internal nodes across AA modes, while the complete Roots remain distinct.
 Caches validate the node identity, full vector and exact profile before reuse.
 `EqualCommitment` does not establish interchangeable Root/query semantics.
 
+## Positional root metadata and geometry
+
+Layout 3 reserves **only root slot 0** for `0x04 || uint64be(count) || payloadCID`.
+The CID is optional: absence ends after the nine-byte tag/count prefix; presence
+uses the complete canonical binary CID through the end of the cell. A defined
+CID of empty content differs from absence. Core does not fetch or decode it.
+Layout 2 is retired and rejected. Root `V` remains zero.
+
+With physical capacity `C=2^k` (`k=8` for IPA, `12` for KZG), the root has `C-1`
+content slots and every descendant has `C`. Height `H` is the smallest
+nonnegative integer satisfying `count <= (C-1)*C^H`, with `H=0` for empty state.
+Cells are densely packed left to right; all unused positions are empty. Internal
+cells reference children, leaf cells contain `0x03 || targetCID`. Child references
+retain the existing `0x02 || NodeRef` framing. No descendant stores metadata.
+
+For index `i`, the root selects `1 + (i >> (k*H))`. Each subsequent level selects
+the next `k`-bit digit `(i >> (k*h)) & (C-1)`; the leaf uses `i & (C-1)`.
+A height-zero root selects `i+1`. Child counts and padding follow from count and
+traversal context. Implementations must handle virtual spans at or above `2^64`
+without overflow. Membership proofs open metadata once at the root; any
+metadata attached to a descendant proof is rejected.
+
+At capacity 256, count 255 fits a root leaf, count 256 uses one full descendant
+leaf, and count 257 uses two leaves. When a root becomes a descendant, move its
+content slots 1..C-1 to 0..C-2 and recompute that vector; descendant references
+can be reused. Root promotion does the inverse. Append and truncation preserve
+the root payload CID, even when truncating to zero. `SetPayload` updates only
+the root. `Height`, byte sizes and per-node counts are never serialized.
+
+`ProveRange`/`VerifyRange` authenticate the half-open **element index** interval
+`[start,end)`, with omitted end equal to count. Bounds require
+`0 <= start <= end <= count`. Applications such as UnixFS may bind JSON byte
+geometry through the root payload CID, verify those bytes, and translate their
+byte interval into element indices. Heterogeneous lists need no byte geometry.
+
 ## State, writes and proofs
 
 The authenticated view contains coordinates, not original label preimages.
@@ -160,7 +195,7 @@ Candidate preparation and materialization do not publish or trust a Root and
 do not prove a transition from a previous Root. A candidate's optional
 `previous` field is storage lineage only.
 
-The current query (`malt.authentication/3`) and candidate (`malt.authentication/2`)
+The current query (`malt.authentication/5`) and candidate (`malt.authentication/4`)
 JSON contracts live in `protocol/authentication.go`
 and `protocol/schemas/authentication*.schema.json`. Queries select a Root,
 explicit label traversal steps, and resolve/binding/range operation. Range
@@ -182,7 +217,7 @@ writer does not migrate historical update views. Recreate old experimental
 state and dependent parents with the current implementation. Replacing a Root
 prefix alone is not a migration; payload CIDs remain reusable.
 
-`conformance/authentication-v2.json` is generated from current queries over
+`conformance/authentication-v3.json` is generated from current queries over
 V=0 Roots. Historical authentication/0 vectors remain only in Git history and are not
 accepted by the current verifier. See [conformance corpora](./conformance-corpora.md). Measurements
 must identify their exact Core revision, profile, and corpus. Browser release
@@ -200,14 +235,14 @@ injected and must not import this convenience constructor.
 
 ## Rooted paths and retained writers
 
-`malt.authentication/3` supports authenticated early path termination. A missing
+`malt.authentication/5` supports authenticated early path termination. A missing
 traversal selector returns `absent_step` as a zero-based decimal string, an
 empty `resolved`, and exactly the successful prefix proofs followed by the
 missing binding proof. It carries neither a primitive binding nor a range
 result. Verification binds that prefix to the caller's Root and steps; it does
 not claim to have evaluated the suffix. I/O, recovery, unsupported-input and
 cancellation errors never become absence. Historical query and candidate profiles are rejected. Complete candidates use
-the independent `/2` candidate profile.
+the independent `/4` candidate profile.
 
 `ExecuteWithRoots` accepts a Root-scoped node lookup. A service can reconstruct
 one ArcSet before serving its proof and defer other Roots until traversal
@@ -216,8 +251,7 @@ reaches them. Core defines no recovery records, durable store or cache policy.
 `authentication.NewWriter` imports and verifies a complete candidate once.
 `Writer.Update` returns an independent candidate writer, preserving its base for
 retries and branches. Prefix changes and Positional replacement, append,
-truncation and measured-size changes reuse unchanged authentication paths.
-Changing chunk geometry explicitly falls back to complete materialization.
+truncation and opaque payload changes reuse unchanged authentication paths.
 The exported candidate remains a complete input/node view: this is neither a
 partial update witness nor a stateless transition proof. Complete export still traverses the materialization, but does not repeat
 cryptographic validation of owned nodes; path reuse does not imply constant
@@ -225,9 +259,9 @@ update or transport cost. Applications update child ArcSets before rebinding
 parent entries, and retain candidate writers only under their own receipt and
 trust policies.
 
-Measured truncation uses `ResizeMeasured` with an explicit new count and total
-size. The application supplies any changed final payload CID separately; Core
-cannot infer re-chunked content or verify its bytes from relation state.
+Truncation supplies an explicit new count. `SetPayload` changes the optional
+root payload CID; it never decodes application content. Applications update
+changed final chunks and their metadata together before publishing a candidate.
 
 ## Independent tree and explicit export
 
@@ -238,9 +272,8 @@ organization and from Gateway relation persistence.
 
 For a retained writer, `Apply(ctx, Delta)` accepts expected-before label changes.
 Prefix supports insert/replace/delete. Positional changes replace existing
-positions or supply appended bindings; `Count` controls suffix length, and
-measured length changes require `TotalSize`. Changing chunk geometry uses full
-`Update`/construction. `Update(ctx, State)` compiles complete desired inputs to
+positions or supply appended bindings; `Count` controls suffix length and
+`PayloadCID` optionally replaces or clears the application metadata reference. `Update(ctx, State)` compiles complete desired inputs to
 the same path, with an unavoidable input scan.
 
 Use `Root()` for the candidate identity and `Export(ctx)` when a complete
@@ -250,8 +283,8 @@ owns its immutable vectors; unchanged subtrees can be shared across independent
 branches without revalidating them or retaining obsolete ancestors. External
 materializations still undergo complete Root-bound validation.
 
-The corresponding JSON delta profile is `malt.authentication-delta/1`; the
+The corresponding JSON delta profile is `malt.authentication-delta/2`; the
 [schema](../../protocol/schemas/authentication-delta.schema.json) requires typed
-changes, optional decimal-string count/total size, and exact field names. It is
+changes, optional decimal-string count and payload CID, and exact field names. It is
 an instruction for retained complete state, not an authenticated-update witness.
 See [implementation and lifecycle details](../changes/authentication-tree.md).

@@ -1,7 +1,7 @@
 # Commitment And Proof Encoding
 
 This document describes current V0 primitive and semantic evidence exercised
-by authentication/2 conformance. It complements
+by authentication/3 conformance. It complements
 [self-describing Roots](./authentication-inputs.md) and
 [typed query contracts](./authentication-contracts.md). Historical V2/V3 Root readers and
 semantic proof envelopes are retired; their original source and corpus bytes
@@ -32,13 +32,13 @@ Verification must not infer or override the backend from the digest length.
 
 Semantic node geometry is locked to the selected backend suite:
 
-| Backend | Physical node slots | Prefix radix bits | Positional content slots |
+| Backend | Physical node slots | Prefix radix bits | Positional root / descendant slots |
 | --- | ---: | ---: | ---: |
-| KZG | 4096 | 12 | 4095 |
-| IPA | 256 | 8 | 255 |
+| KZG | 4096 | 12 | 4095 / 4096 |
+| IPA | 256 | 8 | 255 / 256 |
 
-Slot zero is an ordinary Prefix slot. Positional nodes reserve slot zero for
-authenticated metadata, leaving the listed number of content slots. KZG
+Slot zero is an ordinary Prefix slot. Only the Positional root reserves slot zero for
+authenticated metadata; descendants use all slots. KZG
 semantic nodes supply all 4096 cells to the primitive commitment; IPA semantic
 nodes supply all 256.
 
@@ -178,7 +178,7 @@ Both Prefix and Positional evidence serialize `engine.Proof` as JSON:
 
 ```json
 {
-  "format": "malt.binding/0",
+  "format": "malt.binding/1",
   "nodes": [
     {
       "cell": "<base64 cell bytes>",
@@ -192,7 +192,7 @@ Both Prefix and Positional evidence serialize `engine.Proof` as JSON:
 
 Empty byte fields are omitted. Prefix proofs carry only the selected cell and
 opening at each node. A terminal empty cell or a routed leaf for another key
-proves absence. Positional proofs also open slot-zero metadata at every node;
+proves absence. Positional proofs open slot-zero metadata only at the root;
 a root-level out-of-range result contains only metadata evidence. All supplied
 nodes must be consumed. Metadata, leaf, and internal child framing follow
 [authentication inputs and Roots](./authentication-inputs.md).
@@ -201,18 +201,18 @@ Ordered traversal results and final binding results contain this same typed
 evidence. The verifier derives coordinates from the caller's Root and input;
 it never trusts a proof-supplied key or a historical semantic CID.
 
-## Fixed-width Positional range proof
+## Positional index range proof
 
 The range envelope is the JSON projection of `engine.RangeResult`, containing
 `metadata`, `metadata_evidence`, and ordered `segments`. Each evidence value is
-an `engine.Result` with `present`, `target`, and its `malt.binding/0` proof.
+an `engine.Result` with `present`, `target`, and its `malt.binding/1` proof.
 The metadata evidence opens the always-out-of-range maximum uint64 index.
-Segment results open precisely the indices selected by the requested byte
-range. The verifier checks the metadata opening, bounds, order, and targets.
+Segment results open precisely the requested half-open element index
+interval. The verifier checks the metadata opening, bounds, order, and targets.
 The typed authentication result carries this envelope in its `range` field.
 
-Only fixed-width measured Positional ranges are supported. Byte verification under each
-returned payload CID remains application work.
+Core ranges require only count. Application metadata decoding, byte geometry
+and byte verification under each returned payload CID remain application work.
 
 ## JSON Projection
 

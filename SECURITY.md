@@ -25,7 +25,7 @@ release.
 Security fixes may require breaking API, proof, Root or wire-format changes.
 The [compatibility policy](docs/policy/compatibility.md) defines the current
 contracts and latest-only pre-beta migration policy. Current queries use
-`malt.authentication/3` and self-describing V0 Roots; the retired Map-proof,
+`malt.authentication/5` and self-describing V0 Roots; the retired Map-proof,
 Resolve/Read and client-root interfaces are not supported compatibility paths.
 The optional `sdk/object` constructors in rc.3 use the current authentication
 contracts and do not introduce a new wire format.

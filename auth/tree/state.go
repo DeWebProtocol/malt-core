@@ -36,8 +36,8 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 	view := View{Descriptor: d}
 	work := newProofWork(source)
 	visiting := make(map[string]bool)
-	var walk func(maltcid.NodeRef, int, *Metadata, []int) error
-	walk = func(node maltcid.NodeRef, depth int, expected *Metadata, path []int) error {
+	var walk func(maltcid.NodeRef, int, *position, []int) error
+	walk = func(node maltcid.NodeRef, depth int, expected *position, path []int) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -66,44 +66,38 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 		// for repeats; release the prepared polynomial and its vector copy.
 		physical.opening = nil
 		cells := physical.cells
-		var meta Metadata
+		var pos position
 		start := 0
 		if d.Layout == maltcid.Positional {
-			meta, err = parseMetadata(cells[0])
-			if err != nil {
-				return err
-			}
-			if err := checkMetadata(meta, expected, p.Slots); err != nil {
-				return err
-			}
-			start = 1
 			if depth == 0 {
+				meta, err := parseMetadata(cells[0])
+				if err != nil {
+					return err
+				}
 				if meta.Count > maxBindings {
 					return fmt.Errorf("snapshot count %d exceeds bound %d", meta.Count, maxBindings)
 				}
-				view.ChunkSize = meta.ChunkSize
-				view.TotalSize = meta.TotalSize
+				view.PayloadCID = meta.PayloadCID
+				pos = rootPosition(meta.Count, p.Slots)
+			} else {
+				pos = *expected
+			}
+			start = pos.base()
+			if err := checkPosition(cells, pos, p.Slots); err != nil {
+				return err
 			}
 		}
 		before := len(view.Bindings)
 		for slot := start; slot < len(cells); slot++ {
 			cell := cells[slot]
 			if d.Layout == maltcid.Positional {
-				span, err := subtreeSpan(meta.Height, uint64(p.Slots-1))
-				if err != nil {
-					return err
-				}
-				offset := uint64(slot-1) * span
-				if uint64(slot-1) > meta.Count/span || offset >= meta.Count {
-					if len(cell) != 0 {
-						return errors.New("nonempty Positional padding")
-					}
+				if slot-start >= pos.used(p.Slots) {
 					continue
 				}
 				if len(cell) == 0 {
 					return errors.New("hole in Positional state")
 				}
-				if meta.Height == 0 {
+				if pos.height == 0 {
 					target, err := parsePositional(cell)
 					if err != nil {
 						return err
@@ -114,11 +108,8 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 					if err != nil {
 						return err
 					}
-					childMeta, _, err := childMetadata(meta, offset, p.Slots)
-					if err != nil {
-						return err
-					}
-					if err := walk(child, depth+1, &childMeta, nil); err != nil {
+					childPos, _ := pos.child(slot-start, p.Slots)
+					if err := walk(child, depth+1, &childPos, nil); err != nil {
 						return err
 					}
 				}
@@ -157,7 +148,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 				}
 			}
 		}
-		if d.Layout == maltcid.Positional && uint64(len(view.Bindings)-before) != meta.Count {
+		if d.Layout == maltcid.Positional && uint64(len(view.Bindings)-before) != pos.count {
 			return errors.New("Positional subtree count mismatch")
 		}
 		return nil

@@ -47,19 +47,19 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 	}
 	return e.Tree.Apply(ctx, root, derived, source, out)
 }
-func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
+func (e *Engine) Append(ctx context.Context, root cid.Cid, target cid.Cid, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
 	if err := e.CheckRoot(root); err != nil {
 		return cid.Undef, 0, err
 	}
-	return e.Tree.Append(ctx, root, target, totalSize, source, out)
+	return e.Tree.Append(ctx, root, target, source, out)
 }
 
 // AppendBatch appends a contiguous suffix in one tree edit and returns its first index.
-func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Cid, totalSize *uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
+func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Cid, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, uint64, error) {
 	if err := e.CheckRoot(root); err != nil {
 		return cid.Undef, 0, err
 	}
-	return e.Tree.AppendBatch(ctx, root, targets, totalSize, source, out)
+	return e.Tree.AppendBatch(ctx, root, targets, source, out)
 }
 func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	if err := e.CheckRoot(root); err != nil {
@@ -67,11 +67,11 @@ func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, sourc
 	}
 	return e.Tree.Truncate(ctx, root, count, source, out)
 }
-func (e *Engine) ResizeMeasured(ctx context.Context, root cid.Cid, count, totalSize uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
+func (e *Engine) SetPayload(ctx context.Context, root cid.Cid, payload cid.Cid, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	if err := e.CheckRoot(root); err != nil {
 		return cid.Undef, err
 	}
-	return e.Tree.ResizeMeasured(ctx, root, count, totalSize, source, out)
+	return e.Tree.SetPayload(ctx, root, payload, source, out)
 }
 func (e *Engine) Snapshot(ctx context.Context, root cid.Cid, source materializer.NodeLookup) (View, error) {
 	if err := e.CheckRoot(root); err != nil {

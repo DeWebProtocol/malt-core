@@ -18,8 +18,10 @@ const RootVersion uint8 = 0
 type Layout uint8
 
 const (
-	Prefix     Layout = 1
-	Positional Layout = 2
+	Prefix Layout = 1
+	// Layout 2 is retired. Root-only metadata and full-capacity descendants
+	// have a distinct interpretation while the pre-production Root stays V=0.
+	Positional Layout = 3
 )
 
 type ProfileID uint64

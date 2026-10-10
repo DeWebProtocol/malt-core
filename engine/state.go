@@ -57,7 +57,7 @@ func matchView(expected, actual View) error {
 		return errors.New("state descriptor differs from Root")
 	}
 	d := expected.Descriptor
-	if expected.ChunkSize != actual.ChunkSize || expected.TotalSize != actual.TotalSize || len(expected.Bindings) != len(actual.Bindings) {
+	if !expected.PayloadCID.Equals(actual.PayloadCID) || len(expected.Bindings) != len(actual.Bindings) {
 		return errors.New("state metadata or count differs from Root")
 	}
 	sort.Slice(expected.Bindings, func(i, j int) bool {

@@ -18,7 +18,7 @@
         "layout": {
           "enum": [
             1,
-            2
+            3
           ]
         },
         "derivation_profile": {
@@ -67,7 +67,7 @@
       "additionalProperties": false,
       "properties": {
         "format": {
-          "const": "malt.binding/0"
+          "const": "malt.binding/1"
         },
         "nodes": {
           "type": "array",
@@ -139,28 +139,33 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "height": {
-          "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,19})$"
-        },
         "count": {
           "type": "string",
           "pattern": "^(0|[1-9][0-9]{0,19})$"
         },
-        "chunk_size": {
-          "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,19})$"
-        },
-        "total_size": {
-          "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        "payload_cid": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "/": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "/"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
-        "height",
-        "count",
-        "chunk_size",
-        "total_size"
+        "count"
       ]
     },
     "range": {
@@ -191,7 +196,7 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/3"
+          "const": "malt.authentication/5"
         },
         "root": {
           "type": "string",
@@ -316,7 +321,7 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/3"
+          "const": "malt.authentication/5"
         },
         "resolved": {
           "type": "string"
@@ -350,7 +355,7 @@
           "then": {
             "properties": {
               "profile": {
-                "const": "malt.authentication/3"
+                "const": "malt.authentication/5"
               },
               "resolved": {
                 "const": ""
@@ -420,13 +425,25 @@
             ]
           }
         },
-        "chunk_size": {
-          "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,19})$"
-        },
-        "total_size": {
-          "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        "payload_cid": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "/": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "/"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -438,7 +455,7 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/2"
+          "const": "malt.authentication/4"
         },
         "root": {
           "type": "string",

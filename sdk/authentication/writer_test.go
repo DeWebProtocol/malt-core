@@ -18,7 +18,7 @@ func TestWriterStateOwnsLabelsAndPreservesMetadata(t *testing.T) {
 	state := engine.State{
 		Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256},
 		Entries:    []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}},
-		ChunkSize:  8, TotalSize: 3,
+		PayloadCID: cid.MustParse("bafkqaaa"),
 	}
 	w, err := authentication.BuildWriter(t.Context(), pathEngine(t), state)
 	if err != nil {
@@ -30,7 +30,7 @@ func TestWriterStateOwnsLabelsAndPreservesMetadata(t *testing.T) {
 	}
 	got.Entries[0].Label[0] = 0xff
 	got.Entries[0].Target = cid.Undef
-	got.TotalSize = 99
+	got.PayloadCID = cid.Undef
 	again, err := w.State(t.Context())
 	if err != nil || !reflect.DeepEqual(again, state) {
 		t.Fatalf("caller changed retained state: %+v, %v", again, err)
@@ -51,11 +51,11 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 	e := pathEngine(t)
 	target := cid.MustParse("bafkqaaa")
 	other := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
-	for _, measured := range []bool{false, true} {
-		t.Run(map[bool]string{false: "plain", true: "measured"}[measured], func(t *testing.T) {
+	for _, withPayload := range []bool{false, true} {
+		t.Run(map[bool]string{false: "plain", true: "with payload"}[withPayload], func(t *testing.T) {
 			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
-			if measured {
-				state.ChunkSize = 8
+			if withPayload {
+				state.PayloadCID = target
 			}
 			base, err := authentication.Prepare(t.Context(), e, state)
 			if err != nil {
@@ -65,7 +65,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// Cross the IPA leaf-capacity boundary, change a partial final chunk,
+			// Cross the IPA leaf-capacity boundary, update the opaque payload,
 			// shrink across the boundary, then empty and regrow the sequence.
 			for _, count := range []int{3, 256, 256, 510, 511, 255, 2, 0, 4} {
 				state.Entries = make([]engine.Entry, count)
@@ -75,11 +75,8 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 				if count > 0 {
 					state.Entries[count-1].Target = other
 				}
-				if measured {
-					state.TotalSize = uint64(count) * 8
-					if count > 0 {
-						state.TotalSize -= 3
-					}
+				if withPayload {
+					state.PayloadCID = other
 				}
 				next, err := w.Update(t.Context(), state)
 				if err != nil {
@@ -142,7 +139,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 
 func TestWriterFillsPartialInternalTailBeforeAppend(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 8, TotalSize: 510*8 - 3}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, PayloadCID: cid.MustParse("bafkqaaa")}
 	for i := uint64(0); i < 510; i++ {
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: cid.MustParse("bafkqaaa")})
 	}
@@ -158,7 +155,6 @@ func TestWriterFillsPartialInternalTailBeforeAppend(t *testing.T) {
 		if count > uint64(len(state.Entries)) {
 			state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(count - 1), Target: cid.MustParse("bafkqaaa")})
 		}
-		state.TotalSize = count * 8
 		w, err = w.Update(t.Context(), state)
 		if err != nil {
 			t.Fatal(err)
@@ -168,29 +164,7 @@ func TestWriterFillsPartialInternalTailBeforeAppend(t *testing.T) {
 			t.Fatal(err)
 		}
 		if w.Candidate().Root != fresh.Root {
-			t.Fatal("internal tail metadata differs from fresh build")
+			t.Fatal("internal tail differs from fresh build")
 		}
-	}
-}
-
-func TestWriterMeasuredPartialTailAtUint64Boundary(t *testing.T) {
-	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, ChunkSize: 1 << 63, TotalSize: 1 << 63, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
-	base, err := authentication.Prepare(t.Context(), e, state)
-	if err != nil {
-		t.Fatal(err)
-	}
-	state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(1), Target: cid.MustParse("bafkqaaa")})
-	state.TotalSize++
-	next, err := authentication.PrepareUpdate(t.Context(), e, base, state)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fresh, err := authentication.Prepare(t.Context(), e, state)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if next.Root != fresh.Root {
-		t.Fatal("valid partial tail overflowed")
 	}
 }

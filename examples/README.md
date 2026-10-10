@@ -102,14 +102,15 @@ go run ./examples/range
 ```
 
 [Source](range/main.go). Commit a Positional sequence, call `ProveRange`, then
-call `VerifyRange` against the same Root and byte interval. Only after proof
+call `VerifyRange` against the same Root and element index interval. Only after proof
 verification does the application fetch, check, and assemble the payload bytes.
 
 The example splits `hello world` into `hell`, `o wo`, and `rld`, bound at indices
-0, 1, and 2 with `ChunkSize=4` and `TotalSize=11`. `coordinate.EncodeIndex`
+0, 1, and 2 with application JSON `chunk_size=4` and `total_size=11` bound through `PayloadCID`. `coordinate.EncodeIndex`
 produces exactly eight unsigned big-endian bytes for each label. Direct
 derivation parses those bytes as an index; decimal strings are not index labels.
-The requested `[start, end)` offsets are byte positions, distinct from indices.
+The application translates its requested byte offsets to the element interval
+passed to Core, then checks the CID-bound JSON geometry before assembling bytes.
 
 Expected output:
 

@@ -39,7 +39,7 @@ func TestSnapshotRejectsHugeLogicalExpansionAtRoot(t *testing.T) {
 	// vector. Reject its count before traversing or allocating logical entries.
 	cells := make([]commitment.Cell, 256)
 	cells[0] = []byte{maltcid.MetadataCell}
-	for _, v := range []uint64{3, 255 * 255 * 255 * 255, 0, 0} {
+	for _, v := range []uint64{1 << 40} {
 		cells[0] = binary.BigEndian.AppendUint64(cells[0], v)
 	}
 	primitive, err := scheme.Commit(cells)
@@ -139,8 +139,7 @@ func TestSnapshotChecksEverySharedOccurrence(t *testing.T) {
 			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
 			if positional {
 				state.Descriptor.Layout = maltcid.Positional
-				state.ChunkSize, state.TotalSize = 8, 510*8
-				for i := uint64(0); i < 510; i++ {
+				for i := uint64(0); i < 512; i++ {
 					state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: target("same")})
 				}
 			} else {
@@ -165,8 +164,8 @@ func TestSnapshotChecksEverySharedOccurrence(t *testing.T) {
 			if positional {
 				// Both children name the same physical full leaf. Its second logical
 				// occurrence must be rejected when the parent declares a partial tail.
-				binary.BigEndian.PutUint64(cells[0][25:], state.TotalSize-1)
-				want = "metadata"
+				binary.BigEndian.PutUint64(cells[0][1:9], 511)
+				want = "padding"
 			} else {
 				// The second occurrence of this child is under the wrong Prefix route.
 				cells[2] = append(commitment.Cell(nil), cells[1]...)

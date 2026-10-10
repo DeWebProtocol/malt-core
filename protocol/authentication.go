@@ -16,10 +16,10 @@ import (
 
 // AuthenticationProfile identifies complete typed candidate state and nodes.
 // Queries use AuthenticationPathProfile.
-const AuthenticationProfile = "malt.authentication/2"
+const AuthenticationProfile = "malt.authentication/4"
 
 // AuthenticationPathProfile uses opaque labels and authenticates early traversal absence.
-const AuthenticationPathProfile = "malt.authentication/3"
+const AuthenticationPathProfile = "malt.authentication/5"
 
 // AuthenticationRequest uses explicit steps. Every visited Root chooses its
 // own derivation profile; the protocol assigns no path separator or application normalization.
@@ -70,7 +70,7 @@ func (q AuthenticationRequest) Validate() error {
 			return errors.New("range requires start and optional end")
 		}
 		if q.End != nil && *q.End < *q.Start {
-			return errors.New("inverted byte range")
+			return errors.New("inverted index range")
 		}
 	default:
 		return errors.New("unknown authentication operation")

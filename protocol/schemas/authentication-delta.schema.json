@@ -10,7 +10,7 @@
   ],
   "properties": {
     "profile": {
-      "const": "malt.authentication-delta/1"
+      "const": "malt.authentication-delta/2"
     },
     "changes": {
       "type": "array",
@@ -51,9 +51,9 @@
       "type": "string",
       "pattern": "^(0|[1-9][0-9]{0,19})$"
     },
-    "total_size": {
+    "payload_cid": {
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]{0,19})$"
+      "description": "Omit to preserve; empty string clears the root payload; otherwise a CID."
     }
   }
 }

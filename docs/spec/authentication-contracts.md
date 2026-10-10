@@ -1,6 +1,6 @@
 # Typed authentication query contract
 
-The sole current query profile is `malt.authentication/3`. The schemas in
+The sole current query profile is `malt.authentication/5`. The schemas in
 `protocol/schemas/authentication-request.schema.json`,
 `authentication-result.schema.json`, and `authentication-verification.schema.json`
 are transport neutral. Core owns no HTTP routes.
@@ -9,12 +9,12 @@ are transport neutral. Core owns no HTTP routes.
 
 | Field | Meaning |
 | --- | --- |
-| `profile` | Exactly `malt.authentication/3` |
+| `profile` | Exactly `malt.authentication/5` |
 | `root` | Caller-selected complete self-describing V0 Root CID |
 | `steps` | At most 256 explicit application labels, evaluated in order |
 | `operation` | `resolve`, `binding`, or `range` |
 | `label` | Required only for `binding` |
-| `start`, `end` | Decimal-string byte offsets; start required for `range`, end optional |
+| `start`, `end` | Decimal-string element indices; start required for `range`, end optional |
 
 `resolve` permits no primitive input/range fields. `binding` permits only its
 label. `range` permits start and optional end, with end no smaller than start.
@@ -54,12 +54,13 @@ absence.
 
 Prefix absence ends at a proved empty slot or a terminal different full key.
 Positional absence authenticates count metadata showing the index is outside
-`[0,count)`. Both use `malt.binding/0` node evidence. A binding's `present` and
+`[0,count)`. Both use `malt.binding/1` node evidence. A binding's `present` and
 target are checked against this evidence, never accepted as assertions.
 
-A fixed-chunk Positional range authenticates metadata, bounds, and precisely the
-ordered segment bindings selected by the byte interval. Applications must
-check payload bytes against segment CIDs and compose the requested slice.
+A Positional range authenticates root count, optional payload CID, bounds, and
+precisely the ordered bindings selected by the element index interval. Applications
+decode their own CID-bound metadata and verify content bytes when assembling
+byte ranges. The optional payload consumes no element index.
 Authentication alone does not prove availability, freshness, or byte integrity
 of an arbitrary HTTP response.
 

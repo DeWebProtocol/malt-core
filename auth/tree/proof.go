@@ -12,7 +12,7 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-const ProofFormat = "malt.binding/0"
+const ProofFormat = "malt.binding/1"
 
 type NodeOpening struct {
 	Cell          []byte `json:"cell,omitempty"`
@@ -73,7 +73,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coord
 	}
 	result := Result{Proof: Proof{Format: ProofFormat, Nodes: []NodeOpening{}}}
 	localIndex := k.Index
-	var expectedMeta *Metadata
+	var pos position
 	for depth := 0; depth < 256; depth++ {
 		if err := ctx.Err(); err != nil {
 			return Result{}, err
@@ -84,37 +84,29 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coord
 		}
 		opening := NodeOpening{}
 		var slot uint64
-		var meta Metadata
 		if d.Layout == maltcid.Prefix {
 			digit, err := digit(k.Key, depth, p.Slots)
 			if err != nil {
 				return Result{}, err
 			}
 			slot = uint64(digit)
-		} else {
+		} else if depth == 0 {
 			opening.Metadata, opening.MetadataProof, err = node.open(ctx, s, 0)
 			if err != nil {
 				return Result{}, err
 			}
-			meta, err = parseMetadata(opening.Metadata)
+			meta, err := parseMetadata(opening.Metadata)
 			if err != nil {
 				return Result{}, err
 			}
-			if err := checkMetadata(meta, expectedMeta, p.Slots); err != nil {
-				return Result{}, err
-			}
+			pos = rootPosition(meta.Count, p.Slots)
 			if localIndex >= meta.Count {
-				if depth != 0 {
-					return Result{}, errors.New("inconsistent child count")
-				}
 				result.Proof.Nodes = append(result.Proof.Nodes, opening)
 				return result, nil
 			}
-			span, err := subtreeSpan(meta.Height, uint64(p.Slots-1))
-			if err != nil {
-				return Result{}, err
-			}
-			slot = localIndex/span + 1
+		}
+		if d.Layout == maltcid.Positional {
+			slot = uint64(pos.slot(localIndex, p.Slots))
 		}
 		opening.Cell, opening.Proof, err = node.open(ctx, s, slot)
 		if err != nil {
@@ -141,7 +133,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coord
 			}
 			return result, nil
 		}
-		if d.Layout == maltcid.Positional && meta.Height == 0 {
+		if d.Layout == maltcid.Positional && pos.height == 0 {
 			result.Target, err = parsePositional(opening.Cell)
 			if err != nil {
 				return Result{}, err
@@ -154,12 +146,9 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query coordinate.Coord
 			return Result{}, err
 		}
 		if d.Layout == maltcid.Positional {
-			next, index, err := childMetadata(meta, localIndex, p.Slots)
-			if err != nil {
-				return Result{}, err
-			}
-			expectedMeta = &next
-			localIndex = index
+			next, start := pos.child(int(slot)-pos.base(), p.Slots)
+			pos = next
+			localIndex -= start
 		}
 	}
 	return Result{}, errors.New("authentication path exceeds maximum depth")
@@ -187,10 +176,9 @@ func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result
 		return false, errors.New("presence and target disagree")
 	}
 	localIndex := k.Index
-	var expectedMeta *Metadata
+	var pos position
 	for depth, opening := range result.Proof.Nodes {
 		last := depth == len(result.Proof.Nodes)-1
-		var meta Metadata
 		var slot uint64
 		if d.Layout == maltcid.Prefix {
 			if len(opening.Metadata) != 0 || len(opening.MetadataProof) != 0 {
@@ -201,26 +189,24 @@ func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result
 				return false, err
 			}
 			slot = uint64(x)
-		} else {
+		} else if depth == 0 {
 			valid, err := verifyOpening(s, ref, 0, opening.Metadata, opening.MetadataProof)
 			if err != nil || !valid {
 				return valid, err
 			}
-			meta, err = parseMetadata(opening.Metadata)
+			meta, err := parseMetadata(opening.Metadata)
 			if err != nil {
 				return false, err
 			}
-			if err := checkMetadata(meta, expectedMeta, p.Slots); err != nil {
-				return false, err
-			}
+			pos = rootPosition(meta.Count, p.Slots)
 			if localIndex >= meta.Count {
 				return depth == 0 && last && !result.Present && len(opening.Cell) == 0 && len(opening.Proof) == 0, nil
 			}
-			span, err := subtreeSpan(meta.Height, uint64(p.Slots-1))
-			if err != nil {
-				return false, err
-			}
-			slot = localIndex/span + 1
+		} else if len(opening.Metadata) != 0 || len(opening.MetadataProof) != 0 {
+			return false, nil
+		}
+		if d.Layout == maltcid.Positional {
+			slot = uint64(pos.slot(localIndex, p.Slots))
 		}
 		valid, err := verifyOpening(s, ref, slot, opening.Cell, opening.Proof)
 		if err != nil || !valid {
@@ -245,7 +231,7 @@ func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result
 			}
 			return key != k.Key, nil
 		}
-		if d.Layout == maltcid.Positional && meta.Height == 0 {
+		if d.Layout == maltcid.Positional && pos.height == 0 {
 			target, err := parsePositional(opening.Cell)
 			if err != nil {
 				return false, err
@@ -260,12 +246,9 @@ func (e *Engine) Verify(root cid.Cid, query coordinate.Coordinate, result Result
 			return false, err
 		}
 		if d.Layout == maltcid.Positional {
-			next, index, err := childMetadata(meta, localIndex, p.Slots)
-			if err != nil {
-				return false, err
-			}
-			expectedMeta = &next
-			localIndex = index
+			next, start := pos.child(int(slot)-pos.base(), p.Slots)
+			pos = next
+			localIndex -= start
 		}
 	}
 	return false, nil
@@ -296,43 +279,6 @@ func parsePositional(cell commitment.Cell) (cid.Cid, error) {
 		return cid.Undef, errors.New("noncanonical Positional target")
 	}
 	return target, nil
-}
-func checkMetadata(meta Metadata, expected *Metadata, slots int) error {
-	if expected != nil {
-		if meta != *expected {
-			return errors.New("child metadata does not match parent")
-		}
-		return nil
-	}
-	h, err := height(meta.Count, uint64(slots-1))
-	if err != nil {
-		return err
-	}
-	if meta.Height != h {
-		return errors.New("noncanonical Positional root height")
-	}
-	return nil
-}
-func childMetadata(parent Metadata, index uint64, slots int) (Metadata, uint64, error) {
-	if parent.Height == 0 {
-		return Metadata{}, 0, errors.New("leaf has no internal child")
-	}
-	span, err := subtreeSpan(parent.Height, uint64(slots-1))
-	if err != nil {
-		return Metadata{}, 0, err
-	}
-	start := (index / span) * span
-	child := parent
-	child.Height--
-	child.Count = min(span, parent.Count-start)
-	if parent.ChunkSize > 0 {
-		remaining := parent.TotalSize - start*parent.ChunkSize
-		child.TotalSize = remaining
-		if child.Count <= remaining/parent.ChunkSize {
-			child.TotalSize = child.Count * parent.ChunkSize
-		}
-	}
-	return child, index - start, nil
 }
 
 // RootMetadata decodes structural metadata from the first proof node. Callers

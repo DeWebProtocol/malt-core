@@ -143,15 +143,12 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 		if err != nil {
 			return cid.Undef, err
 		}
-		if err = checkMetadata(meta, nil, u.profile.Slots); err != nil {
-			return cid.Undef, err
-		}
 		for _, item := range items {
 			if item.key.Index >= meta.Count {
 				return cid.Undef, errors.New("old target does not match authenticated state")
 			}
 		}
-		ref, err = u.replace(&b, ref, meta, 0, items)
+		ref, err = u.replace(&b, ref, rootPosition(meta.Count, u.profile.Slots), 0, items)
 		if err != nil {
 			return cid.Undef, err
 		}
@@ -263,33 +260,25 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 	}
 	return cells, nil
 }
-func (u *nodeEdit) replace(b *builder, ref maltcid.NodeRef, meta Metadata, offset uint64, items []coordinateChange) (maltcid.NodeRef, error) {
+func (u *nodeEdit) replace(b *builder, ref maltcid.NodeRef, pos position, offset uint64, items []coordinateChange) (maltcid.NodeRef, error) {
 	cells, err := u.GetNode(u.ctx, ref)
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	got, err := parseMetadata(cells[0])
-	if err != nil {
-		return maltcid.NodeRef{}, err
-	}
-	if got != meta {
-		return maltcid.NodeRef{}, errors.New("child metadata does not match parent")
-	}
-	span, err := subtreeSpan(meta.Height, uint64(u.profile.Slots-1))
-	if err != nil {
+	if err := checkPosition(cells, pos, u.profile.Slots); err != nil {
 		return maltcid.NodeRef{}, err
 	}
 	groups := make(map[int][]coordinateChange)
 	for _, item := range items {
-		slot := int((item.key.Index-offset)/span) + 1
+		slot := pos.slot(item.key.Index-offset, u.profile.Slots)
 		groups[slot] = append(groups[slot], item)
 	}
-	for slot := 1; slot < len(cells); slot++ {
+	for slot := pos.base(); slot < len(cells); slot++ {
 		group := groups[slot]
 		if len(group) == 0 {
 			continue
 		}
-		if meta.Height == 0 {
+		if pos.height == 0 {
 			target, err := parsePositional(cells[slot])
 			if err != nil {
 				return maltcid.NodeRef{}, err
@@ -303,11 +292,8 @@ func (u *nodeEdit) replace(b *builder, ref maltcid.NodeRef, meta Metadata, offse
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
-			childMeta, _, err := childMetadata(meta, uint64(slot-1)*span, u.profile.Slots)
-			if err != nil {
-				return maltcid.NodeRef{}, err
-			}
-			child, err = u.replace(b, child, childMeta, offset+uint64(slot-1)*span, group)
+			childPos, start := pos.child(slot-pos.base(), u.profile.Slots)
+			child, err = u.replace(b, child, childPos, offset+start, group)
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}

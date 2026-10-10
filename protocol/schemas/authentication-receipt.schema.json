@@ -14,7 +14,7 @@
   ],
   "properties": {
     "profile": {
-      "const": "malt.authentication-receipt/1"
+      "const": "malt.authentication-receipt/2"
     },
     "transaction_id": {
       "type": "string",

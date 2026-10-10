@@ -112,7 +112,7 @@ measurements.
 4. A consuming application binds any returned bytes to their authenticated
    CIDs and applies its own trust/freshness policy.
 
-The query profile is `malt.authentication/3`. It supports explicit resolution,
+The query profile is `malt.authentication/5`. It supports explicit resolution,
 a final binding query, or a fixed-chunk Positional byte range. Missing traversal
 steps carry authenticated early termination; the unevaluated suffix is not
 claimed to be absent. See [query contracts](docs/spec/authentication-contracts.md).

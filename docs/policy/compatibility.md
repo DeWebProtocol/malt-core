@@ -8,12 +8,12 @@ their original identifiers.
 
 | Current surface | Contract |
 | --- | --- |
-| Typed queries/results | `malt.authentication/3` |
-| Complete candidates | `malt.authentication/2` |
-| Retained-state changes | `malt.authentication-delta/1` |
-| Ordered candidate submission | `malt.authentication-batch/1` |
-| Exact materialization acknowledgement | `malt.authentication-receipt/1` |
-| Primitive binding evidence | `malt.binding/0` |
+| Typed queries/results | `malt.authentication/5` |
+| Complete candidates | `malt.authentication/4` |
+| Retained-state changes | `malt.authentication-delta/2` |
+| Ordered candidate submission | `malt.authentication-batch/2` |
+| Exact materialization acknowledgement | `malt.authentication-receipt/2` |
+| Primitive binding evidence | `malt.binding/1` |
 | Root | Self-describing V0, exact layout/derivation profile/VC profile |
 | Go SDK | `sdk/authentication` and optional `sdk/object`, experimental source APIs |
 | Browser ABI | Complete current typed exports; exact backend/profile required |
