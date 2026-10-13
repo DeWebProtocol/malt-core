@@ -307,3 +307,18 @@ The corresponding JSON delta profile is `malt.authentication-delta/2`; the
 changes, optional decimal-string count and payload CID, and exact field names. It is
 an instruction for retained complete state, not an authenticated-update witness.
 See [implementation and lifecycle details](../changes/authentication-tree.md).
+
+### Retained Writer reads
+
+`Writer.Lookup(ctx, label)` reads an original retained relation without exporting
+state. It returns an error for a distinct label at an occupied full coordinate;
+local lookup alone is not portable membership or absence evidence.
+`Writer.Nodes()` returns an independent traversal-local reader over the retained
+immutable DAG for normal Core proof/snapshot operations. Read parents before
+children; do not share the reader concurrently. Returned cells are owned copies.
+These operations cannot modify the Writer or its independent branches.
+`Writer.Len()` counts original relations; `Writer.StateCharge()` exposes the
+same conservative charge as Session. The charge includes retained inputs and
+vectors and overcounts any sharing across independently charged writers; it is
+not allocator RSS. Persistence, eviction and checkpoint policy remain outside
+Core, and exporting a complete portable candidate remains explicit.
