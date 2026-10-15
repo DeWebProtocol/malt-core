@@ -89,7 +89,9 @@ func commitPolynomial(key *kzgWriterKey, polynomial []blsfr.Element) (gokzg4844.
 	if _, err := result.MultiExp(
 		key.lagrangeG1,
 		polynomial,
-		ecc.MultiExpConfig{NbTasks: 1},
+		// A non-positive task count lets gnark size the MSM fan-out from the
+		// host CPU count instead of serializing every commitment and opening.
+		ecc.MultiExpConfig{NbTasks: 0},
 	); err != nil {
 		return gokzg4844.KZGCommitment{}, err
 	}
