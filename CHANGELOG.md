@@ -6,12 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.11-rc.2] - 2026-10-17
+
+### Added
+
+- Expose immutable retained-writer `Lookup`, `Nodes`, `Len` and `StateCharge`
+  capabilities for local reads and conservative state accounting without
+  exporting the complete state. These reads are not portable evidence.
+
+### Changed
+
+- Size KZG commitment and opening MSM tasks from the current `GOMAXPROCS`
+  budget, capped at gnark's supported limit of 1024. This enables multicore
+  work without using the host-CPU-based automatic task count.
+- Upgrade `golang.org/x/sync` to v0.24.0 and `golang.org/x/sys` to v0.49.0.
+
+### Compatibility
+
+- Relative to v0.0.11-rc.1, existing SDK APIs, Root V=0, Prefix layout 4,
+  Positional layout 3, proof encodings, schemas and conformance data are unchanged.
+  Parallelism is a local execution choice, not part of cryptographic identity.
+
+See [v0.0.11-rc.2 release notes](docs/releases/v0.0.11-rc.2.md).
+
+## [0.0.11-rc.1] - 2026-10-10
+
 ### Changed
 
 - Replace coordinate-only Prefix layout 1 with original-label layout 4. Leaves
   authenticate canonical label bytes and target CIDs; coordinates select slots.
   Reject distinct-label coordinate collisions in construction, proofs, updates,
   recovery and retained writers with `ErrCoordinateCollision`. Root V remains 0.
+
+## [0.0.10] - 2026-10-10
+
+### Changed
+
 - Replace Positional layout 2 with layout 3: only the root reserves slot zero
   for count and an optional opaque payload CID; descendants use all 256/4096
   positions. Derive height and routing with power-of-two radix digits.

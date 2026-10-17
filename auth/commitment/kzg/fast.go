@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"math/bits"
+	"runtime"
 	"sync"
 
 	"github.com/consensys/gnark-crypto/ecc"
@@ -89,12 +90,18 @@ func commitPolynomial(key *kzgWriterKey, polynomial []blsfr.Element) (gokzg4844.
 	if _, err := result.MultiExp(
 		key.lagrangeG1,
 		polynomial,
-		ecc.MultiExpConfig{NbTasks: 1},
+		msmConfig(),
 	); err != nil {
 		return gokzg4844.KZGCommitment{}, err
 	}
 	serialized := result.Bytes()
 	return gokzg4844.KZGCommitment(serialized), nil
+}
+
+func msmConfig() ecc.MultiExpConfig {
+	// Read the current Go scheduler budget for each MSM. gnark's zero default
+	// uses host CPUs instead, and explicit budgets above 1024 are rejected.
+	return ecc.MultiExpConfig{NbTasks: min(runtime.GOMAXPROCS(0), 1024)}
 }
 
 func provePolynomialAtIndex(
