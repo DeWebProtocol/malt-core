@@ -1,0 +1,11 @@
+{
+  "fields/storage.cuh": "1640959bba561d848ca18c5b23bfbd10abc71f0c12b215a3fc92e2a95dbf15bd",
+  "fields/ptx.cuh": "e21b5f048ca7cebcd16eeab122572ba67bf4685f4dd48469c2aeda12500fcb0f",
+  "fields/host_math.cuh": "e5cfc18f9832a9d90d3a3c1b927bf8839cb4c27f0827c5baae8b892e6f397e85",
+  "fields/params_gen.cuh": "b3bfe6909a6e198b89b1910872da8466a86ffbb112eb2f05f08c388d3b32c09f",
+  "fields/field.cuh": "05eb3729f10bff9e53b5d8ac786a9d135367a9381e771c95ff788ca52d02b899",
+  "fields/snark_fields/bls12_381_base.cuh": "4035442c58cb266f06cea6423cd1975248d2eaf0741a40d43e34f72102a79834",
+  "fields/snark_fields/bls12_381_scalar.cuh": "fecf238dedfb4a2f3a8c1edb1da1ee00b02b2ca85420e71b05ab665b0fa044ec",
+  "curves/affine.cuh": "4592e31e52e769d6c17dec4e7d3dbb331c9db8f35723b133cbfeb596b22018c4",
+  "curves/projective.cuh": "ba017732d6a9e2b490b8f43d332d9efc1ee4723048b9e522c5e0452e3f2d958d"
+}
