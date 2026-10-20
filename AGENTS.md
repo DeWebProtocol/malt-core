@@ -97,6 +97,8 @@ in Git history; do not relabel them or change CIDv1's container version.
   `malt-integration`. In the latter case, also read the integration root's
   `AGENTS.md`; its `go.work` selects local source without changing Core's
   ownership or release contract.
+  The integration repository is the parent checkout, with its workspace at
+  `../go.work` and its orchestration scripts at `../scripts/`.
 - For Go changes, run `gofmt`, `git diff --check`,
   `GOWORK=off go test ./...`, `GOWORK=off go vet ./...`, and
   `GOWORK=off go build -buildvcs=false ./...` when practical. Apply the shared
