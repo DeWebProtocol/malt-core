@@ -93,9 +93,26 @@ in Git history; do not relabel them or change CIDv1's container version.
 
 ## Validation And Delivery
 
-- Run `gofmt` on changed Go files, `git diff --check`, `go test ./...`,
-  `go vet ./...`, and `go build -buildvcs=false ./...` when practical.
+- This repository may be a standalone checkout or a pinned submodule of
+  `malt-integration`. In the latter case, also read the integration root's
+  `AGENTS.md`; its `go.work` selects local source without changing Core's
+  ownership or release contract.
+- For Go changes, run `gofmt`, `git diff --check`,
+  `GOWORK=off go test ./...`, `GOWORK=off go vet ./...`, and
+  `GOWORK=off go build -buildvcs=false ./...` when practical. Apply the shared
+  host's resource limits to full-module checks. Documentation-only changes
+  require relevant content checks and `git diff --check`, not a full Go suite.
+- Validate reviewed source combinations through the integration root's
+  `scripts/verify-go.sh`. For branch/worktree combinations, use the selected
+  evaluator's boundary checker with explicit checkout paths and
+  `MALT_INTEGRATION_REQUIRED=1`; record all selected HEADs and dirty states.
+  Check the active `GOWORK` and module directories instead of assuming a
+  workspace selects this checkout. Source integration is separate from
+  standalone dependency and release validation.
 - Keep architecture/import-boundary tests passing whenever packages move.
 - Use a topic branch/worktree, commit verified changes, push the branch, and
   open a draft pull request to `main`; do not edit `main` directly unless the
   maintainer explicitly requests it.
+- Create a branch before editing a detached submodule. Push and review child
+  changes in this repository before an explicit integration pin update;
+  a Core merge does not automatically advance the integration baseline.
