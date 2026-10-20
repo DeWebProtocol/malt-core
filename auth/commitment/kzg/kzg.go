@@ -34,6 +34,7 @@ type VerifierScheme struct {
 type Scheme struct {
 	*VerifierScheme
 	writerKey *kzgWriterKey
+	computer  OpeningComputer
 }
 
 // NewScheme creates a new KZG commitment scheme.
@@ -116,7 +117,7 @@ func (o *opening) Open(index uint64) (commitment.Cell, []byte, error) {
 	if index >= uint64(len(o.values)) {
 		return nil, nil, fmt.Errorf("index %d out of range", index)
 	}
-	proof, claimedValue, err := provePolynomialAtIndex(o.scheme.writerKey, o.scheme.domain, o.polynomial, index)
+	proof, claimedValue, err := o.scheme.openPolynomial(o.polynomial, index)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -128,7 +129,7 @@ func (s *Scheme) proveValuesIndex(values []commitment.Cell, index uint64) (commi
 	if err != nil {
 		return nil, nil, err
 	}
-	proof, claimedValue, err := provePolynomialAtIndex(s.writerKey, s.domain, polynomial, index)
+	proof, claimedValue, err := s.openPolynomial(polynomial, index)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to compute proof: %w", err)
 	}

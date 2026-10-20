@@ -44,6 +44,11 @@ go get github.com/dewebprotocol/malt-core@v0.0.10-rc.4
 After copying an example into your module, run `go mod tidy` to resolve its
 imports.
 
+For optional KZG4096 opening acceleration, see the independent
+[Go/CUDA module](accelerators/cuda/README.md). It loads CUDA Driver/NVRTC at
+runtime without Python or CGO. Default CPU and portable verification builds
+remain independent of CUDA; hardware qualification uses the module's smoke tool.
+
 The Object API used below is available starting with `v0.0.10-rc.3`.
 For JavaScript or TypeScript, use
 [malt-ts](https://github.com/DeWebProtocol/malt-ts), which has its own API and

@@ -12,6 +12,29 @@ permissions:
   contents: read
 
 jobs:
+  optional-cuda:
+    name: Optional CUDA module / ${{ matrix.os }} (no device)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: accelerators/cuda
+        shell: bash
+    env:
+      GOWORK: 'off'
+      CGO_ENABLED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: accelerators/cuda/go.mod
+          cache-dependency-path: accelerators/cuda/go.sum
+      - run: go test ./...
+      - run: go vet ./...
+      - run: go build ./...
+
   test:
     name: Test and vet
     runs-on: ubuntu-latest
