@@ -91,6 +91,9 @@ func TestKZGPreprocessedWriterMatchesGoKZG(t *testing.T) {
 func compatibilityValues() []commitment.Cell {
 	values := make([]commitment.Cell, kzg.MaxValues)
 	for i := range values {
+		if i == 0 || i == kzg.MaxValues-1 {
+			continue
+		}
 		value := make([]byte, len("malt-kzg-compat-slot:")+4)
 		copy(value, "malt-kzg-compat-slot:")
 		binary.BigEndian.PutUint32(value[len(value)-4:], uint32(i))
@@ -144,10 +147,13 @@ func TestKZGBatchEncodingMatchesLegacyPrimitiveProofs(t *testing.T) {
 func legacyBlob(values []commitment.Cell) *gokzg4844.Blob {
 	blob := new(gokzg4844.Blob)
 	for i, value := range values {
-		hash := sha256.Sum256(value)
-		fieldValue := new(big.Int).SetBytes(hash[:])
-		fieldValue.Mod(fieldValue, compatibilityScalarModulus)
-		encoded := fieldValue.FillBytes(make([]byte, gokzg4844.SerializedScalarSize))
+		encoded := make([]byte, gokzg4844.SerializedScalarSize)
+		if len(value) > 0 {
+			hash := sha256.Sum256(value)
+			fieldValue := new(big.Int).SetBytes(hash[:])
+			fieldValue.Mod(fieldValue, compatibilityScalarModulus)
+			encoded = fieldValue.FillBytes(encoded)
+		}
 		copy(blob[i*gokzg4844.SerializedScalarSize:], encoded)
 	}
 	return blob

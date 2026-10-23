@@ -50,13 +50,16 @@ ceremony parameters.
 
 ### Cell To Scalar
 
-For each cell:
+An empty cell maps directly to the scalar zero. For a nonempty cell:
 
 1. compute SHA-256 over the exact cell bytes;
 2. interpret the 32-byte digest as an unsigned big-endian integer;
 3. reduce it modulo the BLS12-381 scalar-field modulus
    `0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`;
 4. serialize the result as exactly 32 big-endian bytes.
+
+The hash rule therefore applies only to nonempty cells; a nonempty cell whose
+bytes are all zero remains distinct from an empty cell.
 
 The fixed 4096-position blob is zero-filled after the supplied cells.
 
@@ -81,7 +84,7 @@ A KZG index proof is exactly 84 bytes:
 
 Verification rejects any other length, an index above 4095, a proof-carried
 index different from the requested index, or a claimed scalar different from
-the SHA-256-derived cell scalar.
+the cell-to-scalar mapping above.
 
 ### Current Batch Proof
 
@@ -138,13 +141,15 @@ auxiliary point `Q` is the dependency's `banderwagon.Generator`.
 
 ### Cell To Scalar
 
-For each cell, compute SHA-256 over the exact bytes, interpret the digest as an
-unsigned big-endian integer, and reduce it modulo the Bandersnatch scalar-field
-modulus
+An empty cell maps directly to the scalar zero. For a nonempty cell, compute
+SHA-256 over the exact bytes, interpret the digest as an unsigned big-endian
+integer, and reduce it modulo the Bandersnatch scalar-field modulus
 `13108968793781547619861935127046491459309155893440570251786403306729687672801`.
-The fixed 256-element vector is zero-filled after the supplied cells. The
-commitment is the multiscalar multiplication of that vector by the ordered SRS;
-commitment bytes are the 32-byte `banderwagon.Element.Bytes()` result.
+The fixed 256-element vector is zero-filled after the supplied cells. The hash
+rule applies only to nonempty cells; a nonempty cell whose bytes are all zero
+remains distinct from an empty cell. The commitment is the multiscalar
+multiplication of that vector by the ordered SRS; commitment bytes are the
+32-byte `banderwagon.Element.Bytes()` result.
 
 ### Single Proof
 

@@ -120,3 +120,49 @@ func TestOpeningComputerErrorsNeverFallBackSilently(t *testing.T) {
 		}
 	}
 }
+
+func TestOpeningComputerPreservesEmptyCellEncoding(t *testing.T) {
+	cpu, err := NewScheme()
+	if err != nil {
+		t.Fatal(err)
+	}
+	accelerated, err := NewSchemeWithOpeningComputer(computerFunc(func(raw [][32]byte, index uint64) ([48]byte, error) {
+		p := make([]blsfr.Element, len(raw))
+		for i := range p {
+			if err := p[i].SetBytesCanonical(raw[i][:]); err != nil {
+				return [48]byte{}, err
+			}
+		}
+		proof, _, err := provePolynomialAtIndex(cpu.writerKey, cpu.domain, p, index)
+		return [48]byte(proof), err
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cells := make([]commitment.Cell, MaxValues)
+	root, err := cpu.Commit(cells)
+	if err != nil {
+		t.Fatal(err)
+	}
+	acceleratedRoot, err := accelerated.Commit(cells)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !acceleratedRoot.Equals(root) {
+		t.Fatal("accelerated empty-cell root differs from CPU root")
+	}
+	prepared, err := accelerated.PrepareOpening(root, cells)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, proof, err := prepared.Open(MaxValues - 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(value) != 0 {
+		t.Fatalf("empty opening returned %x", value)
+	}
+	if ok, err := cpu.VerifyIndex(root, MaxValues-1, value, proof); err != nil || !ok {
+		t.Fatalf("CPU verification = %v, %v; want true, nil", ok, err)
+	}
+}
