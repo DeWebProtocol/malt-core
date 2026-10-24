@@ -293,6 +293,9 @@ func (s *Scheme) Replace(values []commitment.Cell, index uint64, oldValue, newVa
 
 func cellToKZGScalar(value commitment.Cell) gokzg4844.Scalar {
 	var scalar gokzg4844.Scalar
+	if len(value) == 0 {
+		return scalar
+	}
 	hash := sha256.Sum256(value)
 
 	fieldValue := new(big.Int).SetBytes(hash[:])

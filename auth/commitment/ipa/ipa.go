@@ -538,6 +538,9 @@ func deserializeMultiProof(data []byte) (*multiproof.MultiProof, error) {
 
 func cellToFieldElement(cell commitment.Cell) fr.Element {
 	var result fr.Element
+	if len(cell) == 0 {
+		return result
+	}
 	h := sha256.Sum256(cell)
 	result.SetBytes(h[:])
 	return result
