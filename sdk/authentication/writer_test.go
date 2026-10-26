@@ -16,7 +16,7 @@ import (
 
 func TestWriterStateOwnsLabelsAndPreservesMetadata(t *testing.T) {
 	state := engine.State{
-		Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256},
+		Descriptor: maltcid.RootDescriptor{Layout: maltcid.List, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256},
 		Entries:    []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}},
 		PayloadCID: cid.MustParse("bafkqaaa"),
 	}
@@ -53,7 +53,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 	other := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
 	for _, withPayload := range []bool{false, true} {
 		t.Run(map[bool]string{false: "plain", true: "with payload"}[withPayload], func(t *testing.T) {
-			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}}
 			if withPayload {
 				state.PayloadCID = target
 			}
@@ -101,7 +101,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 			}
 		})
 	}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("a"), Target: target}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("a"), Target: target}}}
 	base, err := authentication.Prepare(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 	if next.Candidate().Root != fresh.Root || w.Candidate().Root != base.Root {
-		t.Fatal("Prefix update or immutable base mismatch")
+		t.Fatal("Map update or immutable base mismatch")
 	}
 	detached := next.Candidate()
 	detached.State.Entries[0].Label[0] = 'x'
@@ -139,7 +139,7 @@ func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 
 func TestWriterFillsPartialInternalTailBeforeAppend(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, PayloadCID: cid.MustParse("bafkqaaa")}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, PayloadCID: cid.MustParse("bafkqaaa")}
 	for i := uint64(0); i < 510; i++ {
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: cid.MustParse("bafkqaaa")})
 	}

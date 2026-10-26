@@ -37,19 +37,19 @@ type CommitConfig struct {
 	Content        cid.Prefix
 }
 
-// MapConfig selects Prefix authentication with SHA256 label derivation.
+// MapConfig selects Map authentication with SHA256 label derivation.
 // The engine must have the selected exact commitment profile installed.
 func MapConfig(profile maltcid.ProfileID) CommitConfig {
 	return CommitConfig{Authentication: maltcid.RootDescriptor{
-		Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile,
+		Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: profile,
 	}}
 }
 
-// ListConfig selects Positional authentication with canonical direct indices.
+// ListConfig selects List authentication with canonical direct indices.
 // Either IPA256 or KZG4096 can be selected independently of the layout.
 func ListConfig(profile maltcid.ProfileID) CommitConfig {
 	return CommitConfig{Authentication: maltcid.RootDescriptor{
-		Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: profile,
+		Layout: maltcid.List, DerivationProfile: uint8(derivation.Direct), Profile: profile,
 	}}
 }
 

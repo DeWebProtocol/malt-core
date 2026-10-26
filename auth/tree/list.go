@@ -11,7 +11,7 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// Metadata is authenticated only at the Positional root. PayloadCID is an
+// Metadata is authenticated only at the List root. PayloadCID is an
 // optional opaque application-content reference; the tree never decodes it.
 type Metadata struct {
 	Count      uint64  `json:"count,string"`
@@ -25,7 +25,7 @@ func (m Metadata) cell() commitment.Cell {
 
 func parseMetadata(data commitment.Cell) (Metadata, error) {
 	if len(data) < 9 || data[0] != metadataCell {
-		return Metadata{}, errors.New("invalid Positional root metadata")
+		return Metadata{}, errors.New("invalid List root metadata")
 	}
 	m := Metadata{Count: binary.BigEndian.Uint64(data[1:9])}
 	if len(data) > 9 {
@@ -86,23 +86,23 @@ func (p position) child(digit int, slots int) (position, uint64) {
 	return position{count: count, height: p.height - 1}, start
 }
 
-func (b *builder) positional(items []binding, meta Metadata) (maltcid.NodeRef, error) {
-	return b.positionalNode(items, rootPosition(meta.Count, b.profile.Slots), meta)
+func (b *builder) list(items []binding, meta Metadata) (maltcid.NodeRef, error) {
+	return b.listNode(items, rootPosition(meta.Count, b.profile.Slots), meta)
 }
 
-func (b *builder) positionalNode(items []binding, p position, meta Metadata) (maltcid.NodeRef, error) {
+func (b *builder) listNode(items []binding, p position, meta Metadata) (maltcid.NodeRef, error) {
 	cells := make([]commitment.Cell, b.profile.Slots)
 	if p.root {
 		cells[0] = meta.cell()
 	}
 	if p.height == 0 {
 		for i, item := range items {
-			cells[p.base()+i] = append(commitment.Cell{positionalLeaf}, item.target.Bytes()...)
+			cells[p.base()+i] = append(commitment.Cell{listLeaf}, item.target.Bytes()...)
 		}
 	} else {
 		for digit := 0; digit < p.used(b.profile.Slots); digit++ {
 			child, start := p.child(digit, b.profile.Slots)
-			ref, err := b.positionalNode(items[start:start+child.count], child, Metadata{})
+			ref, err := b.listNode(items[start:start+child.count], child, Metadata{})
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
@@ -119,22 +119,22 @@ func (b *builder) positionalNode(items []binding, p position, meta Metadata) (ma
 // metadata, holes, wrong cell roles and nonempty padding are all noncanonical.
 func checkPosition(cells []commitment.Cell, p position, slots int) error {
 	if len(cells) != slots || p.used(slots) > slots-p.base() {
-		return errors.New("invalid Positional node geometry")
+		return errors.New("invalid List node geometry")
 	}
 	for slot := p.base(); slot < slots; slot++ {
 		cell := cells[slot]
 		if slot-p.base() >= p.used(slots) {
 			if len(cell) != 0 {
-				return errors.New("nonempty Positional padding")
+				return errors.New("nonempty List padding")
 			}
 			continue
 		}
 		want := childNode
 		if p.height == 0 {
-			want = positionalLeaf
+			want = listLeaf
 		}
 		if len(cell) == 0 || cell[0] != want {
-			return errors.New("invalid Positional content cell")
+			return errors.New("invalid List content cell")
 		}
 	}
 	return nil

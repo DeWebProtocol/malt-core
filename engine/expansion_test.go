@@ -50,7 +50,7 @@ func TestSnapshotRejectsHugeLogicalExpansionAtRoot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}
 	root, err := maltcid.NewRoot(d, c)
 	if err != nil {
 		t.Fatal(err)
@@ -74,7 +74,7 @@ func TestEncodedSharedAAIndependentNodes(t *testing.T) {
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "retention"}
 	ctx := context.Background()
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	value := []byte("one")
 	child, err := e.Build(ctx, engine.State{Descriptor: d, Entries: []engine.Entry{{Label: value, Target: target("payload")}}}, nodes)
 	if err != nil {
@@ -109,23 +109,23 @@ func TestEncodedSharedAAIndependentNodes(t *testing.T) {
 	}
 }
 
-func TestEncodedPositionalParentPointingToPrefixChild(t *testing.T) {
+func TestEncodedListParentPointingToMapChild(t *testing.T) {
 	e, _ := setup(t, maltcid.IPA256)
 	store := memory.New(true)
 	nodes := encoded.Nodes{Lookup: store, Updater: store, Scope: "mixed"}
 	value := []byte("child-label")
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	child, err := e.Build(t.Context(), engine.State{Descriptor: d, Entries: []engine.Entry{{Label: value, Target: target("payload")}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: child}}}, nodes)
+	_, err = e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: child}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	result, err := e.Prove(t.Context(), child, value, nodes)
 	if err != nil {
-		t.Fatal("Positional parent lost its Prefix child", err)
+		t.Fatal("List parent lost its Map child", err)
 	}
 	if ok, err := e.Verify(child, value, result); err != nil || !ok {
 		t.Fatal("child proof", err)
@@ -133,12 +133,12 @@ func TestEncodedPositionalParentPointingToPrefixChild(t *testing.T) {
 }
 
 func TestSnapshotChecksEverySharedOccurrence(t *testing.T) {
-	for _, positional := range []bool{true, false} {
-		t.Run(fmt.Sprint(positional), func(t *testing.T) {
+	for _, list := range []bool{true, false} {
+		t.Run(fmt.Sprint(list), func(t *testing.T) {
 			e, nodes := setup(t, maltcid.IPA256)
-			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
-			if positional {
-				state.Descriptor.Layout = maltcid.Positional
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Map, Profile: maltcid.IPA256}}
+			if list {
+				state.Descriptor.Layout = maltcid.List
 				for i := uint64(0); i < 512; i++ {
 					state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: target("same")})
 				}
@@ -161,13 +161,13 @@ func TestSnapshotChecksEverySharedOccurrence(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := "routing prefix"
-			if positional {
+			if list {
 				// Both children name the same physical full leaf. Its second logical
 				// occurrence must be rejected when the parent declares a partial tail.
 				binary.BigEndian.PutUint64(cells[0][1:9], 511)
 				want = "padding"
 			} else {
-				// The second occurrence of this child is under the wrong Prefix route.
+				// The second occurrence of this child is under the wrong Map route.
 				cells[2] = append(commitment.Cell(nil), cells[1]...)
 			}
 			scheme, err := ipa.NewCommitterScheme(ipa.ProfileDirect)

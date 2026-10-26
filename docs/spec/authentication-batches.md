@@ -14,8 +14,8 @@ nodes fail. New retained writers own validated immutable nodes; unchanged
 owned nodes can be reused across branches without revalidating them.
 
 `malt.authentication-delta/2` describes expected-before typed changes against
-retained complete state. Prefix supports insertion, replacement, and deletion;
-Positional supports replacement, append, and suffix truncation with explicit
+retained complete state. Map supports insertion, replacement, and deletion;
+List supports replacement, append, and suffix truncation with explicit
 count. Optional `payload_cid` preserves the payload when omitted, replaces it
 when a CID string is supplied, and clears it when the empty string is supplied. It is not a partial witness or transition proof.
 Applications rebuild changed child ArcSets before rebinding their parents.

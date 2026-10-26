@@ -14,8 +14,9 @@ type Object interface {
 ```
 
 `Immutable` contains an owned copy of raw bytes and returns an ordinary
-CIDv1 with the raw codec and SHA-256 multihash. `Map` returns a Prefix MALT
-Root. `List` holds dense, zero-based references and returns a Positional Root.
+CIDv1 with the raw codec and SHA-256 multihash. `Map` returns a MALT Root using
+the Map authentication layout. `List` holds dense, zero-based references and
+returns a Root using the List authentication layout.
 `MapConfig(profile)` and `ListConfig(profile)` select the authentication layout
 and coordinate derivation; each accepts either `maltcid.IPA256` or
 `maltcid.KZG4096`. Install the corresponding commitment/proving implementations
@@ -56,12 +57,12 @@ fmt.Println(rootCID)
 `Set` copies the label and retains the Object reference. `Get` returns that
 reference. `Delete` removes it. Labels are opaque bytes; empty and binary labels
 are supported, but a nil label is rejected. No path normalization or splitting
-occurs. For a Direct Prefix configuration, every label must already contain
+occurs. For a Direct Map configuration, every label must already contain
 exactly 32 key bytes.
 
 ## List references
 
-`NewList(e, object.ListConfig(maltcid.KZG4096))` selects Positional + KZG.
+`NewList(e, object.ListConfig(maltcid.KZG4096))` selects the List layout with KZG.
 Choose `maltcid.IPA256` for the same container with IPA. `Append` appends child
 references, `Set` replaces an existing index, and `Remove` shifts all following
 references down by one. Invalid indices and nil children are errors.
@@ -105,7 +106,7 @@ There is no required `Arcs()` method.
 
 Embedding a Map or List reuses that container's behavior. Its promoted Commit
 method still has the embedded container as its receiver; it does not inspect
-new fields in the outer struct. For additional named arcs, use a tagged Prefix
+new fields in the outer struct. For additional named arcs, use a tagged Map
 struct with its own Base and place the container in a tagged child field.
 
 ## Payloads and immutable bytes
@@ -116,7 +117,7 @@ content CID from Payload and Commit. `Bytes()` returns a copy for application
 storage or transport. Other immutable codecs can implement Object directly;
 `CommitConfig.Content` describes their content-CID prefix.
 
-For Map and tagged Prefix objects, `SetPayload(cid)` binds an already encoded
+For Map and tagged Map objects, `SetPayload(cid)` binds an already encoded
 payload CID during Commit. Passing `cid.Undef` removes it. `PayloadLabel(config)`
 returns the reserved label for proving this binding: `@payload` with SHA256
 derivation, or the canonical SHA256-derived coordinate of `@payload` with Direct
@@ -124,7 +125,7 @@ derivation. Map.Set and struct tags cannot overwrite that reserved binding.
 This is a convention of `sdk/object`; the authentication engine continues to
 treat these labels as ordinary bytes.
 
-For List, `SetPayload(cid)` binds an optional content CID in Positional root
+For List, `SetPayload(cid)` binds an optional content CID in List root
 slot 0 alongside the item count. It consumes no item index, and `Payload()`
 returns the selected CID. Passing `cid.Undef` clears it; removing all items
 preserves it. Commit authenticates this reference, while applications own

@@ -346,7 +346,7 @@ func TestInvalidObjectConfigurations(t *testing.T) {
 		t.Fatal("nil engine accepted")
 	}
 	if _, err := object.NewMap(engineFor(t), object.ListConfig(maltcid.IPA256)); err == nil {
-		t.Fatal("Map accepted Positional")
+		t.Fatal("Map accepted List")
 	}
 	config := object.MapConfig(maltcid.IPA256)
 	config.Content = leaf(t, "block").Config().Content

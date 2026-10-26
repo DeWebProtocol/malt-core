@@ -20,8 +20,8 @@ optional old-ABI detection.
 Current query profile `malt.authentication/1` authenticates explicit traversal
 and early absence. Applications still support flat/hybrid/rooted organization:
 flat path bindings may target payload/manifest CIDs directly; rooted content
-queries add a typed payload selector at the reached Prefix. Literal labels do
-not become system selectors. Positional chunk/range authentication remains.
+queries add a typed payload selector at the reached Map. Literal labels do
+not become system selectors. List chunk/range authentication remains.
 
 Ordered candidate batches and exact receipts preserve multi-object writes and
 retries without defining a portable transition proof or promoting trusted

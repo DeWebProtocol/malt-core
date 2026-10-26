@@ -15,7 +15,7 @@ func TestSelfDescribingRoot(t *testing.T) {
 		p, _ := maltcid.Profile(id)
 		c := make([]byte, p.CommitmentSize)
 		c[0] = 42
-		d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: id}
+		d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: id}
 		root, err := maltcid.NewRoot(d, c)
 		if err != nil {
 			t.Fatal(err)
@@ -46,12 +46,12 @@ func TestSelfDescribingRoot(t *testing.T) {
 			t.Fatal("nonminimal profile ID accepted")
 		}
 	}
-	if _, err := maltcid.NewRoot(maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Version: 1, Layout: maltcid.Prefix, Profile: maltcid.IPA256}, make([]byte, 32)); err == nil {
+	if _, err := maltcid.NewRoot(maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Version: 1, Layout: maltcid.Map, Profile: maltcid.IPA256}, make([]byte, 32)); err == nil {
 		t.Fatal("production V=1 enabled")
 	}
 }
 
-func TestCoordinateOnlyPrefixLayoutIsRetired(t *testing.T) {
+func TestCoordinateOnlyMapLayoutIsRetired(t *testing.T) {
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		p, _ := maltcid.Profile(profile)
 		commitment := make([]byte, p.CommitmentSize)

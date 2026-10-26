@@ -52,15 +52,15 @@ verifier authenticates this termination, not the remaining suffix. Unsupported
 inputs, cancellation, corrupt materialization, and recovery/I/O errors are not
 absence.
 
-Prefix absence ends at a proved empty slot or a routed terminal label with a
+Map absence ends at a proved empty slot or a routed terminal label with a
 different full coordinate. Membership compares exact authenticated label bytes;
 different labels at the same full coordinate return `ErrCoordinateCollision`
-instead of membership or absence. Prefix leaves use Root layout 4.
-Positional absence authenticates count metadata showing the index is outside
+instead of membership or absence. Map leaves use Root layout 4.
+List absence authenticates count metadata showing the index is outside
 `[0,count)`. Both use `malt.binding/1` node evidence. A binding's `present` and
 target are checked against this evidence, never accepted as assertions.
 
-A Positional range authenticates root count, optional payload CID, bounds, and
+A List range authenticates root count, optional payload CID, bounds, and
 precisely the ordered bindings selected by the element index interval. Applications
 decode their own CID-bound metadata and verify content bytes when assembling
 byte ranges. The optional payload consumes no element index.

@@ -62,7 +62,7 @@ func matchView(expected, actual View) error {
 	}
 	sort.Slice(expected.Bindings, func(i, j int) bool {
 		a, b := expected.Bindings[i].Coordinate, expected.Bindings[j].Coordinate
-		if d.Layout == maltcid.Positional {
+		if d.Layout == maltcid.List {
 			return a.Index < b.Index
 		}
 		return bytes.Compare(a.Key[:], b.Key[:]) < 0

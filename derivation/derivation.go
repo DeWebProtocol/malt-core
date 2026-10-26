@@ -23,7 +23,7 @@ func Supported(profile ProfileID) bool { return profile == Direct || profile == 
 
 // Derive performs no application normalization, path parsing or reserved-name
 // interpretation. Direct parses the label's canonical coordinate encoding.
-// SHA256 hashes domain || uvarint(label length) || label, yielding a Prefix key.
+// SHA256 hashes domain || uvarint(label length) || label, yielding a Map key.
 func Derive(profile ProfileID, label []byte) (coordinate.Coordinate, error) {
 	switch profile {
 	case Direct:

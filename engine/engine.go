@@ -50,8 +50,8 @@ func (e *Engine) check(d maltcid.RootDescriptor) error {
 	if !derivation.Supported(derivation.ProfileID(d.DerivationProfile)) {
 		return fmt.Errorf("unsupported coordinate derivation profile %d", d.DerivationProfile)
 	}
-	if d.Layout == maltcid.Positional && d.DerivationProfile != uint8(derivation.Direct) {
-		return errors.New("Positional requires Direct derivation")
+	if d.Layout == maltcid.List && d.DerivationProfile != uint8(derivation.Direct) {
+		return errors.New("List requires Direct derivation")
 	}
 	return e.Tree.CheckDescriptor(d)
 }
@@ -72,7 +72,7 @@ type Entry struct {
 
 // State stores the original labels so label-based persistence can reconstruct
 // a Root without pretending that labels and authentication keys are identical.
-// PayloadCID is an optional opaque Positional root payload; Prefix uses labels.
+// PayloadCID is an optional opaque List root payload; Map uses labels.
 type State struct {
 	Descriptor maltcid.RootDescriptor `json:"descriptor"`
 	Entries    []Entry                `json:"entries" schema:"optional,nullable"`
@@ -87,7 +87,7 @@ func (e *Engine) coordinate(d maltcid.RootDescriptor, value []byte) (coordinate.
 	if err != nil {
 		return coordinate.Coordinate{}, err
 	}
-	if d.Layout == maltcid.Prefix && k.Kind != coordinate.Key || d.Layout == maltcid.Positional && k.Kind != coordinate.Index {
+	if d.Layout == maltcid.Map && k.Kind != coordinate.Key || d.Layout == maltcid.List && k.Kind != coordinate.Index {
 		return coordinate.Coordinate{}, errors.New("derived coordinate does not match layout")
 	}
 	return k, nil

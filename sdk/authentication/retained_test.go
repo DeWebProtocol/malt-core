@@ -45,7 +45,7 @@ func TestRetainedWriterDoesNotRevalidateOwnedNodes(t *testing.T) {
 	other := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
 	for _, n := range []int{1, 256, 511} {
 		t.Run(fmt.Sprint(n), func(t *testing.T) {
-			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}}
 			for i := 0; i < n; i++ {
 				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target})
 			}
@@ -107,7 +107,7 @@ func TestDeltaRejectsWrongBeforeAndPreservesBranches(t *testing.T) {
 	e := pathEngine(t)
 	value := cid.MustParse("bafkqaaa")
 	other := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("base"), Target: value}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("base"), Target: value}}}
 	w, err := authentication.BuildWriter(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
@@ -144,7 +144,7 @@ func TestDeltaRejectsWrongBeforeAndPreservesBranches(t *testing.T) {
 
 func TestRetainedSessionBoundsAndHandleLifetime(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
 	s, err := authentication.NewSession(e, authentication.SessionLimits{MaxCandidates: 2})
 	if err != nil {
 		t.Fatal(err)
@@ -186,9 +186,9 @@ func TestRetainedSessionBoundsAndHandleLifetime(t *testing.T) {
 	}
 }
 
-func TestRetainedPrefixMixedDeltasMatchRebuild(t *testing.T) {
+func TestRetainedMapMixedDeltasMatchRebuild(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
 	w, err := authentication.BuildWriter(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)
@@ -249,7 +249,7 @@ func (s rewritingExportSource) GetNode(ctx context.Context, ref maltcid.NodeRef)
 func TestExportIsolatesCollectorReferenceFromSource(t *testing.T) {
 	e := pathEngine(t)
 	nodes := memory.NewNodes()
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)

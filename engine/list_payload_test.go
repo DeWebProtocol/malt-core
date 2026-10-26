@@ -17,7 +17,7 @@ func TestRootOnlyMetadataAcrossGrowthAndCollapse(t *testing.T) {
 			e, base := setup(t, profile)
 			nodes := &countedNodes{Nodes: base}
 			p, _ := maltcid.Profile(profile)
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: profile}, PayloadCID: target("opaque JSON metadata")}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.List, DerivationProfile: uint8(derivation.Direct), Profile: profile}, PayloadCID: target("opaque JSON metadata")}
 			for i := 0; i < p.Slots-1; i++ {
 				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target(fmt.Sprint(i))})
 			}

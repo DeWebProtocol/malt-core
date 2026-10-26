@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Name the two authentication layouts Map and List. Rename Go layout constants
+  to `maltcid.Map` / `maltcid.List` and leaf tags to `MapLeafCell` /
+  `ListLeafCell`; update Core callers, examples and current specifications.
+  The old `Prefix` / `Positional` source names have no compatibility aliases.
+- Retain sparse/dense as descriptions of the intended coordinate distributions,
+  and coordinate prefixes as the Map routing mechanism. List still requires
+  contiguous bindings; this rename does not introduce holes or new mutations.
+
+### Compatibility
+
+- Preserve layout IDs 4/3, cell tags 1/3, Root V=0, CIDs, proof and wire profiles,
+  schemas and conformance bytes. Current serialized data needs no migration.
+  Downstream Go callers must rename the symbols before adopting this revision;
+  published release pins and integration pins are unchanged by this Core change.
+
 ## [0.0.11-rc.2] - 2026-10-17
 
 ### Added

@@ -2,10 +2,10 @@
 
 The current language-neutral corpus is `conformance/authentication-v3.json`,
 with schema `malt.conformance.authentication/3`. Its 26 vectors cover both exact
-built-in VC profiles, opaque and empty labels, original-label Prefix layout 4
+built-in VC profiles, opaque and empty labels, original-label Map layout 4
 leaves, tampered label identity, retired coordinate-only Roots, ordinary
 application payload labels, native keys, explicit traversal absence, index ranges
-and opaque root payloads, Positional out-of-range evidence, wrong prefixes and
+and opaque root payloads, List out-of-range evidence, wrong prefixes and
 wrong Roots.
 
 Core native tests and the malt-ts WASM runners consume these same checked-in

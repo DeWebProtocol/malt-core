@@ -83,7 +83,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 		}
 		opening := NodeOpening{}
 		var slot uint64
-		if d.Layout == maltcid.Prefix {
+		if d.Layout == maltcid.Map {
 			digit, err := digit(k.Key, depth, p.Slots)
 			if err != nil {
 				return Result{}, err
@@ -104,7 +104,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 				return result, nil
 			}
 		}
-		if d.Layout == maltcid.Positional {
+		if d.Layout == maltcid.List {
 			slot = uint64(pos.slot(localIndex, p.Slots))
 		}
 		opening.Cell, opening.Proof, err = node.open(ctx, s, slot)
@@ -113,13 +113,13 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 		}
 		result.Proof.Nodes = append(result.Proof.Nodes, opening)
 		if len(opening.Cell) == 0 {
-			if d.Layout == maltcid.Positional {
-				return Result{}, errors.New("hole in Positional state")
+			if d.Layout == maltcid.List {
+				return Result{}, errors.New("hole in List state")
 			}
 			return result, nil
 		}
-		if d.Layout == maltcid.Prefix && opening.Cell[0] == prefixLeaf {
-			label, target, err := parsePrefix(opening.Cell)
+		if d.Layout == maltcid.Map && opening.Cell[0] == mapLeaf {
+			label, target, err := parseMap(opening.Cell)
 			if err != nil {
 				return Result{}, err
 			}
@@ -139,8 +139,8 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 			}
 			return result, nil
 		}
-		if d.Layout == maltcid.Positional && pos.height == 0 {
-			result.Target, err = parsePositional(opening.Cell)
+		if d.Layout == maltcid.List && pos.height == 0 {
+			result.Target, err = parseList(opening.Cell)
 			if err != nil {
 				return Result{}, err
 			}
@@ -151,7 +151,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 		if err != nil {
 			return Result{}, err
 		}
-		if d.Layout == maltcid.Positional {
+		if d.Layout == maltcid.List {
 			next, start := pos.child(int(slot)-pos.base(), p.Slots)
 			pos = next
 			localIndex -= start
@@ -186,7 +186,7 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 	for depth, opening := range result.Proof.Nodes {
 		last := depth == len(result.Proof.Nodes)-1
 		var slot uint64
-		if d.Layout == maltcid.Prefix {
+		if d.Layout == maltcid.Map {
 			if len(opening.Metadata) != 0 || len(opening.MetadataProof) != 0 {
 				return false, nil
 			}
@@ -211,7 +211,7 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 		} else if len(opening.Metadata) != 0 || len(opening.MetadataProof) != 0 {
 			return false, nil
 		}
-		if d.Layout == maltcid.Positional {
+		if d.Layout == maltcid.List {
 			slot = uint64(pos.slot(localIndex, p.Slots))
 		}
 		valid, err := verifyOpening(s, ref, slot, opening.Cell, opening.Proof)
@@ -219,10 +219,10 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 			return valid, err
 		}
 		if len(opening.Cell) == 0 {
-			return d.Layout == maltcid.Prefix && last && !result.Present, nil
+			return d.Layout == maltcid.Map && last && !result.Present, nil
 		}
-		if d.Layout == maltcid.Prefix && opening.Cell[0] == prefixLeaf {
-			label, target, err := parsePrefix(opening.Cell)
+		if d.Layout == maltcid.Map && opening.Cell[0] == mapLeaf {
+			label, target, err := parseMap(opening.Cell)
 			if err != nil {
 				return false, err
 			}
@@ -244,8 +244,8 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 			}
 			return !bytes.Equal(label, query.Label) && leaf.Key != k.Key, nil
 		}
-		if d.Layout == maltcid.Positional && pos.height == 0 {
-			target, err := parsePositional(opening.Cell)
+		if d.Layout == maltcid.List && pos.height == 0 {
+			target, err := parseList(opening.Cell)
 			if err != nil {
 				return false, err
 			}
@@ -258,7 +258,7 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 		if err != nil {
 			return false, err
 		}
-		if d.Layout == maltcid.Positional {
+		if d.Layout == maltcid.List {
 			next, start := pos.child(int(slot)-pos.base(), p.Slots)
 			pos = next
 			localIndex -= start
@@ -280,16 +280,16 @@ func checkLeafRoute(leaf, query [32]byte, depth, slots int) error {
 	}
 	return nil
 }
-func parsePositional(cell commitment.Cell) (cid.Cid, error) {
-	if len(cell) < 2 || cell[0] != positionalLeaf {
-		return cid.Undef, errors.New("invalid Positional target")
+func parseList(cell commitment.Cell) (cid.Cid, error) {
+	if len(cell) < 2 || cell[0] != listLeaf {
+		return cid.Undef, errors.New("invalid List target")
 	}
 	target, err := cid.Cast(cell[1:])
 	if err != nil {
 		return cid.Undef, err
 	}
 	if !bytes.Equal(target.Bytes(), cell[1:]) {
-		return cid.Undef, errors.New("noncanonical Positional target")
+		return cid.Undef, errors.New("noncanonical List target")
 	}
 	return target, nil
 }

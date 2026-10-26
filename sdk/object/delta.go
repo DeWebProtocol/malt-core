@@ -39,7 +39,7 @@ type Delta struct {
 // ArcSetDelta describes exact label additions, removals and target replacements
 // for one vertex. Before is undefined when the vertex has no known version in
 // the previous graph. A configuration change can change After with no Changes;
-// the complete configurations are encoded in the Roots. Positional removals
+// the complete configurations are encoded in the Roots. List removals
 // are explicit label deletions here, not authentication.Delta truncation syntax.
 type ArcSetDelta struct {
 	Before  cid.Cid

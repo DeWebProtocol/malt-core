@@ -34,13 +34,13 @@ parameter profiles from the same algorithm family.
 ## Specification
 
 The proposed codec notation is `0x30VLAA`: `V` selects the MALT Root format,
-`L` selects Positional/Prefix authentication interpretation, and `AA` selects
+`L` selects the Map/List authentication layout, and `AA` selects
 an input rule. A multicommitment identifies the exact VC profile and carries
 the commitment. The preferred container under review remains CIDv1 with an
 identity multihash containing that multicommitment. The reference specification now defines experimental IDs and canonical byte framing.
 
-Positional/direct consumes a canonical integer index. Prefix/direct consumes
-a native byte key under an explicit key-width rule. Prefix/label consumes a
+List/direct consumes a canonical integer index. Map/direct consumes
+a native byte key under an explicit key-width rule. Map/label consumes a
 selector under a predefined rule covering encoding, namespace treatment,
 derivation, output width, and conflicting bindings. Unsupported combinations
 must be rejected. Key distribution must not select a layout heuristically.
@@ -63,10 +63,12 @@ and conformance vectors in this repository.
 ## Rationale
 
 The serial computation is input interpretation, authentication coordinates,
-layout construction with VC computation, and Root encoding. Positional/Prefix
-describe authentication organization more precisely at the Root boundary.
-Existing Map/List convenience APIs may survive through adapters; dense
-sequence and key-binding constraints still need exact definitions.
+layout construction with VC computation, and Root encoding. Map and List name
+the authentication layouts at the Root boundary. Map routes by coordinate
+prefixes for potentially sparse key spaces; List uses count-defined intervals
+for dense integer positions. These names describe authentication organization
+independently of application containers. The current Object API builds on the
+typed authentication contracts; it does not restore retired semantic adapters.
 
 Keeping CIDv1 avoids replacing the common identifier container throughout
 downstream systems. Bare codec plus multicommitment would require a new Root
@@ -90,8 +92,9 @@ have independent versioning.
 Verification uses the complete caller-selected Root descriptor and query.
 Equal raw commitments are not equal Roots when interpretation differs.
 Profile IDs must not select mutable parameters or fall back to defaults.
-Prefix evidence binds the complete key and target; absence follows the new
-leaf/collision rules. Retaining labels does not itself establish key isolation.
+Map evidence binds the exact original label and target; derived coordinates
+select routing slots. Absence follows the leaf/collision rules. Retaining
+labels does not itself establish key isolation.
 Native and portable verifiers must migrate together. Receipts and candidate
 Roots remain operational outputs, not portable transition proofs.
 
@@ -122,6 +125,9 @@ follows workspace resource limits.
 
 ## History
 
+- 2026-10-26: Adopted Map/List authentication layout names, retaining sparse/dense
+  as coordinate-distribution descriptions. Layout IDs and current encodings
+  are unchanged; historical source APIs remain in Git history.
 - 2026-09-12: Recorded the proposal and requested impact assessment against
   Core `c90b4d35ec95003b14422546b777fbf9ada2b0c7`; linked the separately
   confirmed pre-production `V=0` and explicit production `V=1` gate.

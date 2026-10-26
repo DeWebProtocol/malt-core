@@ -94,9 +94,9 @@ type coordinateChange struct {
 	before, after cid.Cid
 }
 
-// Apply copies only affected authentication paths. Prefix supports insert,
-// replace and delete; Positional supports replacement at existing indices.
-// Append and Truncate explicitly manage Positional length and metadata.
+// Apply copies only affected authentication paths. Map supports insert,
+// replace and delete; List supports replacement at existing indices.
+// Append and Truncate explicitly manage List length and metadata.
 func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	u, ref, err := e.edit(ctx, root, source, out)
 	if err != nil {
@@ -121,17 +121,17 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 		if !change.Before.Defined() && !change.After.Defined() {
 			return cid.Undef, errors.New("empty update")
 		}
-		if u.descriptor.Layout == maltcid.Positional && (!change.Before.Defined() || !change.After.Defined()) {
-			return cid.Undef, errors.New("Positional Apply requires replacement; use Append or Truncate for length changes")
+		if u.descriptor.Layout == maltcid.List && (!change.Before.Defined() || !change.After.Defined()) {
+			return cid.Undef, errors.New("List Apply requires replacement; use Append or Truncate for length changes")
 		}
 		items = append(items, coordinateChange{key: k, label: bytes.Clone(change.Label), before: change.Before, after: change.After})
 	}
 	if len(items) == 0 {
 		return root, nil
 	}
-	if u.descriptor.Layout == maltcid.Prefix {
+	if u.descriptor.Layout == maltcid.Map {
 		sort.Slice(items, func(i, j int) bool { return bytes.Compare(items[i].key.Key[:], items[j].key.Key[:]) < 0 })
-		cells, err := u.prefix(&b, ref, 0, items)
+		cells, err := u.mapNode(&b, ref, 0, items)
 		if err != nil {
 			return cid.Undef, err
 		}
@@ -166,7 +166,7 @@ func expect(actual cid.Cid, item coordinateChange) error {
 	}
 	return nil
 }
-func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []coordinateChange) ([]commitment.Cell, error) {
+func (u *nodeEdit) mapNode(b *builder, ref maltcid.NodeRef, depth int, items []coordinateChange) ([]commitment.Cell, error) {
 	cells, err := u.GetNode(u.ctx, ref)
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 			if err != nil {
 				return nil, err
 			}
-			next, err := u.prefix(b, child, depth+1, group)
+			next, err := u.mapNode(b, child, depth+1, group)
 			if err != nil {
 				return nil, err
 			}
@@ -205,7 +205,7 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 			switch {
 			case count == 0:
 				cells[slot] = nil
-			case count == 1 && only[0] == prefixLeaf:
+			case count == 1 && only[0] == mapLeaf:
 				cells[slot] = only
 			default:
 				child, err = b.commit(next)
@@ -221,7 +221,7 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 		}
 		entries := make(map[[32]byte]binding)
 		if len(old) > 0 {
-			label, target, err := parsePrefix(old)
+			label, target, err := parseMap(old)
 			if err != nil {
 				return nil, err
 			}
@@ -259,9 +259,9 @@ func (u *nodeEdit) prefix(b *builder, ref maltcid.NodeRef, depth int, items []co
 		case 0:
 			cells[slot] = nil
 		case 1:
-			cells[slot] = prefixCell(bindings[0])
+			cells[slot] = mapCell(bindings[0])
 		default:
-			child, err := b.prefix(bindings, depth+1)
+			child, err := b.mapNode(bindings, depth+1)
 			if err != nil {
 				return nil, err
 			}
@@ -292,14 +292,14 @@ func (u *nodeEdit) replace(b *builder, ref maltcid.NodeRef, pos position, offset
 			continue
 		}
 		if pos.height == 0 {
-			target, err := parsePositional(cells[slot])
+			target, err := parseList(cells[slot])
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
 			if err = expect(target, group[0]); err != nil {
 				return maltcid.NodeRef{}, err
 			}
-			cells[slot] = append(commitment.Cell{positionalLeaf}, group[0].after.Bytes()...)
+			cells[slot] = append(commitment.Cell{listLeaf}, group[0].after.Bytes()...)
 		} else {
 			child, err := parseChild(cells[slot], ref)
 			if err != nil {

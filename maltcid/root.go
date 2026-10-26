@@ -13,17 +13,18 @@ import (
 // readiness. It is independent of CIDv1, SDK versions and historical Roots.
 const RootVersion uint8 = 0
 
-// Layout selects how coordinates are organized within one authentication tree.
+// Layout selects the Map or List authentication layout within one tree.
 // Application ArcSet organization (flat or compositional) is not a Root field.
 type Layout uint8
 
 const (
-	// Layout 1 is retired: it authenticated coordinates instead of original
-	// labels. Layout 4 binds canonical label bytes and targets in Prefix leaves.
-	Prefix Layout = 4
-	// Layout 2 is retired. Root-only metadata and full-capacity descendants
-	// have a distinct interpretation while the pre-production Root stays V=0.
-	Positional Layout = 3
+	// Map organizes bindings by coordinate prefixes for general, potentially
+	// sparse key spaces. Leaves bind original label bytes and targets.
+	// Layout 1 is retired: it authenticated coordinates instead of labels.
+	Map Layout = 4
+	// List organizes dense integer positions using authenticated root count
+	// metadata and full-capacity descendants. Layout 2 is retired.
+	List Layout = 3
 )
 
 type ProfileID uint64
@@ -69,7 +70,7 @@ func (d RootDescriptor) Validate() error {
 	if d.Version != RootVersion {
 		return fmt.Errorf("unsupported Root version %d", d.Version)
 	}
-	if d.Layout != Prefix && d.Layout != Positional {
+	if d.Layout != Map && d.Layout != List {
 		return fmt.Errorf("unsupported layout %d", d.Layout)
 	}
 	_, err := Profile(d.Profile)
@@ -170,7 +171,7 @@ type NodeRef struct {
 }
 
 func (r NodeRef) Bytes() ([]byte, error) {
-	if r.Layout != Prefix && r.Layout != Positional {
+	if r.Layout != Map && r.Layout != List {
 		return nil, fmt.Errorf("invalid internal layout")
 	}
 	mc, err := Multicommitment(r.Profile, r.Commitment)

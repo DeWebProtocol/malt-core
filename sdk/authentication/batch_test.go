@@ -15,7 +15,7 @@ import (
 
 func TestBatchVerifiesCandidatesAndBindsExactReceipt(t *testing.T) {
 	e := pathEngine(t)
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	base, err := authentication.Prepare(t.Context(), e, engine.State{Descriptor: d})
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +101,7 @@ func TestBatchVerifiesCandidatesAndBindsExactReceipt(t *testing.T) {
 // real update. Batch and receipt checks must agree with both writer APIs.
 func TestNoOpCandidatesKeepLineageAndMaterialize(t *testing.T) {
 	e := pathEngine(t)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}}
 	initial, err := authentication.Prepare(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)

@@ -210,9 +210,9 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		}
 		delta.Changes = append(delta.Changes, change)
 	}
-	if state.Descriptor.Layout == maltcid.Prefix {
+	if state.Descriptor.Layout == maltcid.Map {
 		if state.PayloadCID.Defined() {
-			return nil, errors.New("Prefix cannot carry sequence metadata")
+			return nil, errors.New("Map cannot carry sequence metadata")
 		}
 		if err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {
 			if _, exists := desired[n.coordinate]; !exists {
@@ -227,7 +227,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		delta.Count = &count
 		for i := uint64(0); i < count; i++ {
 			if _, exists := desired[coordinate.Coordinate{Kind: coordinate.Index, Index: i}]; !exists {
-				return nil, errors.New("Positional inputs must be contiguous")
+				return nil, errors.New("List inputs must be contiguous")
 			}
 		}
 		delta.PayloadCID = &state.PayloadCID

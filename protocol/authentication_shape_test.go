@@ -16,7 +16,7 @@ import (
 )
 
 func TestAuthenticationResultRequiredFieldsAndNulls(t *testing.T) {
-	root, err := maltcid.NewRoot(maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, make([]byte, 32))
+	root, err := maltcid.NewRoot(maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, make([]byte, 32))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestAuthenticationResultRequiredFieldsAndNulls(t *testing.T) {
 }
 
 func TestAuthenticationCandidateNullCellsAndOptionalDefaults(t *testing.T) {
-	descriptor := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}
+	descriptor := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}
 	root, err := maltcid.NewRoot(descriptor, make([]byte, 32))
 	if err != nil {
 		t.Fatal(err)

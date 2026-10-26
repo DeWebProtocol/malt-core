@@ -33,7 +33,7 @@ func TestCandidateRoundTripOpaqueLabelsAndIndependentVerification(t *testing.T) 
 	sum, _ := mh.Sum([]byte("payload"), mh.SHA2_256, -1)
 	target := cid.NewCidV1(cid.Raw, sum)
 	selector := []byte{'a', '/', 0xff}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: selector, Target: target}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: selector, Target: target}}}
 	candidate, err := authentication.Prepare(ctx, e, state)
 	if err != nil {
 		t.Fatal(err)

@@ -10,7 +10,7 @@ Typed authentication now has one coordinate-only tree implementation in
 re-exports the tree's shared result types for its typed API; there is no second
 proof representation or historical-format decoder behind those names.
 
-The tree owns Prefix and Positional construction, canonical cell encoding,
+The tree owns Map and List construction, canonical cell encoding,
 affected-path updates, complete bounded snapshots, and binding/range proofs.
 It consumes narrow node capabilities and installed exact VC profiles. It does
 not interpret labels, payload selectors, application graphs, relation versions,
@@ -35,7 +35,7 @@ both the input index and authentication DAG, and shares unchanged descendants.
 The resulting writer retains no parent writer or obsolete ancestor chain.
 `Writer.Update` scans complete desired inputs and compiles them to the same delta
 path; callers that already know their changes use `Apply` to avoid that scan.
-Positional growth uses `AppendBatch` to commit each changed or new node once
+List growth uses `AppendBatch` to commit each changed or new node once
 for the whole suffix, including growth across multiple tree levels. Mixed
 replacement or measured-tail changes run before that suffix edit.
 
@@ -69,9 +69,9 @@ transition proof, publication receipt, or client trust decision.
 ## Payload queries and removed code
 
 The caller's application schema supplies every typed query step. A rooted
-content query can end with `Sys(Payload)` at the reached Prefix Root. A flat
+content query can end with `Sys(Payload)` at the reached Map Root. A flat
 path binding can point directly to a content/manifest CID. The flat entry Root
-can still expose its own manifest through a system binding. Positional and
+can still expose its own manifest through a system binding. List and
 native-key profiles do not gain system payload support, and the literal label
 `"@payload"` remains distinct from the system selector.
 

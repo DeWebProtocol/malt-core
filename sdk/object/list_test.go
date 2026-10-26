@@ -44,7 +44,7 @@ func TestListReferenceOperations(t *testing.T) {
 		}
 	}
 	if _, err := object.NewList(engineFor(t), object.MapConfig(maltcid.IPA256)); err == nil {
-		t.Fatal("List accepted Prefix")
+		t.Fatal("List accepted Map")
 	}
 }
 

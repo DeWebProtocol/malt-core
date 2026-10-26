@@ -44,7 +44,7 @@ func (w *Writer) Nodes() (materializer.NodeLookup, error) {
 	return w.engine.Tree.Workspace(w.nodes)
 }
 
-// Len is the number of retained original relations (the count for Positional).
+// Len is the number of retained original relations (the count for List).
 func (w *Writer) Len() uint64 {
 	if w == nil || w.bindings == nil {
 		return 0

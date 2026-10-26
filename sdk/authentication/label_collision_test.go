@@ -22,7 +22,7 @@ func TestRetainedWriterRejectsCollidingLabelEvenForNoOp(t *testing.T) {
 	}
 	e := engine.New(profiles)
 	value := cid.MustParse("bafkqaaa")
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	original := engine.Entry{Label: []byte("original"), Target: value}
 	w, err := BuildWriter(t.Context(), e, engine.State{Descriptor: d, Entries: []engine.Entry{original}})
 	if err != nil {

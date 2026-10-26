@@ -51,7 +51,7 @@ func TestCoordinateCollisionRejectsBuildProofsAndWrites(t *testing.T) {
 			base := newTree(t)
 			e := tree.New(base.Profiles, collisionCoordinate)
 			nodes := memory.NewNodes()
-			d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: 240, Profile: maltcid.IPA256}
+			d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: 240, Profile: maltcid.IPA256}
 			a, b := collisionSelector("label-a"), collisionSelector("label-b")
 			value := cid.MustParse("bafkqaaa")
 			state := tree.View{Descriptor: d, Bindings: []tree.CoordinateBinding{{Coordinate: a.Coordinate, Label: a.Label, Target: value}}}
@@ -71,7 +71,7 @@ func TestCoordinateCollisionRejectsBuildProofsAndWrites(t *testing.T) {
 				t.Fatalf("original label proof: valid=%v err=%v", valid, err)
 			}
 			if deep && len(proof.Proof.Nodes) < 2 {
-				t.Fatal("fixture did not exercise an internal Prefix node")
+				t.Fatal("fixture did not exercise an internal Map node")
 			}
 			if result, err := e.Prove(t.Context(), root, b, nodes); !errors.Is(err, tree.ErrCoordinateCollision) || result.Present || result.Target.Defined() || len(result.Proof.Nodes) != 0 {
 				t.Fatalf("collision became a proof: result=%+v err=%v", result, err)
@@ -126,7 +126,7 @@ func TestCoordinateCollisionRejectsBuildProofsAndWrites(t *testing.T) {
 func TestSelectorCannotSubstituteRoutingCoordinate(t *testing.T) {
 	base := newTree(t)
 	e := tree.New(base.Profiles, collisionCoordinate)
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: 240, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: 240, Profile: maltcid.IPA256}
 	q := collisionSelector("label-a")
 	wrong := q
 	wrong.Coordinate.Key[0] = 2
@@ -158,7 +158,7 @@ func TestSelectorCannotSubstituteRoutingCoordinate(t *testing.T) {
 func TestCoordinateCollisionRejectsRecoveryAndImport(t *testing.T) {
 	base := newTree(t)
 	e := tree.New(base.Profiles, collisionCoordinate)
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: 240, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: 240, Profile: maltcid.IPA256}
 	scheme, err := ipa.NewCommitterScheme(ipa.ProfileDirect)
 	if err != nil {
 		t.Fatal(err)
@@ -166,7 +166,7 @@ func TestCoordinateCollisionRejectsRecoveryAndImport(t *testing.T) {
 	cells := make([]commitment.Cell, scheme.MaxValues())
 	value := cid.MustParse("bafkqaaa")
 	for i, label := range []string{"label-a", "label-b"} {
-		cell := binary.AppendUvarint([]byte{maltcid.PrefixLeafCell}, uint64(len(label)))
+		cell := binary.AppendUvarint([]byte{maltcid.MapLeafCell}, uint64(len(label)))
 		cell = append(cell, []byte(label)...)
 		cells[i+1] = append(cell, value.Bytes()...)
 	}

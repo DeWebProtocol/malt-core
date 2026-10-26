@@ -8,8 +8,9 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// Map is a Prefix Object whose byte labels point to other Objects. Labels are
-// opaque, including empty and binary labels; no path splitting is performed.
+// Map is an Object using the Map authentication layout. Its byte labels point
+// to other Objects. Labels are opaque, including empty and binary labels;
+// no path splitting is performed.
 type Map struct {
 	*Base
 	entries map[string]Object
