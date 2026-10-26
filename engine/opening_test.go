@@ -68,7 +68,7 @@ func (s corruptVector) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]comm
 
 func TestEngineVerifiesEachGeneratedOpeningOnce(t *testing.T) {
 	for _, profile := range []maltcid.ProfileID{maltcid.IPA256, maltcid.KZG4096} {
-		for _, layout := range []maltcid.Layout{maltcid.Prefix, maltcid.Positional} {
+		for _, layout := range []maltcid.Layout{maltcid.Map, maltcid.List} {
 			t.Run(fmt.Sprintf("profile-%d/layout-%d", profile, layout), func(t *testing.T) {
 				var scheme commitment.Backend
 				var err error
@@ -90,7 +90,7 @@ func TestEngineVerifiesEachGeneratedOpeningOnce(t *testing.T) {
 				descriptor := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: layout, Profile: profile}
 				query := coordinate.EncodeIndex(0)
 				wantOpenings := 2
-				if layout == maltcid.Prefix {
+				if layout == maltcid.Map {
 					descriptor.DerivationProfile = uint8(derivation.SHA256)
 					query = []byte("entry")
 					wantOpenings = 1

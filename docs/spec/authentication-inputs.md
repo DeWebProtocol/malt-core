@@ -20,8 +20,8 @@ with candidate preparation, materialization and independent verification.
 The engine consumes narrow `materializer.NodeLookup`/`NodeUpdater` capabilities;
 it contains no persistent ArcTable, CAS, HTTP, application path or trust policy.
 
-Prefix accepts SHA256 (AA=4) or Direct (AA=3) 32-byte coordinates;
-Positional uses Direct (AA=3) uint64 coordinates. AA is the Root byte carrying
+Map accepts SHA256 (AA=4) or Direct (AA=3) 32-byte coordinates;
+List uses Direct (AA=3) uint64 coordinates. AA is the Root byte carrying
 the coordinate derivation profile ID. A slash has no special meaning in a
 label; applications supply explicit label traversal steps.
 
@@ -45,8 +45,8 @@ permission to execute it. No fallback derivation or backend inference is used.
 
 | L | Authentication layout | Permitted inputs |
 | --- | --- | --- |
-| 4 | Prefix | Original labels routed by AA-derived 32-byte keys |
-| 3 | Positional | AA=3, unsigned 64-bit indices |
+| 4 | Map | Original labels routed by AA-derived 32-byte keys |
+| 3 | List | AA=3, unsigned 64-bit indices |
 
 | Profile | Algorithm and parameters | Commitment bytes | VC slots |
 | --- | --- | ---: | ---: |
@@ -113,12 +113,26 @@ It does not import the derivation package or interpret application labels.
 
 ## Authentication layout and internal node identity
 
-Prefix and Positional organize coordinate bindings within one authentication
-tree. Flat and compositional ArcSet organization describe how an application
+The **Map authentication layout** (`maltcid.Map`, `L=4`) organizes bindings by
+coordinate prefixes. It is suited to sparse coordinates in a general key space;
+sparsity is an optimization context, not a requirement on every input set.
+The **List authentication layout** (`maltcid.List`, `L=3`) organizes integer
+positions into fixed radix intervals, with geometry determined by authenticated
+count and vector capacity. It is suited to dense position domains. The current
+Core contract requires every position in `[0,count)` to have a binding; it does
+not support holes or non-shifting deletion within that domain.
+
+Map and List are the layout names; **sparse** and **dense** describe their
+intended coordinate distributions. **prefix** describes Map routing, and
+**position** describes List indexing. These descriptions do not introduce
+additional layouts or select a layout automatically. `auth/tree` implements
+both layouts using authentication trees.
+
+Flat and compositional ArcSet organization describe how an application
 groups bindings across Roots. That application choice is not a Root field;
 the same ArcSet may be used in either organization or a mixture of them.
 
-Prefix routes over all 256 key bits (12 bits per KZG level, 8 per IPA level;
+Map routes over all 256 key bits (12 bits per KZG level, 8 per IPA level;
 the final KZG digit is zero-padded). Layout 4 terminal cells contain
 `0x01 || uvarint(label byte length) || original label bytes || targetCID`.
 The length is minimal, the label is opaque (including empty bytes), and the
@@ -133,7 +147,7 @@ Native keys are not rehash inputs. Layout 1 is retired and rejected; Root `V`
 remains zero. Cell encodings are defined in `maltcid/node_cells.go` and
 `auth/tree`; changing them must not silently reuse a descriptor's interpretation.
 
-Positional consumes dense indices `[0,count)` using canonical index labels.
+List consumes dense indices `[0,count)` using canonical index labels.
 Only root slot 0 stores metadata: count and an optional opaque payload CID.
 The root has `slots-1` entry/child slots; descendants use all `slots` positions.
 Count authenticates sequence bounds and determines tree height and occupancy.
@@ -148,7 +162,7 @@ interpreted with its layout and exact VC profile. Application-valued targets
 retain complete Roots/CIDs, including the target Root's AA. Each explicit
 traversal step uses the AA of the Root reached by the preceding verified step.
 
-Equal coordinates and targets do not establish interchangeable Prefix leaves:
+Equal coordinates and targets do not establish interchangeable Map leaves:
 their original labels must also match. In particular, an opaque SHA256 label
 and its Direct key encoding authenticate different leaf bytes. Reuse across
 AA modes requires identical authenticated vectors and valid routing under each
@@ -156,7 +170,7 @@ selected Root; complete Roots remain distinct.
 Caches validate the node identity, full vector and exact profile before reuse.
 `EqualCommitment` does not establish interchangeable Root/query semantics.
 
-## Positional root metadata and geometry
+## List root metadata and geometry
 
 Layout 3 reserves **only root slot 0** for `0x04 || uint64be(count) || payloadCID`.
 The CID is optional: absence ends after the nine-byte tag/count prefix; presence
@@ -196,15 +210,16 @@ byte interval into element indices. Heterogeneous lists need no byte geometry.
 The authenticated view contains original labels, targets and their checked
 routing coordinates. `engine.State` retains application labels for construction;
 applications or Gateway-owned ArcTable records may independently retain the
-same label–target bindings for enumeration and writes. Prefix recovery reads
-labels from authenticated cells; Positional recovery reconstructs canonical
+same label–target bindings for enumeration and writes. Map recovery reads
+labels from authenticated cells; List recovery reconstructs canonical
 index labels. Deltas, tombstones, checkpoints and lineage recovery operate on
 labels. `ValidateState` and `MatchView` compare exact labels, coordinates and
 targets against root-bound materialization. A query never accepts a distinct
 label merely because its coordinate matches. Coordinate collisions are explicit
 errors and do not create collision buckets or overwrite existing bindings.
 
-`PrefixApply` and Positional replacement/append/truncation reuse unchanged
+`Apply` handles Map changes and List replacements; `Append`/`AppendBatch` and
+`Truncate` handle List length changes. These operations reuse unchanged
 subtrees. Updates check expected bindings before exposing a result Root. I/O
 failure may leave unreachable immutable nodes in the caller-owned store.
 Candidate preparation and materialization do not publish or trust a Root and
@@ -266,7 +281,7 @@ reaches them. Core defines no recovery records, durable store or cache policy.
 
 `authentication.NewWriter` imports and verifies a complete candidate once.
 `Writer.Update` returns an independent candidate writer, preserving its base for
-retries and branches. Prefix changes and Positional replacement, append,
+retries and branches. Map changes and List replacement, append,
 truncation and opaque payload changes reuse unchanged authentication paths.
 The exported candidate remains a complete input/node view: this is neither a
 partial update witness nor a stateless transition proof. Complete export still traverses the materialization, but does not repeat
@@ -290,7 +305,7 @@ composes proofs across Roots. These are separate from application flat/rooted
 organization and from Gateway relation persistence.
 
 For a retained writer, `Apply(ctx, Delta)` accepts expected-before label changes.
-Prefix supports insert/replace/delete. Positional changes replace existing
+Map supports insert/replace/delete. List changes replace existing
 positions or supply appended bindings; `Count` controls suffix length and
 `PayloadCID` optionally replaces or clears the application metadata reference. `Update(ctx, State)` compiles complete desired inputs to
 the same path, with an unavoidable input scan.

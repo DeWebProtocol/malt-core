@@ -11,12 +11,12 @@ import (
 	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
-func TestPrefixLeafAuthenticatesOriginalLabel(t *testing.T) {
+func TestMapLeafAuthenticatesOriginalLabel(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
 	label := []byte("original-label-identity")
 	value := target("label-bound-target")
 	state := engine.State{
-		Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256},
+		Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256},
 		Entries:    []engine.Entry{{Label: label, Target: value}},
 	}
 	root, err := e.Build(t.Context(), state, nodes)
@@ -27,7 +27,7 @@ func TestPrefixLeafAuthenticatesOriginalLabel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := binary.AppendUvarint([]byte{maltcid.PrefixLeafCell}, uint64(len(label)))
+	want := binary.AppendUvarint([]byte{maltcid.MapLeafCell}, uint64(len(label)))
 	want = append(want, label...)
 	want = append(want, value.Bytes()...)
 	cell := result.Proof.Nodes[len(result.Proof.Nodes)-1].Cell
@@ -39,11 +39,11 @@ func TestPrefixLeafAuthenticatesOriginalLabel(t *testing.T) {
 	}
 }
 
-func TestPrefixLabelRecoveryPreservesExactBytes(t *testing.T) {
+func TestMapLabelRecoveryPreservesExactBytes(t *testing.T) {
 	for _, profile := range []maltcid.ProfileID{maltcid.IPA256, maltcid.KZG4096} {
 		t.Run(string(rune(profile+'0')), func(t *testing.T) {
 			e, nodes := setup(t, profile)
-			d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile}
+			d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: profile}
 			child, err := e.Build(t.Context(), engine.State{Descriptor: d, Entries: []engine.Entry{{Label: []byte("child"), Target: target("payload")}}}, nodes)
 			if err != nil {
 				t.Fatal(err)

@@ -32,12 +32,12 @@ Verification must not infer or override the backend from the digest length.
 
 Semantic node geometry is locked to the selected backend suite:
 
-| Backend | Physical node slots | Prefix radix bits | Positional root / descendant slots |
+| Backend | Physical node slots | Map radix bits | List root / descendant slots |
 | --- | ---: | ---: | ---: |
 | KZG | 4096 | 12 | 4095 / 4096 |
 | IPA | 256 | 8 | 255 / 256 |
 
-Slot zero is an ordinary Prefix slot. Only the Positional root reserves slot zero for
+Slot zero is an ordinary Map slot. Only the List root reserves slot zero for
 authenticated metadata; descendants use all slots. KZG
 semantic nodes supply all 4096 cells to the primitive commitment; IPA semantic
 nodes supply all 256.
@@ -179,7 +179,7 @@ expected cells are separate verifier inputs.
 
 ## Current semantic binding proof
 
-Both Prefix and Positional evidence serialize `engine.Proof` as JSON:
+Both Map and List evidence serialize `engine.Proof` as JSON:
 
 ```json
 {
@@ -188,18 +188,18 @@ Both Prefix and Positional evidence serialize `engine.Proof` as JSON:
     {
       "cell": "<base64 cell bytes>",
       "proof": "<base64 primitive opening>",
-      "metadata": "<base64 Positional metadata>",
-      "metadata_proof": "<base64 Positional metadata opening>"
+      "metadata": "<base64 List metadata>",
+      "metadata_proof": "<base64 List metadata opening>"
     }
   ]
 }
 ```
 
-Empty byte fields are omitted. Prefix proofs carry only the selected cell and
-opening at each node. Prefix leaves authenticate canonical original label bytes
+Empty byte fields are omitted. Map proofs carry only the selected cell and
+opening at each node. Map leaves authenticate canonical original label bytes
 and target CIDs. A terminal empty cell or a routed leaf for another full coordinate
 proves absence. A distinct label at the same full coordinate is an explicit
-collision error, never a valid membership or absence result. Positional proofs
+collision error, never a valid membership or absence result. List proofs
 open slot-zero metadata only at the root;
 a root-level out-of-range result contains only metadata evidence. All supplied
 nodes must be consumed. Metadata, leaf, and internal child framing follow
@@ -209,7 +209,7 @@ Ordered traversal results and final binding results contain this same typed
 evidence. The verifier derives coordinates from the caller's Root and input;
 it never trusts a proof-supplied key or a historical semantic CID.
 
-## Positional index range proof
+## List index range proof
 
 The range envelope is the JSON projection of `engine.RangeResult`, containing
 `metadata`, `metadata_evidence`, and ordered `segments`. Each evidence value is

@@ -17,7 +17,7 @@ func TestRetainedReadsPreserveIndependentBranches(t *testing.T) {
 	a := cid.MustParse("bafkqaaa")
 	b := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
 	w, err := authentication.BuildWriter(t.Context(), e, engine.State{
-		Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256},
+		Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256},
 		Entries:    []engine.Entry{{Label: []byte("file"), Target: a}, {Label: []byte("unchanged"), Target: a}},
 	})
 	if err != nil {

@@ -9,7 +9,7 @@ when this checkout is part of the combined MALT workspace.
 
 ## Core Boundary
 
-- Keep application labels, coordinates, Prefix/Positional authentication trees,
+- Keep application labels, coordinates, Map/List authentication layouts,
   commitments, explicit traversal, authentication query/candidate/batch/receipt
   contracts, portable verification, and transport-neutral schemas here.
 - Core algorithms may consume narrow capabilities under
@@ -51,7 +51,7 @@ in Git history; do not relabel them or change CIDv1's container version.
   must not import derivation or application label/payload/UnixFS policy.
 - `auth/tree` owns original-label authentication, coordinate routing, immutable
   nodes and updates. It consumes a pure injected coordinate derivation capability;
-  Prefix leaves bind exact label bytes and targets and reject coordinate collisions.
+  Map leaves bind exact label bytes and targets and reject coordinate collisions.
 - `engine` binds derivation profiles, layouts and exact VC profiles to full Roots.
 - `auth/commitment` owns independent Committer, Prover, and Verifier capabilities;
   proof generation uses an explicit existing commitment. `auth/observation` owns

@@ -61,7 +61,7 @@ func TestIndependentAuthenticationCapabilities(t *testing.T) {
 				t.Fatal(err)
 			}
 			query := []byte("a/b")
-			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: id}, Entries: []engine.Entry{{Label: query, Target: target("before")}}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: id}, Entries: []engine.Entry{{Label: query, Target: target("before")}}}
 			nodes := memory.NewNodes()
 			root, err := committer.Build(t.Context(), state, nodes)
 			if err != nil {

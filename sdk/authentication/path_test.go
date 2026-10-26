@@ -31,7 +31,7 @@ func TestPathAbsenceBindsPrefixAndRejectsFailures(t *testing.T) {
 	ctx := context.Background()
 	e := pathEngine(t)
 	nodes := memory.NewNodes()
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	child, err := e.Build(ctx, engine.State{Descriptor: d}, nodes)
 	if err != nil {
 		t.Fatal(err)

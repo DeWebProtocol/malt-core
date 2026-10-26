@@ -16,7 +16,7 @@ import (
 func TestAppendBatchGrowsMultipleLevels(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
 	value := target("batch")
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: value}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: value}}}
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +48,7 @@ func TestAppendBatchGrowsMultipleLevels(t *testing.T) {
 
 func TestAppendBatchRejectsInvalidSuffixWithoutWrites(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: target("before")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: target("before")}}}
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
 		t.Fatal(err)

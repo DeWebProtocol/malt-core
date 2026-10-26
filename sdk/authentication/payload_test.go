@@ -17,7 +17,7 @@ func TestExplicitOpaqueLabelTraversal(t *testing.T) {
 	nodes := memory.NewNodes()
 	manifest := cid.MustParse("bafkqaaa")
 	literal := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
-	descriptor := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
+	descriptor := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}
 	build := func(entries ...engine.Entry) cid.Cid {
 		t.Helper()
 		root, err := e.Build(t.Context(), engine.State{Descriptor: descriptor, Entries: entries}, nodes)
@@ -60,13 +60,13 @@ func TestExplicitOpaqueLabelTraversal(t *testing.T) {
 			}
 		})
 	}
-	// Positional roots do not acquire payload bindings during composition.
-	positional, err := e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}, nodes)
+	// List roots do not acquire payload bindings during composition.
+	list, err := e.Build(t.Context(), engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: positional.String(), Operation: "resolve", Steps: [][]byte{payload}}
+	q := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: list.String(), Operation: "resolve", Steps: [][]byte{payload}}
 	if _, err := authentication.Execute(t.Context(), e, q, nodes); err == nil {
-		t.Fatal("Positional accepted malformed Direct label")
+		t.Fatal("List accepted malformed Direct label")
 	}
 }

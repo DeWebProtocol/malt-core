@@ -14,7 +14,7 @@ assignees: ""
 
 ## Affected area
 
-- [ ] typed input or Prefix/Positional semantics
+- [ ] typed input or Map/List authentication layout
 - [ ] ProofList or verification
 - [ ] commitment backend
 - [ ] authentication query/candidate/batch contract or schema

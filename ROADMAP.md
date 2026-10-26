@@ -1,7 +1,7 @@
 # MALT Core roadmap
 
 The current source provides one typed authentication chain: deterministic input
-rules, original-label Prefix authentication with coordinate routing, Positional
+rules, original-label Map authentication with coordinate routing, List
 index authentication, exact KZG/IPA profiles,
 explicit graph traversal, independent local verification, immutable writers,
 and ordered candidate batches with exact materialization receipts.
@@ -12,7 +12,7 @@ Further protocol work requires explicit design and conformance review:
    establish such a proof.
 2. Partial authenticated update views; current cold import/export remains a
    complete candidate boundary.
-3. Variable-size Positional range evidence and native aggregated openings.
+3. Variable-size List range evidence and native aggregated openings.
 4. Independent language implementations checked against exact frozen corpora.
 
 Core owns none of the service, persistence, application, or trust policies in

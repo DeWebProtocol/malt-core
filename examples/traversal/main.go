@@ -35,7 +35,7 @@ func run() error {
 	}
 	prover := engine.New(profiles)
 	descriptor := maltcid.RootDescriptor{
-		Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256,
+		Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256,
 	}
 	target, err := (cid.Prefix{Version: 1, Codec: cid.Raw, MhType: mh.SHA2_256, MhLength: -1}).Sum([]byte("Report content"))
 	if err != nil {

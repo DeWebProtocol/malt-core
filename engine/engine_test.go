@@ -45,7 +45,7 @@ func TestOriginalLabelIdentityAndProofs(t *testing.T) {
 		t.Run(string(rune(id+'0')), func(t *testing.T) {
 			e, nodes := setup(t, id)
 			ctx := context.Background()
-			d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: id}
+			d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: id}
 			state := engine.State{Descriptor: d, Entries: []engine.Entry{{Label: []byte("a/b"), Target: target("one")}, {Label: []byte("@payload"), Target: target("payload")}}}
 			root, err := e.Build(ctx, state, nodes)
 			if err != nil {
@@ -110,10 +110,10 @@ func TestOriginalLabelIdentityAndProofs(t *testing.T) {
 	}
 }
 
-func TestNativePrefixDepthAndMixedRootTraversal(t *testing.T) {
+func TestNativeMapDepthAndMixedRootTraversal(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
 	ctx := context.Background()
-	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Prefix, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Map, Profile: maltcid.IPA256}
 	a := [32]byte{}
 	b := a
 	b[31] = 1
@@ -130,7 +130,7 @@ func TestNativePrefixDepthAndMixedRootTraversal(t *testing.T) {
 		t.Fatal("native key was hashed or truncated")
 	}
 	if valid, err := e.Verify(root, coordinate.EncodeKey(b), result); err != nil || !valid {
-		t.Fatal("deep prefix proof", err)
+		t.Fatal("deep Map proof", err)
 	}
 	parent := engine.State{Descriptor: d, Entries: []engine.Entry{{Label: []byte("a/b"), Target: root}}}
 	parent.Descriptor.DerivationProfile = uint8(derivation.SHA256)
@@ -149,10 +149,10 @@ func TestNativePrefixDepthAndMixedRootTraversal(t *testing.T) {
 	}
 }
 
-func TestPositionalMetadataAndOpaqueDirectLabels(t *testing.T) {
+func TestListMetadataAndOpaqueDirectLabels(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
 	ctx := context.Background()
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, PayloadCID: target("metadata")}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, PayloadCID: target("metadata")}
 	for i := 0; i < 256; i++ {
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target("chunk")})
 	}
@@ -176,6 +176,6 @@ func TestPositionalMetadataAndOpaqueDirectLabels(t *testing.T) {
 	}
 	state.Entries[0].Label = []byte("@payload")
 	if _, err := e.Build(ctx, state, nodes); err == nil {
-		t.Fatal("Positional system binding committed")
+		t.Fatal("List system binding committed")
 	}
 }

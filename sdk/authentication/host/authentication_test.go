@@ -17,7 +17,7 @@ func TestTypedWriterUpdatesCompleteCandidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.KZG4096}, Entries: []engine.Entry{{Label: []byte("key"), Target: cid.MustParse("bafkqaaa")}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.KZG4096}, Entries: []engine.Entry{{Label: []byte("key"), Target: cid.MustParse("bafkqaaa")}}}
 	encoded, _ := json.Marshal(state)
 	base, err := c.PrepareAuthentication(context.Background(), encoded)
 	if err != nil {

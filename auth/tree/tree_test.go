@@ -36,7 +36,7 @@ func TestTreeConsumesInjectedDerivationWithoutInstallingProfiles(t *testing.T) {
 	nodes := memory.NewNodes()
 	target := cid.MustParse("bafkqaaa")
 	// The tree consumes a pure capability; the outer engine owns profile dispatch.
-	d := maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: 240, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: 240, Profile: maltcid.IPA256}
 	k := coordinate.Coordinate{Kind: coordinate.Key, Key: [32]byte{1}}
 	label := coordinate.EncodeKey(k.Key)
 	query := tree.Selector{Coordinate: k, Label: label}
@@ -80,7 +80,7 @@ func (s rewritingSource) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]co
 func TestMaterializerCannotRewriteSelectedCommitment(t *testing.T) {
 	e := newTree(t)
 	nodes := memory.NewNodes()
-	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}
+	d := maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}
 	state := tree.View{Descriptor: d, Bindings: []tree.CoordinateBinding{{Coordinate: coordinate.At(0), Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 	root, err := e.Commit(t.Context(), state, nodes)
 	if err != nil {
@@ -114,7 +114,7 @@ func (s forgedWorkspace) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]co
 	if err != nil {
 		return nil, err
 	}
-	cells[1] = append(commitment.Cell{maltcid.PositionalLeafCell}, s.target.Bytes()...)
+	cells[1] = append(commitment.Cell{maltcid.ListLeafCell}, s.target.Bytes()...)
 	return cells, nil
 }
 func TestWrappingOwnedMaterializationDoesNotGrantVerificationBypass(t *testing.T) {
@@ -122,7 +122,7 @@ func TestWrappingOwnedMaterializationDoesNotGrantVerificationBypass(t *testing.T
 	nodes := memory.NewNodes()
 	original := cid.MustParse("bafkqaaa")
 	forged := cid.MustParse("bafkreigh2akiscaildcw4535x7k5vfhq56bqddhziq3p4mwfmlz4vfu2ta")
-	root, err := e.Commit(t.Context(), tree.View{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}, Bindings: []tree.CoordinateBinding{{Coordinate: coordinate.At(0), Label: coordinate.EncodeIndex(0), Target: original}}}, nodes)
+	root, err := e.Commit(t.Context(), tree.View{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}, Bindings: []tree.CoordinateBinding{{Coordinate: coordinate.At(0), Label: coordinate.EncodeIndex(0), Target: original}}}, nodes)
 	if err != nil {
 		t.Fatal(err)
 	}

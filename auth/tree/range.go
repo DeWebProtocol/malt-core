@@ -32,8 +32,8 @@ func (e *Engine) readMetadata(ctx context.Context, root cid.Cid, work *proofWork
 	if err != nil {
 		return Metadata{}, Result{}, err
 	}
-	if d.Layout != maltcid.Positional {
-		return Metadata{}, Result{}, errors.New("metadata requires Positional")
+	if d.Layout != maltcid.List {
+		return Metadata{}, Result{}, errors.New("metadata requires List")
 	}
 	result, err := e.prove(ctx, root, indexSelector(math.MaxUint64), work)
 	if err != nil {
@@ -86,8 +86,8 @@ func (e *Engine) VerifyRange(root cid.Cid, start uint64, end *uint64, result Ran
 	if err != nil {
 		return false, err
 	}
-	if d.Layout != maltcid.Positional {
-		return false, errors.New("range requires Positional")
+	if d.Layout != maltcid.List {
+		return false, errors.New("range requires List")
 	}
 	valid, err := e.Verify(root, indexSelector(math.MaxUint64), result.MetadataEvidence)
 	if err != nil || !valid {

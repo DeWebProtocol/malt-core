@@ -13,14 +13,14 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// Snapshot reconstructs original Prefix labels and their checked coordinates.
-// Positional labels are reconstructed from canonical index bytes. Every vector
-// is checked against its ref, and Prefix labels must follow their routing paths.
+// Snapshot reconstructs original Map labels and their checked coordinates.
+// List labels are reconstructed from canonical index bytes. Every vector
+// is checked against its ref, and Map labels must follow their routing paths.
 func (e *Engine) Snapshot(ctx context.Context, root cid.Cid, source materializer.NodeLookup) (View, error) {
 	return e.SnapshotBounded(ctx, root, source, ^uint64(0))
 }
 
-// SnapshotBounded limits logical expansion, including shared Positional
+// SnapshotBounded limits logical expansion, including shared List
 // subtrees. A small materialization must not expand into an enormous view.
 func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source materializer.NodeLookup, maxBindings uint64) (View, error) {
 	ref, d, err := maltcid.RootNode(root)
@@ -70,7 +70,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 		cells := physical.cells
 		var pos position
 		start := 0
-		if d.Layout == maltcid.Positional {
+		if d.Layout == maltcid.List {
 			if depth == 0 {
 				meta, err := parseMetadata(cells[0])
 				if err != nil {
@@ -92,15 +92,15 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 		before := len(view.Bindings)
 		for slot := start; slot < len(cells); slot++ {
 			cell := cells[slot]
-			if d.Layout == maltcid.Positional {
+			if d.Layout == maltcid.List {
 				if slot-start >= pos.used(p.Slots) {
 					continue
 				}
 				if len(cell) == 0 {
-					return errors.New("hole in Positional state")
+					return errors.New("hole in List state")
 				}
 				if pos.height == 0 {
-					target, err := parsePositional(cell)
+					target, err := parseList(cell)
 					if err != nil {
 						return err
 					}
@@ -120,8 +120,8 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 				if len(cell) == 0 {
 					continue
 				}
-				if cell[0] == prefixLeaf {
-					label, target, err := parsePrefix(cell)
+				if cell[0] == mapLeaf {
+					label, target, err := parseMap(cell)
 					if err != nil {
 						return err
 					}
@@ -159,13 +159,13 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 						return err
 					}
 					if len(view.Bindings)-old < 2 {
-						return errors.New("noncanonical uncollapsed Prefix node")
+						return errors.New("noncanonical uncollapsed Map node")
 					}
 				}
 			}
 		}
-		if d.Layout == maltcid.Positional && uint64(len(view.Bindings)-before) != pos.count {
-			return errors.New("Positional subtree count mismatch")
+		if d.Layout == maltcid.List && uint64(len(view.Bindings)-before) != pos.count {
+			return errors.New("List subtree count mismatch")
 		}
 		return nil
 	}

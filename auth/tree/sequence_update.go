@@ -12,8 +12,8 @@ import (
 )
 
 func (u *nodeEdit) sequence(ref maltcid.NodeRef) ([]commitment.Cell, Metadata, error) {
-	if u.descriptor.Layout != maltcid.Positional {
-		return nil, Metadata{}, errors.New("sequence operation requires Positional")
+	if u.descriptor.Layout != maltcid.List {
+		return nil, Metadata{}, errors.New("sequence operation requires List")
 	}
 	cells, err := u.GetNode(u.ctx, ref)
 	if err != nil {
@@ -74,7 +74,7 @@ func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next positio
 		return ref, nil
 	}
 	if old.count == 0 {
-		return b.positionalNode(items, next, meta)
+		return b.listNode(items, next, meta)
 	}
 	cells := make([]commitment.Cell, u.profile.Slots)
 	var previous []commitment.Cell
@@ -95,7 +95,7 @@ func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next positio
 	}
 	if next.height == 0 {
 		for i, item := range items {
-			cells[next.base()+int(old.count)+i] = append(commitment.Cell{positionalLeaf}, item.target.Bytes()...)
+			cells[next.base()+int(old.count)+i] = append(commitment.Cell{listLeaf}, item.target.Bytes()...)
 		}
 		return b.commit(cells)
 	}
@@ -104,7 +104,7 @@ func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next positio
 		var child maltcid.NodeRef
 		var err error
 		if start >= old.count {
-			child, err = b.positionalNode(items[:childPos.count], childPos, Metadata{})
+			child, err = b.listNode(items[:childPos.count], childPos, Metadata{})
 			items = items[childPos.count:]
 		} else {
 			oldChild := old
@@ -153,7 +153,7 @@ func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, sourc
 	b := u.builder
 	b.out = u
 	if count == 0 {
-		ref, err = b.positional(nil, meta)
+		ref, err = b.list(nil, meta)
 	} else {
 		for old.height > next.height {
 			cells, loadErr := u.GetNode(ctx, ref)

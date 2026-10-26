@@ -1,5 +1,5 @@
-// Package tree implements canonical authentication trees for one ArcSet.
-// Coordinates select authenticated slots; Prefix leaves bind original label
+// Package tree implements the Map and List authentication layouts for one ArcSet.
+// Coordinates select authenticated slots; Map leaves bind original label
 // bytes and targets. Coordinate derivation is an injected pure capability;
 // application interpretation, graph traversal and persistence belong to callers.
 package tree
@@ -141,7 +141,7 @@ func (e *Engine) CheckDescriptor(d maltcid.RootDescriptor) error {
 	return err
 }
 func checkCoordinate(d maltcid.RootDescriptor, k coordinate.Coordinate) (coordinate.Coordinate, error) {
-	if d.Layout == maltcid.Prefix && (k.Kind != coordinate.Key || k.Index != 0) || d.Layout == maltcid.Positional && (k.Kind != coordinate.Index || k.Key != ([32]byte{})) {
+	if d.Layout == maltcid.Map && (k.Kind != coordinate.Key || k.Index != 0) || d.Layout == maltcid.List && (k.Kind != coordinate.Index || k.Key != ([32]byte{})) {
 		return coordinate.Coordinate{}, errors.New("invalid authentication coordinate")
 	}
 	return k, nil
@@ -189,9 +189,9 @@ func (e *Engine) Commit(ctx context.Context, state View, out materializer.NodeUp
 	}
 	build := builder{registry: e.Profiles, ctx: ctx, descriptor: state.Descriptor, profile: p, scheme: committer, out: out}
 	var ref maltcid.NodeRef
-	if state.Descriptor.Layout == maltcid.Prefix {
+	if state.Descriptor.Layout == maltcid.Map {
 		if state.PayloadCID.Defined() {
-			return cid.Undef, errors.New("Prefix cannot carry sequence metadata")
+			return cid.Undef, errors.New("Map cannot carry sequence metadata")
 		}
 		sort.Slice(items, func(i, j int) bool { return bytes.Compare(items[i].coordinate.Key[:], items[j].coordinate.Key[:]) < 0 })
 		for i := 1; i < len(items); i++ {
@@ -202,16 +202,16 @@ func (e *Engine) Commit(ctx context.Context, state View, out materializer.NodeUp
 				return cid.Undef, errors.New("duplicate authentication label")
 			}
 		}
-		ref, err = build.prefix(items, 0)
+		ref, err = build.mapNode(items, 0)
 	} else {
 		sort.Slice(items, func(i, j int) bool { return items[i].coordinate.Index < items[j].coordinate.Index })
 		for i, item := range items {
 			if item.coordinate.Index != uint64(i) {
-				return cid.Undef, errors.New("Positional indices must be dense and unique")
+				return cid.Undef, errors.New("List indices must be dense and unique")
 			}
 		}
 		meta := Metadata{Count: uint64(len(items)), PayloadCID: state.PayloadCID}
-		ref, err = build.positional(items, meta)
+		ref, err = build.list(items, meta)
 	}
 	if err != nil {
 		return cid.Undef, err
@@ -251,10 +251,10 @@ func (b *builder) commit(cells []commitment.Cell) (maltcid.NodeRef, error) {
 }
 
 const (
-	prefixLeaf     byte = maltcid.PrefixLeafCell
-	childNode      byte = maltcid.ChildNodeCell
-	positionalLeaf byte = maltcid.PositionalLeafCell
-	metadataCell   byte = maltcid.MetadataCell
+	mapLeaf      byte = maltcid.MapLeafCell
+	childNode    byte = maltcid.ChildNodeCell
+	listLeaf     byte = maltcid.ListLeafCell
+	metadataCell byte = maltcid.MetadataCell
 )
 
 func childCell(ref maltcid.NodeRef) (commitment.Cell, error) {
@@ -274,18 +274,18 @@ func parseChild(cell commitment.Cell, expected maltcid.NodeRef) (maltcid.NodeRef
 	}
 	return ref, nil
 }
-func prefixCell(item binding) commitment.Cell {
-	cell := binary.AppendUvarint(commitment.Cell{prefixLeaf}, uint64(len(item.label)))
+func mapCell(item binding) commitment.Cell {
+	cell := binary.AppendUvarint(commitment.Cell{mapLeaf}, uint64(len(item.label)))
 	cell = append(cell, item.label...)
 	return append(cell, item.target.Bytes()...)
 }
-func parsePrefix(cell commitment.Cell) ([]byte, cid.Cid, error) {
-	if len(cell) < 3 || cell[0] != prefixLeaf {
-		return nil, cid.Undef, errors.New("invalid Prefix leaf")
+func parseMap(cell commitment.Cell) ([]byte, cid.Cid, error) {
+	if len(cell) < 3 || cell[0] != mapLeaf {
+		return nil, cid.Undef, errors.New("invalid Map leaf")
 	}
 	size, n := binary.Uvarint(cell[1:])
 	if n <= 0 || n > 9 || len(binary.AppendUvarint(nil, size)) != n || size >= uint64(len(cell)-1-n) {
-		return nil, cid.Undef, errors.New("invalid or noncanonical Prefix label length")
+		return nil, cid.Undef, errors.New("invalid or noncanonical Map label length")
 	}
 	end := 1 + n + int(size)
 	label := append([]byte{}, cell[1+n:end]...)
@@ -304,7 +304,7 @@ func digit(key [32]byte, depth, slots int) (int, error) {
 		bits++
 	}
 	if slots < 2 || 1<<bits != slots || depth < 0 || depth*bits >= 256 {
-		return 0, errors.New("invalid Prefix geometry or depth")
+		return 0, errors.New("invalid Map geometry or depth")
 	}
 	value := 0
 	for i := 0; i < bits; i++ {
@@ -316,7 +316,7 @@ func digit(key [32]byte, depth, slots int) (int, error) {
 	}
 	return value, nil
 }
-func (b *builder) prefix(items []binding, depth int) (maltcid.NodeRef, error) {
+func (b *builder) mapNode(items []binding, depth int) (maltcid.NodeRef, error) {
 	cells := make([]commitment.Cell, b.profile.Slots)
 	groups := make(map[int][]binding)
 	for _, item := range items {
@@ -330,9 +330,9 @@ func (b *builder) prefix(items []binding, depth int) (maltcid.NodeRef, error) {
 	for i := range cells {
 		group := groups[i]
 		if len(group) == 1 {
-			cells[i] = prefixCell(group[0])
+			cells[i] = mapCell(group[0])
 		} else if len(group) > 1 {
-			ref, err := b.prefix(group, depth+1)
+			ref, err := b.mapNode(group, depth+1)
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}

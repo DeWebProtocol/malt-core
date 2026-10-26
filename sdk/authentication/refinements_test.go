@@ -58,7 +58,7 @@ func candidateEngine(t *testing.T, profile maltcid.ProfileID) (*engine.Engine, *
 func TestExportOwnsRetainedInputs(t *testing.T) {
 	e := pathEngine(t)
 	target := cid.MustParse("bafkqaaa")
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("entry"), Target: target}}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256}, Entries: []engine.Entry{{Label: []byte("entry"), Target: target}}}
 	nodes := memory.NewNodes()
 	root, err := e.Build(t.Context(), state, nodes)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestExportOwnsRetainedInputs(t *testing.T) {
 
 func TestCandidateVerifiesSharedNodesOnce(t *testing.T) {
 	e, work := candidateEngine(t, maltcid.IPA256)
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}}
 	for i := uint64(0); i < 1024; i++ {
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: cid.MustParse("bafkqaaa")})
 	}
@@ -119,7 +119,7 @@ func TestBulkAppendCommitsEachChangedNodeOnce(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("%d/%d-%d", tc.profile, tc.before, tc.after), func(t *testing.T) {
 			e, work := candidateEngine(t, tc.profile)
-			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: tc.profile}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: tc.profile}}
 			target := cid.MustParse("bafkqaaa")
 			for i := 0; i < tc.before; i++ {
 				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target})
@@ -163,7 +163,7 @@ func TestBulkAppendCommitsEachChangedNodeOnce(t *testing.T) {
 func TestPayloadDeltaPreservesClearsAndDoesNotConsumeAnIndex(t *testing.T) {
 	e, _ := candidateEngine(t, maltcid.IPA256)
 	payload := cid.MustParse("bafkqaaa")
-	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256}, PayloadCID: payload}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.List, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256}, PayloadCID: payload}
 	base, err := authentication.BuildWriter(t.Context(), e, state)
 	if err != nil {
 		t.Fatal(err)

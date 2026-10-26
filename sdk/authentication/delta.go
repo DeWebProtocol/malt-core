@@ -13,7 +13,7 @@ import (
 )
 
 // Delta changes typed relations in an already verified retained ArcSet. Count
-// appends/truncates a Positional suffix; appended positions require bindings.
+// appends/truncates a List suffix; appended positions require bindings.
 // PayloadCID changes only the opaque root payload: nil preserves it and a
 // pointer to cid.Undef removes it. This is not a stateless update witness.
 type Delta struct {
@@ -37,21 +37,21 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 		oldCount = w.bindings.size
 	}
 	count := oldCount
-	positional := meta.Descriptor.Layout == maltcid.Positional
-	if !positional && (delta.Count != nil || delta.PayloadCID != nil) {
-		return nil, errors.New("Prefix delta cannot carry sequence metadata")
+	list := meta.Descriptor.Layout == maltcid.List
+	if !list && (delta.Count != nil || delta.PayloadCID != nil) {
+		return nil, errors.New("Map delta cannot carry sequence metadata")
 	}
-	if positional && delta.Count != nil {
+	if list && delta.Count != nil {
 		count = *delta.Count
 	}
-	if positional && count > oldCount && count-oldCount > uint64(len(delta.Changes)) {
+	if list && count > oldCount && count-oldCount > uint64(len(delta.Changes)) {
 		return nil, errors.New("appended positions require complete bindings")
 	}
-	if positional && delta.PayloadCID != nil {
+	if list && delta.PayloadCID != nil {
 		meta.PayloadCID = *delta.PayloadCID
 	}
 	bindings := w.bindings
-	if positional && count < oldCount {
+	if list && count < oldCount {
 		bindings = bindingBefore(bindings, bindingKey(coordinate.At(count)))
 	}
 	seen := make(map[coordinate.Coordinate][]byte, len(delta.Changes))
@@ -83,25 +83,25 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 		if old == nil && change.Before.Defined() || old != nil && !old.entry.Target.Equals(change.Before) {
 			return nil, errors.New("old target does not match retained state")
 		}
-		if positional && (!change.After.Defined() || c.Index >= count) {
-			return nil, errors.New("Positional changes require targets within the new count; use Count to truncate")
+		if list && (!change.After.Defined() || c.Index >= count) {
+			return nil, errors.New("List changes require targets within the new count; use Count to truncate")
 		}
 		if change.After.Defined() {
 			bindings = bindingSet(bindings, c, engine.Entry{Label: change.Label, Target: change.After})
 		} else {
 			bindings = bindingDelete(bindings, key)
 		}
-		if (!positional || c.Index < oldCount) && !change.Before.Equals(change.After) {
+		if (!list || c.Index < oldCount) && !change.Before.Equals(change.After) {
 			replacements = append(replacements, change)
 		}
 	}
-	if positional {
+	if list {
 		var size uint64
 		if bindings != nil {
 			size = bindings.size
 		}
 		if size != count {
-			return nil, errors.New("Positional delta leaves missing positions")
+			return nil, errors.New("List delta leaves missing positions")
 		}
 	}
 	nodes, err := w.engine.Tree.Workspace(w.nodes)
@@ -112,10 +112,10 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if positional && count < oldCount {
+	if list && count < oldCount {
 		root, err = w.engine.Truncate(ctx, root, count, nodes, nodes)
 	}
-	if err == nil && positional && count > oldCount {
+	if err == nil && list && count > oldCount {
 		targets := make([]cid.Cid, 0, count-oldCount)
 		for i := oldCount; i < count; i++ {
 			if err := ctx.Err(); err != nil {
@@ -131,7 +131,7 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 			root, _, err = w.engine.AppendBatch(ctx, root, targets, nodes, nodes)
 		}
 	}
-	if err == nil && positional && !meta.PayloadCID.Equals(w.metadata.PayloadCID) {
+	if err == nil && list && !meta.PayloadCID.Equals(w.metadata.PayloadCID) {
 		root, err = w.engine.SetPayload(ctx, root, meta.PayloadCID, nodes, nodes)
 	}
 	if err != nil {

@@ -10,7 +10,7 @@ does not use the Merkle-DAG object chain as the application proof path.
 | --- | --- | --- |
 | Authentication granularity | Parent/child links committed at block boundaries | Typed arcs committed independently from payload blocks |
 | Payload storage | Immutable content-addressed objects | Ordinary immutable CAS payloads |
-| Relationship authentication | Links embedded in parent object content | Typed bindings under Prefix/Positional Roots |
+| Relationship authentication | Links embedded in parent object content | Typed bindings under Map/List Roots |
 | Read shape | Traverse linked objects from a root CID | Query `trusted root + typed arc`; application models may expose paths |
 | Proof material | Traversal objects and sibling or linked evidence | Dedicated typed authentication evidence |
 | Trusted components | Traversed content-addressed object chain | Portable auth kernel; indexes and gateways remain untrusted |

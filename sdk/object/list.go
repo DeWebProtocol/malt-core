@@ -11,9 +11,10 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// List is a Positional Object with dense, zero-based references. Removing an
-// item shifts its successors down by one; replacing an item preserves its index.
-// Optional payload content is bound in the Positional root metadata.
+// List is an Object using the List authentication layout with dense, zero-based
+// references. Removing an item shifts its successors down by one; replacing
+// an item preserves its index.
+// Optional payload content is bound in the List root metadata.
 type List struct {
 	authenticated
 	items   []Object
@@ -21,7 +22,7 @@ type List struct {
 }
 
 func NewList(e *engine.Engine, config CommitConfig) (*List, error) {
-	a, err := newAuthenticated(e, config, maltcid.Positional)
+	a, err := newAuthenticated(e, config, maltcid.List)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (l *List) Remove(index int) error {
 
 func (l *List) Commit(ctx context.Context) (cid.Cid, error) {
 	return withCommit(ctx, l, func(ctx context.Context) (*snapshot, error) {
-		if err := checkConfig(l.engine, l.Config(), maltcid.Positional); err != nil {
+		if err := checkConfig(l.engine, l.Config(), maltcid.List); err != nil {
 			return nil, err
 		}
 		entries := make([]engine.Entry, len(l.items))

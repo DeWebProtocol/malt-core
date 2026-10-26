@@ -46,7 +46,7 @@ func TestValueBindsProfileAndDetachesBytes(t *testing.T) {
 		if _, err := commitment.NewValue(profile, raw[:len(raw)-1]); err == nil {
 			t.Fatal("accepted the wrong commitment width")
 		}
-		root, err := maltcid.NewRoot(maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, again)
+		root, err := maltcid.NewRoot(maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, again)
 		if err != nil {
 			t.Fatal(err)
 		}

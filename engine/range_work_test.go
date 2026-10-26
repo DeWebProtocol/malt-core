@@ -73,7 +73,7 @@ func TestRangeReusesVerifiedNodeWork(t *testing.T) {
 			}
 			e := engine.New(profiles)
 			store := memory.NewNodes()
-			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: tc.profile}}
+			state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: tc.profile}}
 			for i := uint64(0); i < tc.count; i++ {
 				state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(i), Target: target(fmt.Sprint(i))})
 			}

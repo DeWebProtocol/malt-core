@@ -49,7 +49,7 @@ func GenerateAuthentication() ([]byte, error) {
 		}
 		e := engine.New(profiles)
 		nodes := memory.NewNodes()
-		state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, Entries: []engine.Entry{{Label: []byte("a/b"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte("@payload"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte{}, Target: cid.MustParse("bafkqaaa")}}}
+		state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: profile}, Entries: []engine.Entry{{Label: []byte("a/b"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte("@payload"), Target: cid.MustParse("bafkqaaa")}, {Label: []byte{}, Target: cid.MustParse("bafkqaaa")}}}
 		root, err := e.Build(ctx, state, nodes)
 		if err != nil {
 			return nil, err
@@ -128,7 +128,7 @@ func GenerateAuthentication() ([]byte, error) {
 		if err := add("native-key", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: nativeRoot.String(), Steps: [][]byte{}, Operation: "binding", Label: &key}); err != nil {
 			return nil, err
 		}
-		sequence := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: profile}, PayloadCID: cid.MustParse("bafkqaaa"), Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
+		sequence := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: profile}, PayloadCID: cid.MustParse("bafkqaaa"), Entries: []engine.Entry{{Label: coordinate.EncodeIndex(0), Target: cid.MustParse("bafkqaaa")}}}
 		listRoot, err := e.Build(ctx, sequence, nodes)
 		if err != nil {
 			return nil, err

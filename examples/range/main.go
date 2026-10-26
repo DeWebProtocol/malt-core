@@ -42,7 +42,7 @@ func run() error {
 	payloads := make(map[string][]byte)
 	state := engine.State{
 		Descriptor: maltcid.RootDescriptor{
-			Layout: maltcid.Positional, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256,
+			Layout: maltcid.List, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256,
 		},
 	}
 	for index, chunk := range chunks {

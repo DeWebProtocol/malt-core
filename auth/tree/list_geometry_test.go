@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestPositionalGeometryUsesFullDescendants(t *testing.T) {
+func TestListGeometryUsesFullDescendants(t *testing.T) {
 	for _, c := range []int{256, 4096} {
 		counts := []uint64{0, 1, uint64(c - 1), uint64(c), uint64(c + 1), math.MaxUint64}
 		limit := new(big.Int).SetUint64(uint64(c - 1))

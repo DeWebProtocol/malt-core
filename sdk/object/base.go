@@ -38,7 +38,7 @@ func checkConfig(e *engine.Engine, config CommitConfig, layout maltcid.Layout) e
 
 func (a *authenticated) commit(ctx context.Context, self Object, config CommitConfig, entries []engine.Entry, children []*snapshot) (*snapshot, error) {
 	state := engine.State{Descriptor: config.Authentication, Entries: entries}
-	if config.Authentication.Layout == maltcid.Positional {
+	if config.Authentication.Layout == maltcid.List {
 		state.PayloadCID = self.Payload()
 	}
 	var w *authentication.Writer
@@ -62,7 +62,7 @@ func (a *authenticated) retained() (*authentication.Writer, error) {
 }
 
 // Base supplies configuration, optional payload and retained authentication
-// state for Prefix objects. Embed it in a struct and implement Commit by
+// state for Map objects. Embed it in a struct and implement Commit by
 // calling Base.CommitTagged(ctx, self); embedding alone cannot reflect fields
 // of the outer Go struct.
 type Base struct {
@@ -71,7 +71,7 @@ type Base struct {
 }
 
 func NewBase(e *engine.Engine, config CommitConfig) (*Base, error) {
-	a, err := newAuthenticated(e, config, maltcid.Prefix)
+	a, err := newAuthenticated(e, config, maltcid.Map)
 	if err != nil {
 		return nil, err
 	}
@@ -99,13 +99,13 @@ func (b *Base) Delta(ctx context.Context) (Delta, error) { return b.delta(ctx) }
 // and their storage stay with the caller.
 func (b *Base) SetPayload(payload cid.Cid) { b.payload = payload }
 
-// PayloadLabel is this SDK's reserved payload label for Prefix objects. With
+// PayloadLabel is this SDK's reserved payload label for Map objects. With
 // SHA256 derivation it is @payload. With Direct derivation it is the canonical
 // SHA256-derived coordinate of @payload, used directly as a 32-byte label.
 // This convention belongs to the object layer; auth assigns it no special meaning.
 func PayloadLabel(config CommitConfig) ([]byte, error) {
-	if config.Content != (cid.Prefix{}) || config.Authentication.Layout != maltcid.Prefix {
-		return nil, errors.New("payload label requires a Prefix object")
+	if config.Content != (cid.Prefix{}) || config.Authentication.Layout != maltcid.Map {
+		return nil, errors.New("payload label requires a Map object")
 	}
 	switch derivation.ProfileID(config.Authentication.DerivationProfile) {
 	case derivation.SHA256:
@@ -135,7 +135,7 @@ func checkLabel(config CommitConfig, label []byte) error {
 		return err
 	}
 	if k.Kind != coordinate.Key {
-		return errors.New("map label must derive a Prefix coordinate")
+		return errors.New("map label must derive a Map coordinate")
 	}
 	reserved, err := PayloadLabel(config)
 	if err != nil {
@@ -152,7 +152,7 @@ func (b *Base) commitReferences(ctx context.Context, self Object, refs []referen
 		return nil, errors.New("object Base is nil")
 	}
 	config := self.Config()
-	if err := checkConfig(b.engine, config, maltcid.Prefix); err != nil {
+	if err := checkConfig(b.engine, config, maltcid.Map); err != nil {
 		return nil, err
 	}
 	// Validate the complete reference set before invoking any child Commit.

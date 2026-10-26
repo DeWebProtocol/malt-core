@@ -101,7 +101,7 @@ Missing second step verified; suffix not evaluated
 go run ./examples/range
 ```
 
-[Source](range/main.go). Commit a Positional sequence, call `ProveRange`, then
+[Source](range/main.go). Commit a List sequence, call `ProveRange`, then
 call `VerifyRange` against the same Root and element index interval. Only after proof
 verification does the application fetch, check, and assemble the payload bytes.
 
@@ -176,7 +176,7 @@ runtime coverage on those systems.
 
 The examples select IPA256 with `ipa.ProfileDirect`; the composed Object
 example also installs KZG4096. IPA's execution profile controls precomputation,
-independently of coordinate derivation. `derivation.SHA256` derives Prefix keys;
+independently of coordinate derivation. `derivation.SHA256` derives Map keys;
 `derivation.Direct` accepts canonical key or index bytes.
 
 These commands execute source from this checkout. Objects require

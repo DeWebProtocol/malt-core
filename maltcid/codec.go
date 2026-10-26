@@ -65,7 +65,7 @@ func CodecName(codec uint64) string {
 	version := uint8(codec >> 12 & 15)
 	layout := Layout(codec >> 8 & 15)
 	if codec >= codecMaltRootBase && codec <= codecMaltRootMax &&
-		version == RootVersion && (layout == Prefix || layout == Positional) {
+		version == RootVersion && (layout == Map || layout == List) {
 		return fmt.Sprintf("malt-v%d-layout%d-derivation%02x", version, layout, uint8(codec))
 	}
 	return fmt.Sprintf("unknown-%x", codec)

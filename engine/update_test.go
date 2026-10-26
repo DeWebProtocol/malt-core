@@ -28,11 +28,11 @@ func (n *countedNodes) PutNode(ctx context.Context, r maltcid.NodeRef, c []commi
 	return n.Nodes.PutNode(ctx, r, c)
 }
 
-func TestPrefixBatchCopiesPathsAndValidatesBeforeWriting(t *testing.T) {
+func TestMapBatchCopiesPathsAndValidatesBeforeWriting(t *testing.T) {
 	ctx := context.Background()
 	e, base := setup(t, maltcid.IPA256)
 	nodes := &countedNodes{Nodes: base}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Prefix, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Map, Profile: maltcid.IPA256}}
 	for i := 0; i < 256; i++ {
 		for j := 0; j < 2; j++ {
 			var key [32]byte
@@ -71,11 +71,11 @@ func TestPrefixBatchCopiesPathsAndValidatesBeforeWriting(t *testing.T) {
 	}
 }
 
-func TestPositionalPathUpdatesMatchRebuildAndRange(t *testing.T) {
+func TestListPathUpdatesMatchRebuildAndRange(t *testing.T) {
 	ctx := context.Background()
 	e, base := setup(t, maltcid.IPA256)
 	nodes := &countedNodes{Nodes: base}
-	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.Positional, Profile: maltcid.IPA256}}
+	state := engine.State{Descriptor: maltcid.RootDescriptor{DerivationProfile: uint8(derivation.Direct), Layout: maltcid.List, Profile: maltcid.IPA256}}
 	for i := 0; i < 255; i++ {
 		state.Entries = append(state.Entries, engine.Entry{Label: coordinate.EncodeIndex(uint64(i)), Target: target(fmt.Sprint(i))})
 	}

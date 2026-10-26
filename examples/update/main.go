@@ -47,7 +47,7 @@ func run() error {
 	label := []byte("report.txt")
 	base, err := authentication.BuildWriter(ctx, prover, engine.State{
 		Descriptor: maltcid.RootDescriptor{
-			Layout: maltcid.Prefix, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256,
+			Layout: maltcid.Map, DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256,
 		},
 		Entries: []engine.Entry{{Label: label, Target: before}},
 	})
