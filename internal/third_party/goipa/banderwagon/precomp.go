@@ -18,6 +18,9 @@ const (
 
 	// window16vs8IndexLimit is the index of the first point that will use a 8-bit window instead of a 16-bit window.
 	window16vs8IndexLimit = 5
+
+	// Avoid worker startup and reduction overhead for sparse commitments.
+	minMSMTermsPerTask = 8
 )
 
 // MSMPrecomp is an engine to calculate 256-MSM on a fixed basis using precomputed tables.
@@ -79,8 +82,46 @@ func newPrecompMSM(points []Element, windowSizeForIndex func(int) int) (MSMPreco
 }
 
 // MSM calculates the 256-MSM of the given scalars on the fixed basis.
-// It automatically detects how many non-zero scalars there are and parallelizes the computation.
+// Non-zero terms are balanced across at most GOMAXPROCS tasks. Small MSMs run
+// serially; each parallel task has its own accumulator and only reads the table.
 func (msm *MSMPrecomp) MSM(scalars []fr.Element) Element {
+	nbTasks := runtime.GOMAXPROCS(0)
+	if nbTasks == 1 || len(scalars) < 2*minMSMTermsPerTask {
+		return msm.msmSerial(scalars)
+	}
+
+	// Partition actual work, rather than slot ranges: occupied slots can be
+	// clustered at either end of a sparse vector.
+	var nonzero [supportedMSMLength]int
+	count := 0
+	for i := range scalars {
+		if !scalars[i].IsZero() {
+			nonzero[count] = i
+			count++
+		}
+	}
+	nbTasks = min(nbTasks, count/minMSMTermsPerTask)
+	if nbTasks <= 1 {
+		return msm.msmSerial(scalars)
+	}
+	partials := make([]bandersnatch.PointExtended, nbTasks)
+	parallel.Execute(nbTasks, func(start, end int) {
+		for task := start; task < end; task++ {
+			partial := bandersnatch.IdentityExt
+			for _, i := range nonzero[task*count/nbTasks : (task+1)*count/nbTasks] {
+				msm.precompPoints[i].ScalarMul(scalars[i], &partial)
+			}
+			partials[task] = partial
+		}
+	})
+	result := partials[0]
+	for i := 1; i < len(partials); i++ {
+		result.Add(&result, &partials[i])
+	}
+	return Element{inner: bandersnatch.PointProj{X: result.X, Y: result.Y, Z: result.Z}}
+}
+
+func (msm *MSMPrecomp) msmSerial(scalars []fr.Element) Element {
 	result := bandersnatch.IdentityExt
 
 	for i := range scalars {
@@ -117,7 +158,7 @@ func NewPrecompPoint(point Element, windowSize int) (PrecompPoint, error) {
 
 	windows := make([][]bandersnatch.PointExtended, 256/windowSize)
 	group, _ := errgroup.WithContext(context.Background())
-	group.SetLimit(runtime.NumCPU())
+	group.SetLimit(runtime.GOMAXPROCS(0))
 	for i := 0; i < len(res.windows); i++ {
 		i := i
 		base := bandersnatch.PointExtendedFromProj(&point.inner)

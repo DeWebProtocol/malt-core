@@ -218,9 +218,9 @@ func MultiExp(p *PointProj, points []PointAffine, scalars []fr.Element, config M
 		return nil, errors.New("len(points) != len(scalars)")
 	}
 
-	// if nbTasks is not set, use all available CPUs
+	// If nbTasks is not set, use the current Go scheduler budget.
 	if config.NbTasks <= 0 {
-		config.NbTasks = runtime.NumCPU()
+		config.NbTasks = runtime.GOMAXPROCS(0)
 	}
 
 	// here, we compute the best C for nbPoints

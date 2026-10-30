@@ -306,9 +306,12 @@ func (mp MultiProof) Equal(other MultiProof) bool {
 }
 
 func groupPolynomialsByEvaluationPoint(fs [][]fr.Element, powersOfR []fr.Element, zs []uint8) [common.VectorLength][]fr.Element {
+	if len(fs) == 0 {
+		return [common.VectorLength][]fr.Element{}
+	}
 	workersAggregations := make(chan [common.VectorLength][]fr.Element)
 
-	numWorkers := runtime.NumCPU()
+	numWorkers := min(runtime.GOMAXPROCS(0), len(fs))
 	batchSize := (len(fs) + numWorkers - 1) / numWorkers
 	for i := 0; i < numWorkers; i++ {
 		go func(start, end int) {

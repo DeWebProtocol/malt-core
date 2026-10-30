@@ -11,6 +11,7 @@ import (
 	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/bandersnatch/fr"
 	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/banderwagon"
 	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common"
+	"github.com/dewebprotocol/malt-core/internal/third_party/goipa/common/parallel"
 )
 
 // IPAConfig contains all the necessary information to create an IPA related proofs,
@@ -98,7 +99,7 @@ func MultiScalar(points []banderwagon.Element, scalars []fr.Element) (banderwago
 	var result banderwagon.Element
 	result.SetIdentity()
 
-	res, err := result.MultiExp(points, scalars, banderwagon.MultiExpConfig{NbTasks: runtime.NumCPU(), ScalarsMont: true})
+	res, err := result.MultiExp(points, scalars, banderwagon.MultiExpConfig{NbTasks: runtime.GOMAXPROCS(0), ScalarsMont: true})
 	if err != nil {
 		return banderwagon.Element{}, fmt.Errorf("mult exponentiation was not successful: %w", err)
 	}
@@ -177,11 +178,16 @@ func foldPoints(a []banderwagon.Element, b []banderwagon.Element, x fr.Element) 
 	}
 
 	result := make([]banderwagon.Element, len(a))
-	for i := 0; i < len(a); i++ {
-		var bx banderwagon.Element
-		bx.ScalarMul(&b[i], &x)
-		result[i].Add(&bx, &a[i])
-	}
+	// Early rounds contain many independent scalar multiplications. Keep the
+	// small final rounds serial so worker scheduling does not dominate them.
+	const minPointsPerTask = 4
+	parallel.Execute(len(a), func(start, end int) {
+		for i := start; i < end; i++ {
+			var bx banderwagon.Element
+			bx.ScalarMul(&b[i], &x)
+			result[i].Add(&bx, &a[i])
+		}
+	}, max(1, len(a)/minPointsPerTask))
 	return result, nil
 }
 
