@@ -99,6 +99,13 @@ jobs:
       - name: Run tests
         run: go test ./...
 
+      - name: Check IPA parallel execution for data races
+        env:
+          GOWORK: 'off'
+          GOMAXPROCS: '4'
+          CGO_ENABLED: '1'
+        run: go test -race -p=2 -parallel=2 ./auth/commitment/ipa ./internal/third_party/goipa/common/parallel -run 'TestIPAParallelism|TestExecute'
+
       - name: Run 32-bit commitment tests
         run: GOARCH=386 go test ./auth/commitment/kzg ./auth/commitment/ipa
 

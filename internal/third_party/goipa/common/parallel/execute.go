@@ -19,40 +19,35 @@ import (
 	"sync"
 )
 
-// Execute process in parallel the work function
+// Execute divides [0, nbIterations) into disjoint ranges. It uses the current
+// GOMAXPROCS budget, optionally reduced by a positive maxCpus limit. Empty work
+// is skipped and a single range runs directly on the caller.
 func Execute(nbIterations int, work func(int, int), maxCpus ...int) {
-
-	nbTasks := runtime.NumCPU()
-	if len(maxCpus) == 1 {
-		nbTasks = maxCpus[0]
+	if nbIterations <= 0 {
+		return
 	}
-	nbIterationsPerCpus := nbIterations / nbTasks
-
-	// more CPUs than tasks: a CPU will work on exactly one iteration
-	if nbIterationsPerCpus < 1 {
-		nbIterationsPerCpus = 1
-		nbTasks = nbIterations
+	nbTasks := min(runtime.GOMAXPROCS(0), nbIterations)
+	if len(maxCpus) == 1 && maxCpus[0] > 0 {
+		nbTasks = min(nbTasks, maxCpus[0])
+	}
+	if nbTasks == 1 {
+		work(0, nbIterations)
+		return
 	}
 
 	var wg sync.WaitGroup
-
-	extraTasks := nbIterations - (nbTasks * nbIterationsPerCpus)
-	extraTasksOffset := 0
-
+	wg.Add(nbTasks - 1)
 	for i := 0; i < nbTasks; i++ {
-		wg.Add(1)
-		_start := i*nbIterationsPerCpus + extraTasksOffset
-		_end := _start + nbIterationsPerCpus
-		if extraTasks > 0 {
-			_end++
-			extraTasks--
-			extraTasksOffset++
+		start := i * nbIterations / nbTasks
+		end := (i + 1) * nbIterations / nbTasks
+		if i == nbTasks-1 {
+			work(start, end)
+			break
 		}
 		go func() {
-			work(_start, _end)
-			wg.Done()
+			defer wg.Done()
+			work(start, end)
 		}()
 	}
-
 	wg.Wait()
 }
