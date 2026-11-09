@@ -125,7 +125,7 @@ measurements.
    CIDs and applies its own trust/freshness policy.
 
 The query profile is `malt.authentication/5`. It supports explicit resolution,
-a final binding query, or a fixed-chunk List byte range. Missing traversal
+a final binding query, or a List element-index range. Missing traversal
 steps carry authenticated early termination; the unevaluated suffix is not
 claimed to be absent. See [query contracts](docs/spec/authentication-contracts.md).
 
