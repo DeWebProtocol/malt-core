@@ -37,7 +37,10 @@ The proposed codec notation is `0x30VLAA`: `V` selects the MALT Root format,
 `L` selects the Map/List authentication layout, and `AA` selects
 an input rule. A multicommitment identifies the exact VC profile and carries
 the commitment. The preferred container under review remains CIDv1 with an
-identity multihash containing a fixed `malt:root` domain, a zero byte and that multicommitment. The reference specification now defines experimental IDs and canonical byte framing.
+identity multihash containing that multicommitment directly. The Root descriptor
+contains only version, layout, exact VC/backend profile and label-to-coordinate
+derivation profile. The reference specification defines their current IDs and
+canonical byte framing.
 
 List/direct consumes a canonical integer index. Map/direct consumes
 a native byte key under an explicit key-width rule. Map/label consumes a
@@ -127,8 +130,8 @@ follows workspace resource limits.
 
 - 2026-11-09: Assigned the current VC-tree layouts their canonical Map/List IDs:
   Map `L=1` and List `L=2`. Experimental layout IDs 4/3 are no longer current;
-  rebuild pre-beta state rather than rewriting Root prefixes. Fixed `malt:root`
-  and `malt:node` domains distinguish current framing from historical V0 1/2.
+  Root and internal-reference framing remain unchanged. Historical experimental
+  data is outside the supported data set and needs no additional discriminator.
 - 2026-10-26: Adopted Map/List authentication layout names, retaining sparse/dense
   as coordinate-distribution descriptions. Layout IDs and current encodings
   are unchanged; historical source APIs remain in Git history.

@@ -17,10 +17,6 @@ const RootVersion uint8 = 0
 // Application ArcSet organization (flat or compositional) is not a Root field.
 type Layout uint8
 
-// Fixed domains distinguish current Map/List framing from earlier V0 experiments.
-const rootDomain = "malt:root\x00"
-const nodeDomain = "malt:node\x00"
-
 const (
 	// Map organizes bindings by coordinate prefixes for general, potentially
 	// sparse key spaces. Leaves bind original label bytes and targets.
@@ -122,7 +118,7 @@ func canonicalUvarint(data []byte) (uint64, int, error) {
 	return value, n, nil
 }
 
-// NewRoot constructs CIDv1(codec=0x30VLAA, identity(root-domain || multicommitment)).
+// NewRoot constructs CIDv1(codec=0x30VLAA, identity(multicommitment)).
 func NewRoot(d RootDescriptor, commitment []byte) (cid.Cid, error) {
 	if err := d.Validate(); err != nil {
 		return cid.Undef, err
@@ -131,7 +127,7 @@ func NewRoot(d RootDescriptor, commitment []byte) (cid.Cid, error) {
 	if err != nil {
 		return cid.Undef, err
 	}
-	return newMaltCid(uint64(codecMaltRootBase)|uint64(d.Version)<<12|uint64(d.Layout)<<8|uint64(d.DerivationProfile), append([]byte(rootDomain), mc...))
+	return newMaltCid(uint64(codecMaltRootBase)|uint64(d.Version)<<12|uint64(d.Layout)<<8|uint64(d.DerivationProfile), mc)
 }
 
 func ParseRoot(root cid.Cid) (RootDescriptor, []byte, error) {
@@ -150,10 +146,7 @@ func ParseRoot(root cid.Cid) (RootDescriptor, []byte, error) {
 	if err != nil || hash.Code != mh.IDENTITY {
 		return RootDescriptor{}, nil, fmt.Errorf("Root requires identity multihash")
 	}
-	if !bytes.HasPrefix(hash.Digest, []byte(rootDomain)) {
-		return RootDescriptor{}, nil, fmt.Errorf("invalid Root domain")
-	}
-	d.Profile, hash.Digest, err = ParseMulticommitment(hash.Digest[len(rootDomain):])
+	d.Profile, hash.Digest, err = ParseMulticommitment(hash.Digest)
 	if err != nil {
 		return RootDescriptor{}, nil, err
 	}
@@ -184,15 +177,15 @@ func (r NodeRef) Bytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append(append([]byte(nodeDomain), byte(r.Layout)), mc...), nil
+	return append([]byte{'M', 'N', 0, byte(r.Layout)}, mc...), nil
 }
 func ParseNodeRef(data []byte) (NodeRef, error) {
-	if len(data) <= len(nodeDomain) || !bytes.HasPrefix(data, []byte(nodeDomain)) {
+	if len(data) < 4 || !bytes.Equal(data[:3], []byte{'M', 'N', 0}) {
 		return NodeRef{}, fmt.Errorf("invalid internal node reference")
 	}
-	r := NodeRef{Layout: Layout(data[len(nodeDomain)])}
+	r := NodeRef{Layout: Layout(data[3])}
 	var err error
-	r.Profile, r.Commitment, err = ParseMulticommitment(data[len(nodeDomain)+1:])
+	r.Profile, r.Commitment, err = ParseMulticommitment(data[4:])
 	if err != nil {
 		return NodeRef{}, err
 	}

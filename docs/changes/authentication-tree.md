@@ -32,9 +32,11 @@ is local computation, not a portable transition proof or client trust decision.
 
 ## Current framing and diagnostics
 
-Roots use V=0 with Map=1 and List=2 and the fixed `malt:root` domain. Nodes use
-the distinct `malt:node` domain. Historical untagged V0 Roots/nodes and layouts
-4/3 are rejected. Rebuild old state and dependent parents from original inputs.
+Roots use V=0 with Map=1 and List=2. Their descriptors select the layout, exact
+VC/backend profile and label-to-coordinate derivation profile; the identity
+multihash carries the multicommitment directly. Internal references retain
+`"MN" || 0x00 || byte(L) || multicommitment`. Historical experimental data is
+outside the supported data set and adds no fields to the current format.
 
 Core has no observation package or timing callbacks. Gateway and Evaluation
 wrap the injected node and VC capabilities to measure their own operations.

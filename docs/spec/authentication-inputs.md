@@ -33,11 +33,12 @@ the notation does not mean four literal prefix bytes.
 
 ```text
 multicommitment = uvarint(profile_id) || uvarint(commitment_length) || commitment
-Root = CIDv1(codec, identity_multihash(UTF8("malt:root") || 0x00 || multicommitment))
+Root = CIDv1(codec, identity_multihash(multicommitment))
 ```
 
-The fixed Root domain is required; untagged historical V0 Roots are rejected,
-even when their codec uses layout 1 or 2. Internal nodes use a separate domain.
+The Root descriptor contains only the version, layout, exact VC/backend profile
+and label-to-coordinate derivation profile. The multicommitment carries the
+commitment itself; no historical-format discriminator is added.
 The length must equal the exact registered profile's length. Unknown profiles,
 nonminimal varints, trailing bytes, other hash containers, unsupported versions
 are rejected by the wire parser. `maltcid.ParseRoot`
@@ -159,7 +160,7 @@ Core range queries select element indices. Applications may bind byte geometry
 through the root payload CID, verify its content, and translate byte ranges
 into those indices as described below.
 
-Internal references are `UTF8("malt:node") || 0x00 || byte(L) || multicommitment`.
+Internal references are `"MN" || 0x00 || byte(L) || multicommitment`.
 They identify authentication nodes, not application vertices, and omit AA.
 The root descriptor supplies coordinate derivation; an internal node is
 interpreted with its layout and exact VC profile. Application-valued targets

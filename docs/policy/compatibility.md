@@ -30,11 +30,10 @@ artifact, and aggregate materializer Store interfaces are retired. Root V2/V3
 readers and automatic update-view migration are removed. Rebuild experimental
 state and dependent parents from current inputs; changing a CID prefix cannot
 convert old nodes or proofs. Payload CIDs remain reusable.
-Current Roots require the `malt:root` domain and nodes require `malt:node`, each
-terminated by a zero byte. Untagged historical V0 Roots/nodes fail closed even
-when they use layout 1/2. Historical coordinate-only data is not current Map state.
-Rebuild from original labels so current leaves authenticate label identity and
-targets; replacing a layout byte is not migration.
+Historical experimental data is outside the supported data set. The current
+Root format contains the descriptor and multicommitment without a separate
+historical-format marker. Parsers validate current fields and canonical bytes;
+they do not detect or migrate earlier interpretations of the same identifiers.
 
 The `sdk/object` Map/List constructors added in `v0.0.10-rc.3` build on the
 current authentication API. They do not restore the retired facade or introduce

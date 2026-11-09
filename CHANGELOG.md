@@ -21,8 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Split VC-tree Map construction/routing and updates into `map.go` /
   `map_update.go`; name List geometry and updates consistently.
-- Require fixed `malt:root` / `malt:node` framing so historical V0 1/2 encodings
-  cannot alias the current layouts.
+- Preserve Root descriptor/multicommitment framing and internal `MN` references.
+  Historical experimental data adds no fields or discriminators to the format.
 
 ### Removed
 

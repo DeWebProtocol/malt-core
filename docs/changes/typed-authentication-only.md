@@ -13,8 +13,9 @@ callers use the [typed query contracts](../spec/authentication-contracts.md) and
 List ranges authenticate element indices; applications own payload conventions,
 byte-range translation and payload-byte verification.
 
-Map=1 and List=2 use V=0 with fixed Root/node domains; reconstruct historical
-state rather than rewriting CID prefixes. See [compatibility](../policy/compatibility.md)
+Map=1 and List=2 use V=0 with the existing descriptor/multicommitment framing.
+Historical experimental state is outside the supported data set.
+See [compatibility](../policy/compatibility.md)
 and [the current portable corpus](../spec/conformance-corpora.md).
 
 Timing adapters belong to Gateway and Evaluation. Core's injected materializer

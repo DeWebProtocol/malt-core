@@ -19,7 +19,7 @@ bytes, not its text form. An undefined slot is the empty cell.
 
 Primitive `commitment.Value` objects contain a profile-qualified
 multicommitment. Semantic Roots are CIDv1 values with a `0x30VLAA` codec and
-an identity multihash over `UTF8("malt:root") || 0x00 || multicommitment`. The codec selects version,
+an identity multihash over the multicommitment. The codec selects version,
 layout, and derivation profile; the multicommitment selects the exact VC profile:
 
 | Backend | Commitment bytes | Maximum primitive vector length |
