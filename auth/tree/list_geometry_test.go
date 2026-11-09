@@ -17,12 +17,12 @@ func TestListGeometryUsesFullDescendants(t *testing.T) {
 			limit.Mul(limit, big.NewInt(int64(c)))
 		}
 		for _, count := range counts {
-			p := rootPosition(count, c)
-			capacity := new(big.Int).Lsh(big.NewInt(int64(c-1)), p.height*radixBits(c))
+			p := listRootGeometry(count, c)
+			capacity := new(big.Int).Lsh(big.NewInt(int64(c-1)), p.height*listRadixBits(c))
 			if capacity.Cmp(new(big.Int).SetUint64(count)) < 0 {
 				t.Fatalf("capacity %d/%d", c, count)
 			}
-			if p.height > 0 && new(big.Int).Rsh(new(big.Int).Set(capacity), radixBits(c)).Cmp(new(big.Int).SetUint64(count)) >= 0 {
+			if p.height > 0 && new(big.Int).Rsh(new(big.Int).Set(capacity), listRadixBits(c)).Cmp(new(big.Int).SetUint64(count)) >= 0 {
 				t.Fatalf("nonminimal height %d/%d", c, count)
 			}
 			if count == 0 {

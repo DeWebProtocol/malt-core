@@ -106,6 +106,7 @@ func TestSDKOnlyRepositoryDoesNotRetainProductResidue(t *testing.T) {
 	for _, name := range []string{
 		"wire", "internal/conformancegen",
 		"auth/experimental/hashtrie",
+		"auth/observation",
 		"config.example.json", "graph", "auth/input", "auth/engine", "sdk/authentication/verifier",
 		"cmd/malt-verifier-wasm", "cmd/malt-writer-wasm",
 		"scripts/build-verifier-wasm.sh", "scripts/build-writer-wasm.sh", "scripts/build-wasm-release.sh",

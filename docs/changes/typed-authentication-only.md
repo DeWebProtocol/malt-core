@@ -1,36 +1,23 @@
-# Typed authentication is the sole current chain
+# Typed authentication and Map/List VC Trees
 
-Historical implementation note. The current coordinate derivation boundary and
-label contracts supersede its input/system-selector API; see
-[the current specification](../spec/authentication-inputs.md).
+Current construction and verification use original labels, checked coordinates
+and immutable Map/List VC Trees in `auth/tree`. `engine` binds the Root's
+derivation, layout and exact VC profile; `traversal` composes explicit steps.
+`sdk/authentication` owns queries, retained writers, sessions and candidates.
+The optional Object SDK adds application containers above this chain.
 
-The pre-beta source migration removes Map/List adapters and their old root
-constructors, string resolver and module facade, Resolve/Read and Map-proof
-APIs, `execution`, `mutation`, `sdk/writer`, `sdk/verifier`, and the old proof
-and semantic packages. Their schemas, conformance loaders/corpora, dedicated
-tests, browser exports, and normative API references are removed as well.
-Historical revisions retain the original code and contracts.
+Superseded semantic adapters, string-path resolvers, Resolve/Read, Map-proof,
+old SDK facades and aggregate Store interfaces remain in Git history. Current
+callers use the [typed query contracts](../spec/authentication-contracts.md) and
+[exact candidate/batch/receipt contracts](../spec/authentication-batches.md).
+List ranges authenticate element indices; applications own payload conventions,
+byte-range translation and payload-byte verification.
 
-The current path is input rules -> coordinate-only tree -> typed engine ->
-explicit traversal -> authentication SDK. Complete immutable writers and their
-bounded host sessions live in `sdk/authentication`; native and WASM entrypoints
-share that implementation. There is no aggregate compatibility Store port or
-optional old-ABI detection.
+Map=1 and List=2 use V=0 with fixed Root/node domains; reconstruct historical
+state rather than rewriting CID prefixes. See [compatibility](../policy/compatibility.md)
+and [the current portable corpus](../spec/conformance-corpora.md).
 
-Current query profile `malt.authentication/1` authenticates explicit traversal
-and early absence. Applications still support flat/hybrid/rooted organization:
-flat path bindings may target payload/manifest CIDs directly; rooted content
-queries add a typed payload selector at the reached Map. Literal labels do
-not become system selectors. List chunk/range authentication remains.
-
-Ordered candidate batches and exact receipts preserve multi-object writes and
-retries without defining a portable transition proof or promoting trusted
-Roots. Source callers must adopt these contracts before old entrypoints are
-removed. Published dependency locks, release assets, deployment, and trusted-
-root acceptance remain separate actions.
-
-The current portable corpus is authentication/1. Browser ABI, provenance,
-and WASM release manifests are owned by `malt-ts`; see
-[WASM ownership](wasm-ownership.md). Core publishes source and conformance data.
-Each browser package must bind an exact published Core tag, source commit, and
-module checksums. Source changes alone do not publish or update that package.
+Timing adapters belong to Gateway and Evaluation. Core's injected materializer
+and VC capabilities carry no metrics or timers. Browser ABI, provenance and WASM
+release manifests belong to `malt-ts`; adopting a source change does not publish
+a package, change a release lock, deploy a service or promote a trusted Root.

@@ -189,19 +189,19 @@ See the [Object guide](docs/guides/objects.md) for Lists, custom structs, and
 nested references, and the [examples guide](examples/README.md) for traversal,
 partial reads, and serialized queries.
 
-## Authentication layouts
+## VC Tree layouts
 
 Core calls its two authentication layouts **Map** and **List**. Map organizes
 bindings by coordinate prefixes and suits sparse key spaces. List organizes
 integer positions into fixed radix intervals and suits dense sequences.
-The current List implementation requires contiguous positions; its root count
+The optional `sdk/object` containers sit above these VC Trees. The List layout requires contiguous positions; its root count
 authenticates the sequence bounds. See the
 [layout specification](docs/spec/authentication-inputs.md#authentication-layout-and-internal-node-identity).
 
-On the development branch, these are `maltcid.Map` (`L=4`) and `maltcid.List`
-(`L=3`). Earlier releases call them `Prefix` and `Positional`. The rename changes
-Go names, while preserving Root bytes, proofs, and the current wire profiles.
-The release-pinned quick start above keeps its published API.
+On the development branch, these are `maltcid.Map` (`L=1`) and `maltcid.List`
+(`L=2`). Earlier releases used `Prefix` / `Positional` names and experimental
+layout IDs 4/3. Current pre-beta state must be rebuilt under the Map/List IDs;
+the release-pinned quick start above keeps its published API.
 
 ## Further reading
 

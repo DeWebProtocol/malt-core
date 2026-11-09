@@ -16,9 +16,9 @@ func TestCurrentRootClassification(t *testing.T) {
 		derivation derivation.ProfileID
 		name       string
 	}{
-		{maltcid.Map, derivation.SHA256, "malt-v0-layout4-derivation04"},
-		{maltcid.Map, derivation.Direct, "malt-v0-layout4-derivation03"},
-		{maltcid.List, derivation.Direct, "malt-v0-layout3-derivation03"},
+		{maltcid.Map, derivation.SHA256, "malt-v0-layout1-derivation04"},
+		{maltcid.Map, derivation.Direct, "malt-v0-layout1-derivation03"},
+		{maltcid.List, derivation.Direct, "malt-v0-layout2-derivation03"},
 	} {
 		for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 			p, err := maltcid.Profile(profile)
@@ -46,7 +46,7 @@ func TestCurrentRootClassification(t *testing.T) {
 }
 
 func TestHistoricalRootsAreRejected(t *testing.T) {
-	for _, codec := range []uint64{0x300203, 0x300001, 0x300002, 0x300003, 0x300004, 0x302101, 0x302102, 0x302201, 0x302202, 0x303101, 0x303102, 0x303201, 0x303202} {
+	for _, codec := range []uint64{0x300001, 0x300002, 0x300003, 0x300004, 0x302101, 0x302102, 0x302201, 0x302202, 0x303101, 0x303102, 0x303201, 0x303202} {
 		t.Run(fmt.Sprintf("%x", codec), func(t *testing.T) {
 			size := maltcid.KZGCommitmentSize
 			if codec&1 == 0 {

@@ -42,6 +42,12 @@ compatibility between every experimental build.
 The implemented framing is specified in [authentication inputs and Roots](../spec/authentication-inputs.md)
 and tracked by [MIP-1014](../mips/mip-1014-self-describing-roots.md).
 
+On 2026-11-09 the maintainer fixed the current VC-tree layout IDs at Map=1 and
+List=2 while retaining V=0. Roots require `UTF8("malt:root") || 0x00` before the
+multicommitment; internal node references require `UTF8("malt:node") || 0x00`.
+The explicit framing prevents earlier V0 layouts 1/2 from being interpreted as
+current state. Layout IDs 4/3 and untagged historical V0 encodings are rejected.
+
 ## Existing experimental encodings
 
 At historical Core commit `c90b4d35ec95003b14422546b777fbf9ada2b0c7`, constructors

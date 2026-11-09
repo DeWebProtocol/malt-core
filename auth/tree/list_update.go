@@ -23,7 +23,7 @@ func (u *nodeEdit) sequence(ref maltcid.NodeRef) ([]commitment.Cell, Metadata, e
 	if err != nil {
 		return nil, meta, err
 	}
-	return cells, meta, checkPosition(cells, rootPosition(meta.Count, u.profile.Slots), u.profile.Slots)
+	return cells, meta, checkListGeometry(cells, listRootGeometry(meta.Count, u.profile.Slots), u.profile.Slots)
 }
 
 // Append preserves the opaque payload reference and returns the new index.
@@ -56,9 +56,9 @@ func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Ci
 		items[i] = binding{target: target}
 	}
 	first := meta.Count
-	old := rootPosition(first, u.profile.Slots)
+	old := listRootGeometry(first, u.profile.Slots)
 	meta.Count += uint64(len(items))
-	next := rootPosition(meta.Count, u.profile.Slots)
+	next := listRootGeometry(meta.Count, u.profile.Slots)
 	b := u.builder
 	b.out = u
 	ref, err = u.appendNode(&b, ref, old, next, meta, items)
@@ -69,7 +69,7 @@ func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Ci
 	return root, first, err
 }
 
-func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next position, meta Metadata, items []binding) (maltcid.NodeRef, error) {
+func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next listGeometry, meta Metadata, items []binding) (maltcid.NodeRef, error) {
 	if old == next {
 		return ref, nil
 	}
@@ -84,7 +84,7 @@ func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next positio
 		if err != nil {
 			return maltcid.NodeRef{}, err
 		}
-		if err := checkPosition(previous, old, u.profile.Slots); err != nil {
+		if err := checkListGeometry(previous, old, u.profile.Slots); err != nil {
 			return maltcid.NodeRef{}, err
 		}
 		// Demoting a root reclaims slot zero and shifts only this vector.
@@ -147,9 +147,9 @@ func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, sourc
 	if count == meta.Count {
 		return root, nil
 	}
-	old := rootPosition(meta.Count, u.profile.Slots)
+	old := listRootGeometry(meta.Count, u.profile.Slots)
 	meta.Count = count
-	next := rootPosition(count, u.profile.Slots)
+	next := listRootGeometry(count, u.profile.Slots)
 	b := u.builder
 	b.out = u
 	if count == 0 {
@@ -160,7 +160,7 @@ func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, sourc
 			if loadErr != nil {
 				return cid.Undef, loadErr
 			}
-			if err := checkPosition(cells, old, u.profile.Slots); err != nil {
+			if err := checkListGeometry(cells, old, u.profile.Slots); err != nil {
 				return cid.Undef, err
 			}
 			ref, err = parseChild(cells[old.base()], ref)
@@ -177,7 +177,7 @@ func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, sourc
 	return u.finish(ref)
 }
 
-func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next position, meta Metadata) (maltcid.NodeRef, error) {
+func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next listGeometry, meta Metadata) (maltcid.NodeRef, error) {
 	if old == next {
 		return ref, nil
 	}
@@ -185,7 +185,7 @@ func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next posit
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	if err := checkPosition(previous, old, u.profile.Slots); err != nil {
+	if err := checkListGeometry(previous, old, u.profile.Slots); err != nil {
 		return maltcid.NodeRef{}, err
 	}
 	cells := make([]commitment.Cell, u.profile.Slots)
@@ -240,4 +240,50 @@ func (e *Engine) SetPayload(ctx context.Context, root cid.Cid, payload cid.Cid, 
 		return cid.Undef, err
 	}
 	return u.finish(ref)
+}
+
+func (u *nodeEdit) replace(b *builder, ref maltcid.NodeRef, pos listGeometry, offset uint64, items []coordinateChange) (maltcid.NodeRef, error) {
+	cells, err := u.GetNode(u.ctx, ref)
+	if err != nil {
+		return maltcid.NodeRef{}, err
+	}
+	if err := checkListGeometry(cells, pos, u.profile.Slots); err != nil {
+		return maltcid.NodeRef{}, err
+	}
+	groups := make(map[int][]coordinateChange)
+	for _, item := range items {
+		slot := pos.slot(item.key.Index-offset, u.profile.Slots)
+		groups[slot] = append(groups[slot], item)
+	}
+	for slot := pos.base(); slot < len(cells); slot++ {
+		group := groups[slot]
+		if len(group) == 0 {
+			continue
+		}
+		if pos.height == 0 {
+			target, err := parseList(cells[slot])
+			if err != nil {
+				return maltcid.NodeRef{}, err
+			}
+			if err = expect(target, group[0]); err != nil {
+				return maltcid.NodeRef{}, err
+			}
+			cells[slot] = append(commitment.Cell{listLeaf}, group[0].after.Bytes()...)
+		} else {
+			child, err := parseChild(cells[slot], ref)
+			if err != nil {
+				return maltcid.NodeRef{}, err
+			}
+			childPos, start := pos.child(slot-pos.base(), u.profile.Slots)
+			child, err = u.replace(b, child, childPos, offset+start, group)
+			if err != nil {
+				return maltcid.NodeRef{}, err
+			}
+			cells[slot], err = childCell(child)
+			if err != nil {
+				return maltcid.NodeRef{}, err
+			}
+		}
+	}
+	return b.commit(cells)
 }

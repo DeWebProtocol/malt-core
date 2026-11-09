@@ -16,7 +16,7 @@ import (
 
 // AuthenticationProfile identifies complete typed candidate state and nodes.
 // Queries use AuthenticationPathProfile.
-const AuthenticationProfile = "malt.authentication/4"
+const AuthenticationProfile = "malt.authentication/6"
 
 // AuthenticationPathProfile uses opaque labels and authenticates early traversal absence.
 const AuthenticationPathProfile = "malt.authentication/5"

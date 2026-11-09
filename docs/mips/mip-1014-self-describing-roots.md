@@ -37,7 +37,7 @@ The proposed codec notation is `0x30VLAA`: `V` selects the MALT Root format,
 `L` selects the Map/List authentication layout, and `AA` selects
 an input rule. A multicommitment identifies the exact VC profile and carries
 the commitment. The preferred container under review remains CIDv1 with an
-identity multihash containing that multicommitment. The reference specification now defines experimental IDs and canonical byte framing.
+identity multihash containing a fixed `malt:root` domain, a zero byte and that multicommitment. The reference specification now defines experimental IDs and canonical byte framing.
 
 List/direct consumes a canonical integer index. Map/direct consumes
 a native byte key under an explicit key-width rule. Map/label consumes a
@@ -67,8 +67,8 @@ layout construction with VC computation, and Root encoding. Map and List name
 the authentication layouts at the Root boundary. Map routes by coordinate
 prefixes for potentially sparse key spaces; List uses count-defined intervals
 for dense integer positions. These names describe authentication organization
-independently of application containers. The current Object API builds on the
-typed authentication contracts; it does not restore retired semantic adapters.
+independently of application containers. The optional Object SDK consumes these
+VC-tree layouts; its application Map/List containers do not define them.
 
 Keeping CIDv1 avoids replacing the common identifier container throughout
 downstream systems. Bare codec plus multicommitment would require a new Root
@@ -105,11 +105,11 @@ of the experimental change; they are not a production-readiness declaration.
 
 | Candidate boundary | Current Core touchpoints | Necessary evidence |
 | --- | --- | --- |
-| Root and VC profiles | `wire/maltcid`, `auth/commitment`, `auth/verifier/registry.go`, `auth/semantic/nodegeometry` | Exact parameter dispatch; canonical framing; unknown/profile/length rejection; `V=0`; no old-format aliasing |
-| Coordinates and layouts | `auth/arcset`, `auth/semantic/mapping/radix`, `auth/semantic/list/tree`, materializer capabilities | No label rehash for direct keys; selector isolation; full-key leaves and absence; sequence/metadata boundaries |
-| Proof and query contracts | `auth/proof/prooflist`, `auth/verifier`, `graph/resolver`, `graph/runtime`, `protocol`, `sdk/verifier` | Caller query/Root binding; profile composition; native/portable parity; profiled schema migration |
-| Mutation and writer state | `mutation`, `graph/writer`, `sdk/writer`, module-root facade | Verified base reconstruction; exact candidate; parent rebinding; view/checkpoint/materialization consistency |
-| Conformance and distribution | `conformance`, package-local fixtures, WASM entry points and release checks | New corpus provenance; historical corpora unchanged; published downstream release adoption |
+| Root and VC profiles | `maltcid`, `auth/commitment`, `auth/tree.Registry` | Exact parameter dispatch; canonical framing; unknown/profile/length rejection; `V=0`; no old-format aliasing |
+| Coordinates and layouts | `auth/tree/map.go`, `auth/tree/list.go`, `auth/coordinate`, materializer capabilities | No label rehash for direct keys; selector isolation; full-key leaves and absence; sequence/metadata boundaries |
+| Proof and query contracts | `auth/tree`, `engine`, `traversal`, `protocol`, `sdk/authentication` | Caller query/Root binding; profile composition; native/portable parity; profiled schema migration |
+| Mutation and writer state | `auth/tree/*_update.go`, `sdk/authentication`, `protocol` | Verified base reconstruction; exact candidate; parent rebinding; view/checkpoint/materialization consistency |
+| Conformance and distribution | `conformance`, package-local fixtures, downstream malt-ts validation | New corpus provenance; historical corpora unchanged; published downstream release adoption |
 
 Gateway owns records, indexes, recovery, persistent caches, service composition,
 and product E2E. The MALT runtime owns application query conversion, UnixFS and
@@ -125,6 +125,10 @@ follows workspace resource limits.
 
 ## History
 
+- 2026-11-09: Assigned the current VC-tree layouts their canonical Map/List IDs:
+  Map `L=1` and List `L=2`. Experimental layout IDs 4/3 are no longer current;
+  rebuild pre-beta state rather than rewriting Root prefixes. Fixed `malt:root`
+  and `malt:node` domains distinguish current framing from historical V0 1/2.
 - 2026-10-26: Adopted Map/List authentication layout names, retaining sparse/dense
   as coordinate-distribution descriptions. Layout IDs and current encodings
   are unchanged; historical source APIs remain in Git history.

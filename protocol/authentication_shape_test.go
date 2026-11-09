@@ -79,13 +79,16 @@ func TestAuthenticationCandidateNullCellsAndOptionalDefaults(t *testing.T) {
 	if err != nil || len(decoded.Nodes[0].Cells) != 256 {
 		t.Fatalf("null cells: %v", err)
 	}
+	if _, err := protocol.DecodeAuthenticationCandidate([]byte(strings.Replace(string(raw), protocol.AuthenticationProfile, "malt.authentication/4", 1))); err == nil {
+		t.Fatal("superseded candidate profile accepted")
+	}
 	if _, err := protocol.DecodeAuthenticationCandidate([]byte(strings.Replace(string(raw), `"entries":null`, `"entries":[null]`, 1))); err == nil {
 		t.Fatal("accepted null entry")
 	}
 	for _, state := range []string{
-		`{"descriptor":{"layout":3,"derivation_profile":3,"vc_profile":2}}`,
-		`{"descriptor":{"layout":3,"derivation_profile":3,"vc_profile":2},"entries":null}`,
-		`{"descriptor":{"layout":3,"derivation_profile":3,"vc_profile":2},"entries":[]}`,
+		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2}}`,
+		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2},"entries":null}`,
+		`{"descriptor":{"layout":2,"derivation_profile":3,"vc_profile":2},"entries":[]}`,
 	} {
 		if _, err := protocol.DecodeAuthenticationState([]byte(state)); err != nil {
 			t.Fatal("schema defaults rejected", state, err)

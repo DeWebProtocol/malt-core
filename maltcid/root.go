@@ -17,14 +17,17 @@ const RootVersion uint8 = 0
 // Application ArcSet organization (flat or compositional) is not a Root field.
 type Layout uint8
 
+// Fixed domains distinguish current Map/List framing from earlier V0 experiments.
+const rootDomain = "malt:root\x00"
+const nodeDomain = "malt:node\x00"
+
 const (
 	// Map organizes bindings by coordinate prefixes for general, potentially
 	// sparse key spaces. Leaves bind original label bytes and targets.
-	// Layout 1 is retired: it authenticated coordinates instead of labels.
-	Map Layout = 4
+	Map Layout = 1
 	// List organizes dense integer positions using authenticated root count
-	// metadata and full-capacity descendants. Layout 2 is retired.
-	List Layout = 3
+	// metadata and full-capacity descendants.
+	List Layout = 2
 )
 
 type ProfileID uint64
@@ -119,7 +122,7 @@ func canonicalUvarint(data []byte) (uint64, int, error) {
 	return value, n, nil
 }
 
-// NewRoot constructs CIDv1(codec=0x30VLAA, identity(multicommitment)).
+// NewRoot constructs CIDv1(codec=0x30VLAA, identity(root-domain || multicommitment)).
 func NewRoot(d RootDescriptor, commitment []byte) (cid.Cid, error) {
 	if err := d.Validate(); err != nil {
 		return cid.Undef, err
@@ -128,7 +131,7 @@ func NewRoot(d RootDescriptor, commitment []byte) (cid.Cid, error) {
 	if err != nil {
 		return cid.Undef, err
 	}
-	return newMaltCid(uint64(codecMaltRootBase)|uint64(d.Version)<<12|uint64(d.Layout)<<8|uint64(d.DerivationProfile), mc)
+	return newMaltCid(uint64(codecMaltRootBase)|uint64(d.Version)<<12|uint64(d.Layout)<<8|uint64(d.DerivationProfile), append([]byte(rootDomain), mc...))
 }
 
 func ParseRoot(root cid.Cid) (RootDescriptor, []byte, error) {
@@ -147,7 +150,10 @@ func ParseRoot(root cid.Cid) (RootDescriptor, []byte, error) {
 	if err != nil || hash.Code != mh.IDENTITY {
 		return RootDescriptor{}, nil, fmt.Errorf("Root requires identity multihash")
 	}
-	d.Profile, hash.Digest, err = ParseMulticommitment(hash.Digest)
+	if !bytes.HasPrefix(hash.Digest, []byte(rootDomain)) {
+		return RootDescriptor{}, nil, fmt.Errorf("invalid Root domain")
+	}
+	d.Profile, hash.Digest, err = ParseMulticommitment(hash.Digest[len(rootDomain):])
 	if err != nil {
 		return RootDescriptor{}, nil, err
 	}
@@ -178,15 +184,15 @@ func (r NodeRef) Bytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append([]byte{'M', 'N', 0, byte(r.Layout)}, mc...), nil
+	return append(append([]byte(nodeDomain), byte(r.Layout)), mc...), nil
 }
 func ParseNodeRef(data []byte) (NodeRef, error) {
-	if len(data) < 4 || !bytes.Equal(data[:3], []byte{'M', 'N', 0}) {
+	if len(data) <= len(nodeDomain) || !bytes.HasPrefix(data, []byte(nodeDomain)) {
 		return NodeRef{}, fmt.Errorf("invalid internal node reference")
 	}
-	r := NodeRef{Layout: Layout(data[3])}
+	r := NodeRef{Layout: Layout(data[len(nodeDomain)])}
 	var err error
-	r.Profile, r.Commitment, err = ParseMulticommitment(data[4:])
+	r.Profile, r.Commitment, err = ParseMulticommitment(data[len(nodeDomain)+1:])
 	if err != nil {
 		return NodeRef{}, err
 	}

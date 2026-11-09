@@ -54,8 +54,8 @@ in Git history; do not relabel them or change CIDv1's container version.
   Map leaves bind exact label bytes and targets and reject coordinate collisions.
 - `engine` binds derivation profiles, layouts and exact VC profiles to full Roots.
 - `auth/commitment` owns independent Committer, Prover, and Verifier capabilities;
-  proof generation uses an explicit existing commitment. `auth/observation` owns
-  optional diagnostics that never constitute evidence.
+  proof generation uses an explicit existing commitment. Timing and observation
+  belong to consuming Gateway/Evaluation adapters, not Core algorithms.
 - `traversal` composes explicit typed steps across Roots.
 - `sdk/authentication` owns local queries, immutable writers, bounded sessions
   and exact candidate batches; its `host` shares native/WASM serialization.

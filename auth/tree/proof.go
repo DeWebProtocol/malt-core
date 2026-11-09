@@ -72,7 +72,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 	}
 	result := Result{Proof: Proof{Format: ProofFormat, Nodes: []NodeOpening{}}}
 	localIndex := k.Index
-	var pos position
+	var pos listGeometry
 	for depth := 0; depth < 256; depth++ {
 		if err := ctx.Err(); err != nil {
 			return Result{}, err
@@ -84,7 +84,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 		opening := NodeOpening{}
 		var slot uint64
 		if d.Layout == maltcid.Map {
-			digit, err := digit(k.Key, depth, p.Slots)
+			digit, err := mapSlot(k.Key, depth, p.Slots)
 			if err != nil {
 				return Result{}, err
 			}
@@ -98,7 +98,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 			if err != nil {
 				return Result{}, err
 			}
-			pos = rootPosition(meta.Count, p.Slots)
+			pos = listRootGeometry(meta.Count, p.Slots)
 			if localIndex >= meta.Count {
 				result.Proof.Nodes = append(result.Proof.Nodes, opening)
 				return result, nil
@@ -127,7 +127,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 			if err != nil {
 				return Result{}, err
 			}
-			if err := checkLeafRoute(leaf.Key, k.Key, depth, p.Slots); err != nil {
+			if err := checkMapRoute(leaf.Key, k.Key, depth, p.Slots); err != nil {
 				return Result{}, err
 			}
 			if leaf.Key == k.Key && !bytes.Equal(label, query.Label) {
@@ -182,7 +182,7 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 		return false, errors.New("presence and target disagree")
 	}
 	localIndex := k.Index
-	var pos position
+	var pos listGeometry
 	for depth, opening := range result.Proof.Nodes {
 		last := depth == len(result.Proof.Nodes)-1
 		var slot uint64
@@ -190,7 +190,7 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 			if len(opening.Metadata) != 0 || len(opening.MetadataProof) != 0 {
 				return false, nil
 			}
-			x, err := digit(k.Key, depth, p.Slots)
+			x, err := mapSlot(k.Key, depth, p.Slots)
 			if err != nil {
 				return false, err
 			}
@@ -204,7 +204,7 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 			if err != nil {
 				return false, err
 			}
-			pos = rootPosition(meta.Count, p.Slots)
+			pos = listRootGeometry(meta.Count, p.Slots)
 			if localIndex >= meta.Count {
 				return depth == 0 && last && !result.Present && len(opening.Cell) == 0 && len(opening.Proof) == 0, nil
 			}
@@ -230,7 +230,7 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 			if err != nil {
 				return false, err
 			}
-			if err := checkLeafRoute(leaf.Key, k.Key, depth, p.Slots); err != nil {
+			if err := checkMapRoute(leaf.Key, k.Key, depth, p.Slots); err != nil {
 				return false, err
 			}
 			if !last {
@@ -267,33 +267,6 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 	return false, nil
 }
 
-func checkLeafRoute(leaf, query [32]byte, depth, slots int) error {
-	for d := 0; d <= depth; d++ {
-		a, err := digit(leaf, d, slots)
-		if err != nil {
-			return err
-		}
-		b, _ := digit(query, d, slots)
-		if a != b {
-			return errors.New("leaf does not match its routing prefix")
-		}
-	}
-	return nil
-}
-func parseList(cell commitment.Cell) (cid.Cid, error) {
-	if len(cell) < 2 || cell[0] != listLeaf {
-		return cid.Undef, errors.New("invalid List target")
-	}
-	target, err := cid.Cast(cell[1:])
-	if err != nil {
-		return cid.Undef, err
-	}
-	if !bytes.Equal(target.Bytes(), cell[1:]) {
-		return cid.Undef, errors.New("noncanonical List target")
-	}
-	return target, nil
-}
-
 // RootMetadata decodes structural metadata from the first proof node. Callers
 // must still Verify the proof against the caller-selected Root before using it.
 func (p Proof) RootMetadata() (Metadata, error) {
@@ -304,7 +277,7 @@ func (p Proof) RootMetadata() (Metadata, error) {
 }
 
 // ValidateNode checks a full vector against its internal identity. It does not
-// infer an external Root's AA or a node's tree position from that identity.
+// infer an external Root's AA or a node's tree listGeometry from that identity.
 func (e *Engine) ValidateNode(ctx context.Context, ref maltcid.NodeRef, cells []commitment.Cell) error {
 	if err := ctx.Err(); err != nil {
 		return err

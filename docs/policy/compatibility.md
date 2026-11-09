@@ -9,32 +9,32 @@ their original identifiers.
 | Current surface | Contract |
 | --- | --- |
 | Typed queries/results | `malt.authentication/5` |
-| Complete candidates | `malt.authentication/4` |
+| Complete candidates | `malt.authentication/6` |
 | Retained-state changes | `malt.authentication-delta/2` |
-| Ordered candidate submission | `malt.authentication-batch/2` |
-| Exact materialization acknowledgement | `malt.authentication-receipt/2` |
+| Ordered candidate submission | `malt.authentication-batch/3` |
+| Exact materialization acknowledgement | `malt.authentication-receipt/3` |
 | Primitive binding evidence | `malt.binding/1` |
-| Root | Self-describing V0, Map layout 4 / List layout 3, exact derivation and VC profiles |
+| Root | Self-describing V0, Map layout 1 / List layout 2, exact derivation and VC profiles |
 | Go SDK | `sdk/authentication` and optional `sdk/object`, experimental source APIs |
 | Browser ABI | Complete current typed exports; exact backend/profile required |
 
 The current layout names are **Map** and **List**, exposed as `maltcid.Map` and
-`maltcid.List`. Migrate Go references from `maltcid.Prefix`/`maltcid.Positional`
-and cell tags from `PrefixLeafCell`/`PositionalLeafCell` to
-`MapLeafCell`/`ListLeafCell`. No source aliases are retained. This naming change
-preserves layout IDs 4/3, cell tags, Root V=0, current nodes, CIDs, proofs,
-schemas, conformance bytes, and dense List behavior. Existing layout 4/3 data
-needs no reconstruction for this rename. Historical release notes retain their
-release-specific names. Downstream source callers must adopt the new names
-before selecting this Core revision; release pins remain a separate change.
+`maltcid.List`, with layout IDs 1 and 2 respectively. No Prefix/Positional source
+aliases are retained. Experimental layout IDs 4/3 are rejected. Because layout
+identity is part of Roots, internal node references, CIDs and proofs, active
+pre-beta state must be rebuilt; rewriting a Root prefix is not a migration.
+Historical release notes retain their release-specific names and IDs.
 
 The legacy Map/List facade, string-path resolver, Resolve/Read, Map-proof, client-root,
 artifact, and aggregate materializer Store interfaces are retired. Root V2/V3
 readers and automatic update-view migration are removed. Rebuild experimental
 state and dependent parents from current inputs; changing a CID prefix cannot
 convert old nodes or proofs. Payload CIDs remain reusable.
-Coordinate-only Map layout 1 is retired. Rebuild Map state and dependent
-parents to authenticate original labels; replacing a layout byte is not migration.
+Current Roots require the `malt:root` domain and nodes require `malt:node`, each
+terminated by a zero byte. Untagged historical V0 Roots/nodes fail closed even
+when they use layout 1/2. Historical coordinate-only data is not current Map state.
+Rebuild from original labels so current leaves authenticate label identity and
+targets; replacing a layout byte is not migration.
 
 The `sdk/object` Map/List constructors added in `v0.0.10-rc.3` build on the
 current authentication API. They do not restore the retired facade or introduce

@@ -30,7 +30,7 @@ func GenerateAuthentication() ([]byte, error) {
 	corpus := struct {
 		Schema  string   `json:"schema"`
 		Vectors []vector `json:"vectors"`
-	}{Schema: "malt.conformance.authentication/3", Vectors: []vector{}}
+	}{Schema: "malt.conformance.authentication/4", Vectors: []vector{}}
 	ctx := context.Background()
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		var scheme engine.Profile
@@ -97,8 +97,8 @@ func GenerateAuthentication() ([]byte, error) {
 		badLabel.Valid = false
 		corpus.Vectors = append(corpus.Vectors, badLabel)
 		retiredRoot := corpus.Vectors[bindingStart]
-		retiredRoot.ID = fmt.Sprintf("profile-%d.retired-coordinate-root", profile)
-		retiredRoot.Verification.Request.Root = cid.NewCidV1(0x300104, root.Hash()).String()
+		retiredRoot.ID = fmt.Sprintf("profile-%d.superseded-layout-root", profile)
+		retiredRoot.Verification.Request.Root = cid.NewCidV1(0x300404, root.Hash()).String()
 		retiredRoot.Valid = false
 		corpus.Vectors = append(corpus.Vectors, retiredRoot)
 		path := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: [][]byte{[]byte("missing"), []byte("suffix")}}

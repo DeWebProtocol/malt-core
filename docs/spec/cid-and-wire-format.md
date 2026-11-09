@@ -4,16 +4,18 @@ Current MALT Roots use CIDv1 with codec
 `0x300000 | (V << 12) | (L << 8) | AA`, abbreviated `0x30VLAA`.
 `V=0` is required throughout pre-production. `L` selects the Map or List
 authentication layout; `AA` selects the coordinate derivation profile.
-Current layouts are Map `L=4` (original-label leaves) and List `L=3`.
-Coordinate-only Map `L=1` and former List `L=2` are retired and rejected.
+Current layouts are Map `L=1` (original-label leaves) and List `L=2`.
+Experimental layout IDs 4/3 are retired and rejected.
+The fixed domains distinguish current Roots/nodes from earlier V0 experiments
+that also used IDs 1/2; untagged historical encodings fail closed.
 Flat/compositional ArcSet organization is not encoded in the Root.
 The codec integer is a minimal unsigned
 varint, not a fixed four-byte prefix.
 
-The identity multihash carries a multicommitment:
+The identity multihash carries a fixed Root domain followed by a multicommitment:
 
 ```text
-uvarint(exact VC profile ID) || uvarint(commitment length) || commitment bytes
+UTF8("malt:root") || 0x00 || uvarint(exact VC profile ID) || uvarint(commitment length) || commitment bytes
 ```
 
 The full descriptor selects interpretation. The codec alone cannot select a
@@ -27,7 +29,7 @@ nonminimal varints, non-identity hash wrappers, wrong commitment widths, and
 trailing bytes. Execution additionally requires the exact derivation profile and
 verification/commitment implementation to be installed.
 
-Internal authentication references are `MN || 0x00 || byte(L) ||
+Internal authentication references are `UTF8("malt:node") || 0x00 || byte(L) ||
 multicommitment`. They name coordinate-based authentication nodes, not
 application vertices, and omit AA. Application targets preserve their complete
 Root or ordinary payload CID. Equal commitment bytes do not imply equal Root

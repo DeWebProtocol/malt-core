@@ -6,7 +6,7 @@ proofs, Root encoding, and conformance. Start with the
 [independent authentication tree](changes/authentication-tree.md).
 
 Current queries use `malt.authentication/5`; complete candidates use the
-independent `malt.authentication/4` profile. The
+independent `malt.authentication/6` profile. The
 [typed migration](changes/typed-authentication-only.md) records the removal of
 superseded APIs. Historical releases and MIPs retain their original meaning.
 
