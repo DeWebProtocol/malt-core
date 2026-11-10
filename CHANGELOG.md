@@ -15,13 +15,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Retain sparse/dense as descriptions of the intended coordinate distributions,
   and coordinate prefixes as the Map routing mechanism. List still requires
   contiguous bindings; this rename does not introduce holes or new mutations.
+- Assign the current VC-tree layouts Map `L=1` and List `L=2`. Advance complete
+  candidates to `malt.authentication/6`, batches and receipts to `/3`, and the
+  authentication conformance corpus to `/4`.
+
+- Split VC-tree Map construction/routing and updates into `map.go` /
+  `map_update.go`; name List geometry and updates consistently.
+- Preserve Root descriptor/multicommitment framing and internal `MN` references.
+  Historical experimental data adds no fields or discriminators to the format.
+
+### Removed
+
+- Remove `auth/observation` and phase timers from Core. Gateway and Evaluation
+  own timing wrappers around injected VC/node capabilities.
 
 ### Compatibility
 
-- Preserve layout IDs 4/3, cell tags 1/3, Root V=0, CIDs, proof and wire profiles,
-  schemas and conformance bytes. Current serialized data needs no migration.
-  Downstream Go callers must rename the symbols before adopting this revision;
-  published release pins and integration pins are unchanged by this Core change.
+- Preserve cell tags 1/3 and Root V=0. Layout IDs 4/3, their Roots, internal node
+  references, CIDs, candidates and conformance bytes are superseded. Rebuild
+  pre-beta state under Map/List IDs 1/2; changing a Root prefix is not migration.
+  Published release pins and integration pins are unchanged by this Core change.
 
 ## [0.0.11-rc.2] - 2026-10-17
 

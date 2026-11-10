@@ -36,6 +36,9 @@ multicommitment = uvarint(profile_id) || uvarint(commitment_length) || commitmen
 Root = CIDv1(codec, identity_multihash(multicommitment))
 ```
 
+The Root descriptor contains only the version, layout, exact VC/backend profile
+and label-to-coordinate derivation profile. The multicommitment carries the
+commitment itself; no historical-format discriminator is added.
 The length must equal the exact registered profile's length. Unknown profiles,
 nonminimal varints, trailing bytes, other hash containers, unsupported versions
 are rejected by the wire parser. `maltcid.ParseRoot`
@@ -45,8 +48,8 @@ permission to execute it. No fallback derivation or backend inference is used.
 
 | L | Authentication layout | Permitted inputs |
 | --- | --- | --- |
-| 4 | Map | Original labels routed by AA-derived 32-byte keys |
-| 3 | List | AA=3, unsigned 64-bit indices |
+| 1 | Map | Original labels routed by AA-derived 32-byte keys |
+| 2 | List | AA=3, unsigned 64-bit indices |
 
 | Profile | Algorithm and parameters | Commitment bytes | VC slots |
 | --- | --- | ---: | ---: |
@@ -102,8 +105,8 @@ names and namespace isolation. Under Direct, any application payload label must
 itself be a canonical coordinate encoding. Private preprocessing is performed
 before submission and may require application-specific payload discovery.
 
-IDs 0–2 retain their retired typed-input meanings in Git history and are not
-accepted by the current engine. New profiles require immutable specifications,
+The current engine supports Direct (3) and SHA256 (4).
+New profiles require immutable specifications,
 implementation and conformance vectors; unsupported IDs fail closed. The Root
 codec parses profile IDs structurally without importing derivation. `engine`
 checks supported profiles and layout compatibility even for empty state and
@@ -113,10 +116,10 @@ It does not import the derivation package or interpret application labels.
 
 ## Authentication layout and internal node identity
 
-The **Map authentication layout** (`maltcid.Map`, `L=4`) organizes bindings by
+The **Map authentication layout** (`maltcid.Map`, `L=1`) organizes bindings by
 coordinate prefixes. It is suited to sparse coordinates in a general key space;
 sparsity is an optimization context, not a requirement on every input set.
-The **List authentication layout** (`maltcid.List`, `L=3`) organizes integer
+The **List authentication layout** (`maltcid.List`, `L=2`) organizes integer
 positions into fixed radix intervals, with geometry determined by authenticated
 count and vector capacity. It is suited to dense position domains. The current
 Core contract requires every position in `[0,count)` to have a binding; it does
@@ -126,14 +129,16 @@ Map and List are the layout names; **sparse** and **dense** describe their
 intended coordinate distributions. **prefix** describes Map routing, and
 **position** describes List indexing. These descriptions do not introduce
 additional layouts or select a layout automatically. `auth/tree` implements
-both layouts using authentication trees.
+both layouts as VC Trees, independently of the application-facing Object SDK.
+Map construction and routing live in `map.go`, Map updates in `map_update.go`;
+List geometry and encoding live in `list.go`, List updates in `list_update.go`.
 
 Flat and compositional ArcSet organization describe how an application
 groups bindings across Roots. That application choice is not a Root field;
 the same ArcSet may be used in either organization or a mixture of them.
 
 Map routes over all 256 key bits (12 bits per KZG level, 8 per IPA level;
-the final KZG digit is zero-padded). Layout 4 terminal cells contain
+the final KZG digit is zero-padded). Layout 1 terminal cells contain
 `0x01 || uvarint(label byte length) || original label bytes || targetCID`.
 The length is minimal, the label is opaque (including empty bytes), and the
 target is the complete canonical binary CID. The routing key is recomputed
@@ -143,8 +148,8 @@ An empty slot or a routed terminal label with a different full coordinate proves
 absence. Distinct labels at the same full coordinate return
 `ErrCoordinateCollision`, including during proof generation, membership/absence
 verification, construction, updates and recovery. Duplicate labels are rejected.
-Native keys are not rehash inputs. Layout 1 is retired and rejected; Root `V`
-remains zero. Cell encodings are defined in `maltcid/node_cells.go` and
+Native keys are not rehash inputs. Root `V` remains zero. Cell encodings are
+defined in `maltcid/node_cells.go` and
 `auth/tree`; changing them must not silently reuse a descriptor's interpretation.
 
 List consumes dense indices `[0,count)` using canonical index labels.
@@ -172,11 +177,11 @@ Caches validate the node identity, full vector and exact profile before reuse.
 
 ## List root metadata and geometry
 
-Layout 3 reserves **only root slot 0** for `0x04 || uint64be(count) || payloadCID`.
+Layout 2 reserves **only root slot 0** for `0x04 || uint64be(count) || payloadCID`.
 The CID is optional: absence ends after the nine-byte tag/count prefix; presence
 uses the complete canonical binary CID through the end of the cell. A defined
 CID of empty content differs from absence. Core does not fetch or decode it.
-Layout 2 is retired and rejected. Root `V` remains zero.
+Root `V` remains zero.
 
 With physical capacity `C=2^k` (`k=8` for IPA, `12` for KZG), the root has `C-1`
 content slots and every descendant has `C`. Height `H` is the smallest
@@ -226,7 +231,7 @@ Candidate preparation and materialization do not publish or trust a Root and
 do not prove a transition from a previous Root. A candidate's optional
 `previous` field is storage lineage only.
 
-The current query (`malt.authentication/5`) and candidate (`malt.authentication/4`)
+The current query (`malt.authentication/5`) and candidate (`malt.authentication/6`)
 JSON contracts live in `protocol/authentication.go`
 and `protocol/schemas/authentication*.schema.json`. Queries select a Root,
 explicit label traversal steps, and resolve/binding/range operation. Range
@@ -248,7 +253,7 @@ writer does not migrate historical update views. Recreate old experimental
 state and dependent parents with the current implementation. Replacing a Root
 prefix alone is not a migration; payload CIDs remain reusable.
 
-`conformance/authentication-v3.json` is generated from current queries over
+`conformance/authentication-v4.json` is generated from current queries over
 V=0 Roots. Historical authentication/0 vectors remain only in Git history and are not
 accepted by the current verifier. See [conformance corpora](./conformance-corpora.md). Measurements
 must identify their exact Core revision, profile, and corpus. Browser release
@@ -273,7 +278,7 @@ missing binding proof. It carries neither a primitive binding nor a range
 result. Verification binds that prefix to the caller's Root and steps; it does
 not claim to have evaluated the suffix. I/O, recovery, unsupported-input and
 cancellation errors never become absence. Historical query and candidate profiles are rejected. Complete candidates use
-the independent `/4` candidate profile.
+the independent `/6` candidate profile.
 
 `ExecuteWithRoots` accepts a Root-scoped node lookup. A service can reconstruct
 one ArcSet before serving its proof and defer other Roots until traversal

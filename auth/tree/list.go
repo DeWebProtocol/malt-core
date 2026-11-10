@@ -38,36 +38,36 @@ func parseMetadata(data commitment.Cell) (Metadata, error) {
 	return m, nil
 }
 
-// position is traversal context, never serialized in an internal node. A root
+// listGeometry is authenticated List traversal context, never serialized in an internal node. A root
 // has C-1 content slots; every descendant has C. Height zero denotes a leaf.
-type position struct {
+type listGeometry struct {
 	count  uint64
 	height uint
 	root   bool
 }
 
-func rootPosition(count uint64, slots int) position {
-	p := position{count: count, root: true}
+func listRootGeometry(count uint64, slots int) listGeometry {
+	p := listGeometry{count: count, root: true}
 	if count > 0 {
-		for high := count - 1; high >= uint64(slots-1); high >>= radixBits(slots) {
+		for high := count - 1; high >= uint64(slots-1); high >>= listRadixBits(slots) {
 			p.height++
 		}
 	}
 	return p
 }
 
-func radixBits(slots int) uint { return uint(bits.TrailingZeros(uint(slots))) }
-func (p position) base() int {
+func listRadixBits(slots int) uint { return uint(bits.TrailingZeros(uint(slots))) }
+func (p listGeometry) base() int {
 	if p.root {
 		return 1
 	}
 	return 0
 }
-func (p position) shift(slots int) uint { return p.height * radixBits(slots) }
-func (p position) slot(index uint64, slots int) int {
+func (p listGeometry) shift(slots int) uint { return p.height * listRadixBits(slots) }
+func (p listGeometry) slot(index uint64, slots int) int {
 	return p.base() + int(index>>p.shift(slots))
 }
-func (p position) used(slots int) int {
+func (p listGeometry) used(slots int) int {
 	if p.count == 0 {
 		return 0
 	}
@@ -76,21 +76,21 @@ func (p position) used(slots int) int {
 
 // child handles a virtual span of 2^64 without overflowing uint64. A selected
 // child's start is always representable because it lies below count.
-func (p position) child(digit int, slots int) (position, uint64) {
+func (p listGeometry) child(digit int, slots int) (listGeometry, uint64) {
 	shift := p.shift(slots)
 	start := uint64(digit) << shift
 	count := p.count - start
 	if shift < 64 {
 		count = min(count, uint64(1)<<shift)
 	}
-	return position{count: count, height: p.height - 1}, start
+	return listGeometry{count: count, height: p.height - 1}, start
 }
 
 func (b *builder) list(items []binding, meta Metadata) (maltcid.NodeRef, error) {
-	return b.listNode(items, rootPosition(meta.Count, b.profile.Slots), meta)
+	return b.listNode(items, listRootGeometry(meta.Count, b.profile.Slots), meta)
 }
 
-func (b *builder) listNode(items []binding, p position, meta Metadata) (maltcid.NodeRef, error) {
+func (b *builder) listNode(items []binding, p listGeometry, meta Metadata) (maltcid.NodeRef, error) {
 	cells := make([]commitment.Cell, b.profile.Slots)
 	if p.root {
 		cells[0] = meta.cell()
@@ -115,9 +115,9 @@ func (b *builder) listNode(items []binding, p position, meta Metadata) (maltcid.
 	return b.commit(cells)
 }
 
-// checkPosition validates shape using authenticated parent context. Internal
+// checkListGeometry validates shape using authenticated parent context. Internal
 // metadata, holes, wrong cell roles and nonempty padding are all noncanonical.
-func checkPosition(cells []commitment.Cell, p position, slots int) error {
+func checkListGeometry(cells []commitment.Cell, p listGeometry, slots int) error {
 	if len(cells) != slots || p.used(slots) > slots-p.base() {
 		return errors.New("invalid List node geometry")
 	}
@@ -138,4 +138,18 @@ func checkPosition(cells []commitment.Cell, p position, slots int) error {
 		}
 	}
 	return nil
+}
+
+func parseList(cell commitment.Cell) (cid.Cid, error) {
+	if len(cell) < 2 || cell[0] != listLeaf {
+		return cid.Undef, errors.New("invalid List target")
+	}
+	target, err := cid.Cast(cell[1:])
+	if err != nil {
+		return cid.Undef, err
+	}
+	if !bytes.Equal(target.Bytes(), cell[1:]) {
+		return cid.Undef, errors.New("noncanonical List target")
+	}
+	return target, nil
 }

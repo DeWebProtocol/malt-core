@@ -99,7 +99,7 @@ does not forward the SDK API.
 | `engine` | Apply Root-selected derivation and combine the tree with commitment capabilities |
 | `derivation` | Deterministic conversion of application label bytes to coordinates |
 | `auth/coordinate` | Coordinate types and canonical key/index encodings |
-| `auth/tree` | Label-authenticated Map leaves, coordinate routing, List construction, updates and proofs |
+| `auth/tree` | Map/List VC Trees: label authentication, coordinate routing, immutable construction, updates and proofs |
 | `auth/commitment` | Separate commitment, proving, and verification capabilities; KZG and IPA backends |
 | `auth/arcset/materializer` | Narrow injected lookup/update/snapshot capabilities and an in-memory reference implementation |
 | `traversal` | Compose explicit authenticated steps across Roots |
@@ -125,7 +125,7 @@ measurements.
    CIDs and applies its own trust/freshness policy.
 
 The query profile is `malt.authentication/5`. It supports explicit resolution,
-a final binding query, or a fixed-chunk List byte range. Missing traversal
+a final binding query, or a List element-index range. Missing traversal
 steps carry authenticated early termination; the unevaluated suffix is not
 claimed to be absent. See [query contracts](docs/spec/authentication-contracts.md).
 
@@ -201,6 +201,10 @@ Core defines no ArcTable/KV/CAS persistence, transactions, HTTP, recovery
 records, UnixFS, managed account, authoritative head, or trusted-root policy.
 Those belong to Gateway and the local runtime. Architecture tests enforce the
 import direction and prevent restoration of retired packages.
+
+Timing belongs to consumers. Core contains no observation context or phase timers;
+Gateway instruments its injected backend/node lookup for service diagnostics,
+and Evaluation owns high-resolution measurement adapters and result semantics.
 
 ## Portable boundary
 

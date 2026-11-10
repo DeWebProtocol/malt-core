@@ -1,6 +1,6 @@
 # Authentication candidates, batches, and receipts
 
-Complete state uses `malt.authentication/4`. A candidate contains its exact
+Complete state uses `malt.authentication/6`. A candidate contains its exact
 Root, original application labels and targets, descriptor, and complete reachable
 node vectors. Optional `previous` records storage lineage. Updates that leave
 the Root unchanged preserve the existing lineage instead of naming themselves
@@ -22,7 +22,7 @@ Applications rebuild changed child ArcSets before rebinding their parents.
 
 ## Ordered batches
 
-`malt.authentication-batch/2` contains `transaction_id`, `base`, `root`, and
+`malt.authentication-batch/3` contains `transaction_id`, `base`, `root`, and
 `candidates`. Transaction IDs contain 1–128 ASCII letters, digits, `.`, `_`, or
 `-`. A batch contains 1–4096 distinct candidate Roots and canonical Root strings.
 Its final candidate must equal the declared final `root`.
@@ -46,7 +46,7 @@ a second canonical serializer or hash arbitrary incoming JSON bytes.
 
 ## Exact receipts and trust
 
-`malt.authentication-receipt/2` carries `transaction_id`, `base`, `root`,
+`malt.authentication-receipt/3` carries `transaction_id`, `base`, `root`,
 `digest`, and a nonempty `durable_boundary`. Receipt validation requires those
 values to match the exact locally computed batch, including profile and digest.
 A substituted candidate, reordered batch, transaction, base, or final Root

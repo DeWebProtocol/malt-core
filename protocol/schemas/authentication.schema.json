@@ -17,8 +17,8 @@
         },
         "layout": {
           "enum": [
-            3,
-            4
+            1,
+            2
           ]
         },
         "derivation_profile": {
@@ -455,7 +455,7 @@
       "additionalProperties": false,
       "properties": {
         "profile": {
-          "const": "malt.authentication/4"
+          "const": "malt.authentication/6"
         },
         "root": {
           "type": "string",

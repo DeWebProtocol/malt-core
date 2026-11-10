@@ -54,6 +54,7 @@ func TestBatchVerifiesCandidatesAndBindsExactReceipt(t *testing.T) {
 		func(r *protocol.AuthenticationReceipt) { r.Root = child.Root },
 		func(r *protocol.AuthenticationReceipt) { r.Digest = strings.Repeat("0", 64) },
 		func(r *protocol.AuthenticationReceipt) { r.DurableBoundary = " " },
+		func(r *protocol.AuthenticationReceipt) { r.Profile = "malt.authentication-receipt/2" },
 		func(r *protocol.AuthenticationReceipt) { r.Profile = "malt.materialization-receipt/v2" },
 	} {
 		bad := receipt
@@ -62,7 +63,7 @@ func TestBatchVerifiesCandidatesAndBindsExactReceipt(t *testing.T) {
 			t.Fatal("substituted receipt accepted")
 		}
 	}
-	for _, old := range []string{"malt.client-root-bundle/v2", "malt.update-view/v1"} {
+	for _, old := range []string{"malt.authentication-batch/2", "malt.client-root-bundle/v2", "malt.update-view/v1"} {
 		if _, err := protocol.DecodeAuthenticationBatch([]byte(strings.Replace(string(raw), protocol.AuthenticationBatchProfile, old, 1))); err == nil {
 			t.Fatal("retired profile accepted")
 		}

@@ -12,8 +12,8 @@ import (
 
 type ProfileID uint8
 
-// IDs 0, 1 and 2 belong to retired typed-input profiles. Their meanings must
-// never be reassigned. These profiles operate only on opaque label bytes.
+// These profiles operate only on opaque label bytes. Their IDs identify the
+// current algorithms specified by this package.
 const (
 	Direct ProfileID = 3
 	SHA256 ProfileID = 4

@@ -1,96 +1,48 @@
-# Independent authentication tree and retained writers
+# Map/List VC Trees and retained writers
 
-Historical implementation note. The current coordinate derivation boundary and
-label contracts supersede its input/system-selector API; see
-[the current specification](../spec/authentication-inputs.md).
+The current authentication tree lives in `auth/tree`. Map (`L=1`) authenticates
+exact original label bytes and target CIDs, using derived coordinates for routing.
+List (`L=2`) authenticates dense integer indices and root count metadata. Both
+compose vector commitments into immutable trees. The application-facing
+`sdk/object` containers consume these layouts; they do not define them.
 
-Typed authentication now has one coordinate-only tree implementation in
-`auth/tree`. `auth/input` derives coordinates defined by `auth/coordinate`;
-`auth/engine` binds that interpretation to the full Root descriptor. The engine
-re-exports the tree's shared result types for its typed API; there is no second
-proof representation or historical-format decoder behind those names.
+Map construction, cell encoding and routing live in `map.go`, with updates in
+`map_update.go`. List geometry and cell encoding live in `list.go`, with
+replacement, append, truncation and payload changes in `list_update.go`.
+`engine` binds derivation/layout/exact VC profiles to complete Roots;
+`traversal` composes explicit steps across Roots.
 
-The tree owns Map and List construction, canonical cell encoding,
-affected-path updates, complete bounded snapshots, and binding/range proofs.
-It consumes narrow node capabilities and installed exact VC profiles. It does
-not interpret labels, payload selectors, application graphs, relation versions,
-or storage policy. `traversal` owns explicit typed traversal across Roots,
-including lazy Root-scoped lookup used by `sdk/authentication`.
+## State lifetime
 
-## Source migration
+`authentication.BuildWriter` constructs immutable state; `NewWriter` validates
+an imported complete candidate. `Apply` copies changed paths and shares unchanged
+descendants. `Update` compiles a complete desired state to the same delta path.
+List `AppendBatch` commits each affected vector once for the complete suffix.
+A resulting writer retains no obsolete parent-writer chain.
 
-Typed cross-Root proof values now use `traversal.Traversal` instead of
-`engine.Traversal`. Register exact commitment backends through the registry
-passed to `engine.New`, or through `engine.Tree.Profiles` when configuring an
-existing facade. The former `engine.Profiles` field is no longer a second
-configuration surface. Downstream source callers, including tests, must migrate
-these references when adopting the new Core release.
+`Root` returns the candidate identity. `State` copies labels and targets;
+`Export` also traverses complete reachable nodes. New external materialization
+is checked against its commitments. Owned unchanged vectors do not repeat that
+check. Returned buffers are detached. Bounded snapshots check each distinct
+vector once, but count every logical binding toward the expansion limit.
 
-## State lifetime and incremental work
+Sessions bound retained branches by handle count and conservative state charge.
+Discard/clear releases branches; stale handles are not reused. Retained state
+is local computation, not a portable transition proof or client trust decision.
 
-`authentication.BuildWriter` builds owned immutable state directly.
-`authentication.NewWriter` validates a complete imported candidate before
-retaining it. `Writer.Apply` accepts a typed `Delta`, copies affected paths in
-both the input index and authentication DAG, and shares unchanged descendants.
-The resulting writer retains no parent writer or obsolete ancestor chain.
-`Writer.Update` scans complete desired inputs and compiles them to the same delta
-path; callers that already know their changes use `Apply` to avoid that scan.
-List growth uses `AppendBatch` to commit each changed or new node once
-for the whole suffix, including growth across multiple tree levels. Mixed
-replacement or measured-tail changes run before that suffix edit.
+## Current framing and diagnostics
 
-`Writer.Root` returns the candidate identity without exporting state.
-`Writer.Export` explicitly traverses and copies complete inputs and nodes.
-`Candidate` is the synchronous complete-export convenience. Neither updating
-nor exporting owned vectors repeats their cryptographic validation. Untrusted
-imports and external node writes still validate commitments; newly constructed
-nodes are retained only through the tree's private computed-node path. Wrapping
-an owned materializer does not grant this private capability. External readers
-and writers receive detached node references and cannot mutate the commitment
-being constructed or verified. Stateless `authentication.Export` also copies
-retained inputs, so the returned candidate does not alias caller-owned state.
+Roots use V=0 with Map=1 and List=2. Their descriptors select the layout, exact
+VC/backend profile and label-to-coordinate derivation profile; the identity
+multihash carries the multicommitment directly. Internal references retain
+`"MN" || 0x00 || byte(L) || multicommitment`. Historical experimental data is
+outside the supported data set and adds no fields to the current format.
 
-A bounded snapshot verifies each distinct physical vector once per call.
-Repeated references still undergo metadata and routing checks, and each logical
-binding counts toward the expansion limit. No verification cache survives the
-snapshot call.
+Core has no observation package or timing callbacks. Gateway and Evaluation
+wrap the injected node and VC capabilities to measure their own operations.
+See the [Root/layout specification](../spec/authentication-inputs.md),
+[query contracts](../spec/authentication-contracts.md), and
+[candidates/batches](../spec/authentication-batches.md).
 
-An `authentication.Session` retains bounded immutable branches. Its defaults are
-64 handles and a 64 MiB conservative state charge. Shared descendants count at
-each reference/candidate; this charge is not an allocator measurement. Failed
-updates or capacity checks preserve existing handles. Discard/clear release
-branches, and clear never reuses a stale handle identifier.
-
-These are retained-state optimizations. Complete cold import/recovery remains
-required; there is no partial witness protocol or node-internal incremental
-commitment arithmetic. An exported candidate or local handle is not a portable
-transition proof, publication receipt, or client trust decision.
-
-## Payload queries and removed code
-
-The caller's application schema supplies every typed query step. A rooted
-content query can end with `Sys(Payload)` at the reached Map Root. A flat
-path binding can point directly to a content/manifest CID. The flat entry Root
-can still expose its own manifest through a system binding. List and
-native-key profiles do not gain system payload support, and the literal label
-`"@payload"` remains distinct from the system selector.
-
-The old string resolver, ResolveKey port, transcript verifier, Map/List
-adapters, old ProofList families and node-width adapter are removed. Current
-callers use typed queries and Root descriptors directly. No implicit/HAMT
-placeholder evidence or old cache/path helpers remain.
-
-## Shared hosts and browser integration
-
-`sdk/authentication/host` owns transport-neutral serialization and bounded
-sessions used by the malt-ts WASM commands. Those commands retain backend
-selection and JS ABI registration. The retained ABI exposes create/import,
-delta apply, complete export, discard and clear; batch and receipt validation
-use the same Core contracts. Workers serialize stateful operations and require
-the complete current ABI before becoming ready.
-
-Root V=0 and canonical tree node encoding remain unchanged. Queries use
-`malt.authentication/1`; deltas use `malt.authentication-delta/0`. Native and
-WASM tests compare incremental Roots with independent construction, verify
-exported candidates, reject hostile materialization and omitted steps, and
-check session bounds and stale-handle rejection.
+`sdk/authentication/host` shares native/WASM serialization and bounded sessions.
+`malt-ts` owns WASM entrypoints, browser Workers and exact published-Core assets.

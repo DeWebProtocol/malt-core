@@ -13,7 +13,7 @@
   ],
   "properties": {
     "profile": {
-      "const": "malt.authentication-batch/2"
+      "const": "malt.authentication-batch/3"
     },
     "transaction_id": {
       "type": "string",

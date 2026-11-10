@@ -29,18 +29,23 @@ compatibility between every experimental build.
 - Exact VC profiles must fix their parameters, encodings, and verification
   rules. A different cryptographic configuration receives a distinct profile
   ID; execution-only performance options do not change Root identity.
-- An incompatible input or layout interpretation must remain distinguishable
-  through explicitly defined identifiers or framing. It must not silently
-  reuse the same complete Root descriptor for a different meaning.
+- Input and layout identifiers describe the current pre-beta contract. Historical
+  experimental state is outside the supported data set; do not add Root fields,
+  magic prefixes or decoder branches solely to distinguish or migrate it.
 - Pin source revisions, protocol profiles, and conformance corpora in
   experimental artifacts. An artifact's provenance does not replace the
   Root's own interpretation rules.
-- Unknown or unsupported combinations fail closed. An experimental migration
-  must explicitly choose rejection, reconstruction, or a specified reader;
-  changing `V` is not the default way to resolve that boundary.
+- Unknown or unsupported current combinations fail closed. Validate the current
+  format, without a separate historical-format detection requirement.
 
 The implemented framing is specified in [authentication inputs and Roots](../spec/authentication-inputs.md)
 and tracked by [MIP-1014](../mips/mip-1014-self-describing-roots.md).
+
+On 2026-11-09 the maintainer fixed the current VC-tree layout IDs at Map=1 and
+List=2 while retaining V=0. The Root descriptor contains only version, layout,
+exact VC/backend profile and label-to-coordinate derivation profile. CIDv1
+contains the multicommitment directly in an identity multihash. Internal node
+references retain `"MN" || 0x00 || byte(L) || multicommitment`.
 
 ## Existing experimental encodings
 

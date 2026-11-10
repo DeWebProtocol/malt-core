@@ -24,11 +24,21 @@ func TestSelfDescribingRoot(t *testing.T) {
 		if err != nil || got != d || !bytes.Equal(c, value) {
 			t.Fatalf("round trip %v", err)
 		}
-		if root.Prefix().Codec != 0x300404 || maltcid.VersionIDOf(root) != 0 || !maltcid.IsMaltCid(root) {
+		if root.Prefix().Codec != 0x300104 || maltcid.VersionIDOf(root) != 0 || !maltcid.IsMaltCid(root) {
 			t.Fatal("wrong Root codec")
+		}
+		// Lock the agreed wire fields independently of NewRoot/ParseRoot:
+		// exact VC profile, commitment length and commitment, without a prefix.
+		mc := append([]byte{byte(id), byte(p.CommitmentSize)}, c...)
+		hash, _ := mh.Encode(mc, mh.IDENTITY)
+		if !root.Equals(cid.NewCidV1(0x300104, hash)) {
+			t.Fatal("Root does not match the descriptor and multicommitment encoding")
 		}
 		ref, _, _ := maltcid.RootNode(root)
 		raw, _ := ref.Bytes()
+		if !bytes.Equal(raw, append([]byte{'M', 'N', 0, byte(maltcid.Map)}, mc...)) {
+			t.Fatal("unexpected internal node reference encoding")
+		}
 		parsed, err := maltcid.ParseNodeRef(raw)
 		if err != nil || parsed.Profile != id {
 			t.Fatal(err)
@@ -41,8 +51,8 @@ func TestSelfDescribingRoot(t *testing.T) {
 			t.Fatal("AA leaked into internal node identity")
 		}
 		bad := append([]byte{byte(id) | 128, 0, byte(p.CommitmentSize)}, c...)
-		hash, _ := mh.Encode(bad, mh.IDENTITY)
-		if _, _, err := maltcid.ParseRoot(cid.NewCidV1(0x300404, hash)); err == nil {
+		hash, _ = mh.Encode(bad, mh.IDENTITY)
+		if _, _, err := maltcid.ParseRoot(cid.NewCidV1(0x300104, hash)); err == nil {
 			t.Fatal("nonminimal profile ID accepted")
 		}
 	}
@@ -51,7 +61,7 @@ func TestSelfDescribingRoot(t *testing.T) {
 	}
 }
 
-func TestCoordinateOnlyMapLayoutIsRetired(t *testing.T) {
+func TestUnsupportedLayoutIDsAreRejected(t *testing.T) {
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		p, _ := maltcid.Profile(profile)
 		commitment := make([]byte, p.CommitmentSize)
@@ -60,13 +70,15 @@ func TestCoordinateOnlyMapLayoutIsRetired(t *testing.T) {
 			t.Fatal(err)
 		}
 		hash, _ := mh.Encode(mc, mh.IDENTITY)
-		root := cid.NewCidV1(0x300104, hash)
-		if _, _, err := maltcid.ParseRoot(root); err == nil || maltcid.IsMaltCid(root) {
-			t.Fatal("coordinate-only Root accepted as label-authenticated state")
-		}
-		ref := append([]byte{'M', 'N', 0, 1}, mc...)
-		if _, err := maltcid.ParseNodeRef(ref); err == nil {
-			t.Fatal("coordinate-only internal node accepted")
+		for _, layout := range []byte{0, 3, 4} {
+			root := cid.NewCidV1(0x300000|uint64(layout)<<8|uint64(derivation.Direct), hash)
+			if _, _, err := maltcid.ParseRoot(root); err == nil || maltcid.IsMaltCid(root) {
+				t.Fatalf("unsupported layout %d Root accepted", layout)
+			}
+			ref := append([]byte{'M', 'N', 0, layout}, mc...)
+			if _, err := maltcid.ParseNodeRef(ref); err == nil {
+				t.Fatalf("unsupported layout %d internal node accepted", layout)
+			}
 		}
 	}
 }

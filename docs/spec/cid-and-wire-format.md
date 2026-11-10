@@ -4,8 +4,8 @@ Current MALT Roots use CIDv1 with codec
 `0x300000 | (V << 12) | (L << 8) | AA`, abbreviated `0x30VLAA`.
 `V=0` is required throughout pre-production. `L` selects the Map or List
 authentication layout; `AA` selects the coordinate derivation profile.
-Current layouts are Map `L=4` (original-label leaves) and List `L=3`.
-Coordinate-only Map `L=1` and former List `L=2` are retired and rejected.
+Current layouts are Map `L=1` (original-label leaves) and List `L=2`.
+Experimental layout IDs 4/3 are retired and rejected.
 Flat/compositional ArcSet organization is not encoded in the Root.
 The codec integer is a minimal unsigned
 varint, not a fixed four-byte prefix.
@@ -16,6 +16,8 @@ The identity multihash carries a multicommitment:
 uvarint(exact VC profile ID) || uvarint(commitment length) || commitment bytes
 ```
 
+The descriptor contains only version, layout, exact VC/backend profile and
+label-to-coordinate derivation profile. There is no historical-format prefix.
 The full descriptor selects interpretation. The codec alone cannot select a
 backend, and commitment length cannot infer one. `maltcid.NewRoot` and
 `ParseRoot` are the current constructors/reader. Historical semantic-kind

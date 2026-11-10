@@ -20,11 +20,10 @@ type Layout uint8
 const (
 	// Map organizes bindings by coordinate prefixes for general, potentially
 	// sparse key spaces. Leaves bind original label bytes and targets.
-	// Layout 1 is retired: it authenticated coordinates instead of labels.
-	Map Layout = 4
+	Map Layout = 1
 	// List organizes dense integer positions using authenticated root count
-	// metadata and full-capacity descendants. Layout 2 is retired.
-	List Layout = 3
+	// metadata and full-capacity descendants.
+	List Layout = 2
 )
 
 type ProfileID uint64

@@ -38,8 +38,8 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 	work := newProofWork(source)
 	visiting := make(map[string]bool)
 	seen := make(map[[32]byte][]byte)
-	var walk func(maltcid.NodeRef, int, *position, []int) error
-	walk = func(node maltcid.NodeRef, depth int, expected *position, path []int) error {
+	var walk func(maltcid.NodeRef, int, *listGeometry, []int) error
+	walk = func(node maltcid.NodeRef, depth int, expected *listGeometry, path []int) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 		// for repeats; release the prepared polynomial and its vector copy.
 		physical.opening = nil
 		cells := physical.cells
-		var pos position
+		var pos listGeometry
 		start := 0
 		if d.Layout == maltcid.List {
 			if depth == 0 {
@@ -80,12 +80,12 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 					return fmt.Errorf("snapshot count %d exceeds bound %d", meta.Count, maxBindings)
 				}
 				view.PayloadCID = meta.PayloadCID
-				pos = rootPosition(meta.Count, p.Slots)
+				pos = listRootGeometry(meta.Count, p.Slots)
 			} else {
 				pos = *expected
 			}
 			start = pos.base()
-			if err := checkPosition(cells, pos, p.Slots); err != nil {
+			if err := checkListGeometry(cells, pos, p.Slots); err != nil {
 				return err
 			}
 		}
@@ -136,7 +136,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 					}
 					route := append(append([]int(nil), path...), slot)
 					for level, want := range route {
-						got, err := digit(key.Key, level, p.Slots)
+						got, err := mapSlot(key.Key, level, p.Slots)
 						if err != nil || got != want {
 							return errors.New("leaf is outside its routing prefix")
 						}

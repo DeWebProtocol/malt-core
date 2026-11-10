@@ -7,7 +7,6 @@ import (
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
-	"github.com/dewebprotocol/malt-core/auth/observation"
 	"github.com/dewebprotocol/malt-core/maltcid"
 )
 
@@ -43,15 +42,7 @@ func (w *proofWork) load(ctx context.Context, ref maltcid.NodeRef, slots int) (*
 	if node := w.nodes[string(key)]; node != nil {
 		return node, nil
 	}
-	finish := observation.Start(ctx, observation.PhaseMaterialization)
 	cells, err := w.source.GetNode(ctx, copyNodeRef(ref))
-	var cellBytes uint64
-	if observation.Enabled(ctx) {
-		for _, cell := range cells {
-			cellBytes += uint64(len(cell))
-		}
-	}
-	finish(1, uint64(len(cells)), cellBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +60,6 @@ func (n *proofNode) open(ctx context.Context, profile Profile, index uint64) (co
 	if evidence, ok := n.verified[index]; ok {
 		return commitment.NewCell(evidence.cell), bytes.Clone(evidence.proof), nil
 	}
-	finish := observation.Start(ctx, observation.PhaseOpen)
 	var err error
 	if n.opening == nil {
 		n.opening, err = prepareVector(profile, n.ref, n.cells)
@@ -79,7 +69,6 @@ func (n *proofNode) open(ctx context.Context, profile Profile, index uint64) (co
 	if err == nil {
 		cell, proof, err = n.opening.open(index)
 	}
-	finish(1, 1, uint64(len(proof)))
 	if err != nil {
 		return nil, nil, err
 	}
