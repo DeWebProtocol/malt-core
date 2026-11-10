@@ -209,11 +209,11 @@
       "valid": false
     },
     {
-      "id": "profile-1.superseded-layout-root",
+      "id": "profile-1.unknown-layout-root",
       "verification": {
         "request": {
           "profile": "malt.authentication/5",
-          "root": "bagcirqabaazacmefnruwkru6ugj5x2qrdxboi7xyossidyvvn7n7fyfcleo3rq3gkwurkny6wx2ebidnzvd2fklo2e3q",
+          "root": "bagcj5qabaazacmefnruwkru6ugj5x2qrdxboi7xyossidyvvn7n7fyfcleo3rq3gkwurkny6wx2ebidnzvd2fklo2e3q",
           "steps": [],
           "operation": "binding",
           "label": "YS9i"
@@ -685,11 +685,11 @@
       "valid": false
     },
     {
-      "id": "profile-2.superseded-layout-root",
+      "id": "profile-2.unknown-layout-root",
       "verification": {
         "request": {
           "profile": "malt.authentication/5",
-          "root": "bagcirqabaaraeia2cq63v7ql6upu2aedhi6qszat3lduc7mnlixkxfr6x7m3vbrosu",
+          "root": "bagcj5qabaaraeia2cq63v7ql6upu2aedhi6qszat3lduc7mnlixkxfr6x7m3vbrosu",
           "steps": [],
           "operation": "binding",
           "label": "YS9i"

@@ -96,11 +96,11 @@ func GenerateAuthentication() ([]byte, error) {
 		badLabel.Verification.Result.Binding = &binding
 		badLabel.Valid = false
 		corpus.Vectors = append(corpus.Vectors, badLabel)
-		retiredRoot := corpus.Vectors[bindingStart]
-		retiredRoot.ID = fmt.Sprintf("profile-%d.superseded-layout-root", profile)
-		retiredRoot.Verification.Request.Root = cid.NewCidV1(0x300404, root.Hash()).String()
-		retiredRoot.Valid = false
-		corpus.Vectors = append(corpus.Vectors, retiredRoot)
+		unknownLayoutRoot := corpus.Vectors[bindingStart]
+		unknownLayoutRoot.ID = fmt.Sprintf("profile-%d.unknown-layout-root", profile)
+		unknownLayoutRoot.Verification.Request.Root = cid.NewCidV1(root.Prefix().Codec&^0xf00|0xf00, root.Hash()).String()
+		unknownLayoutRoot.Valid = false
+		corpus.Vectors = append(corpus.Vectors, unknownLayoutRoot)
 		path := protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: root.String(), Operation: "resolve", Steps: [][]byte{[]byte("missing"), []byte("suffix")}}
 		if err := add("path-absence", path); err != nil {
 			return nil, err

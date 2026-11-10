@@ -79,8 +79,8 @@ func TestAuthenticationCandidateNullCellsAndOptionalDefaults(t *testing.T) {
 	if err != nil || len(decoded.Nodes[0].Cells) != 256 {
 		t.Fatalf("null cells: %v", err)
 	}
-	if _, err := protocol.DecodeAuthenticationCandidate([]byte(strings.Replace(string(raw), protocol.AuthenticationProfile, "malt.authentication/4", 1))); err == nil {
-		t.Fatal("superseded candidate profile accepted")
+	if _, err := protocol.DecodeAuthenticationCandidate([]byte(strings.Replace(string(raw), protocol.AuthenticationProfile, "unknown-profile", 1))); err == nil {
+		t.Fatal("unknown candidate profile accepted")
 	}
 	if _, err := protocol.DecodeAuthenticationCandidate([]byte(strings.Replace(string(raw), `"entries":null`, `"entries":[null]`, 1))); err == nil {
 		t.Fatal("accepted null entry")

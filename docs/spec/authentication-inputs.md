@@ -105,8 +105,8 @@ names and namespace isolation. Under Direct, any application payload label must
 itself be a canonical coordinate encoding. Private preprocessing is performed
 before submission and may require application-specific payload discovery.
 
-IDs 0–2 retain their retired typed-input meanings in Git history and are not
-accepted by the current engine. New profiles require immutable specifications,
+The current engine supports Direct (3) and SHA256 (4).
+New profiles require immutable specifications,
 implementation and conformance vectors; unsupported IDs fail closed. The Root
 codec parses profile IDs structurally without importing derivation. `engine`
 checks supported profiles and layout compatibility even for empty state and

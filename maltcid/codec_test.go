@@ -1,13 +1,11 @@
 package maltcid_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/derivation"
 	"github.com/dewebprotocol/malt-core/maltcid"
 	cid "github.com/ipfs/go-cid"
-	mh "github.com/multiformats/go-multihash"
 )
 
 func TestCurrentRootClassification(t *testing.T) {
@@ -45,26 +43,30 @@ func TestCurrentRootClassification(t *testing.T) {
 	}
 }
 
-func TestHistoricalRootsAreRejected(t *testing.T) {
-	for _, codec := range []uint64{0x300001, 0x300002, 0x300003, 0x300004, 0x302101, 0x302102, 0x302201, 0x302202, 0x303101, 0x303102, 0x303201, 0x303202} {
-		t.Run(fmt.Sprintf("%x", codec), func(t *testing.T) {
-			size := maltcid.KZGCommitmentSize
-			if codec&1 == 0 {
-				size = maltcid.IPACommitmentSize
+func TestRootClassificationRequiresCurrentDescriptor(t *testing.T) {
+	root, err := maltcid.NewRoot(maltcid.RootDescriptor{
+		Version: maltcid.RootVersion, Layout: maltcid.Map,
+		DerivationProfile: uint8(derivation.SHA256), Profile: maltcid.IPA256,
+	}, make([]byte, maltcid.IPACommitmentSize))
+	if err != nil {
+		t.Fatal(err)
+	}
+	codec := root.Prefix().Codec
+	for name, invalidCodec := range map[string]uint64{
+		"unknown version": codec&^0xf000 | 0xf000,
+		"unknown layout":  codec&^0xf00 | 0xf00,
+		"non-MALT codec":  cid.Raw,
+	} {
+		t.Run(name, func(t *testing.T) {
+			invalid := cid.NewCidV1(invalidCodec, root.Hash())
+			if _, _, err := maltcid.ParseRoot(invalid); err == nil {
+				t.Fatal("invalid descriptor parsed")
 			}
-			hash, err := mh.Encode(make([]byte, size), mh.IDENTITY)
-			if err != nil {
-				t.Fatal(err)
+			if maltcid.IsMaltCid(invalid) || maltcid.BackendKindOf(invalid) != maltcid.BackendKindUnknown || maltcid.GetMaltCodec(invalid) != 0 {
+				t.Fatal("invalid descriptor advertised as a supported Root")
 			}
-			root := cid.NewCidV1(codec, hash)
-			if _, _, err := maltcid.ParseRoot(root); err == nil {
-				t.Fatal("historical Root parsed as current")
-			}
-			if maltcid.IsMaltCid(root) || maltcid.BackendKindOf(root) != maltcid.BackendKindUnknown || maltcid.GetMaltCodec(root) != 0 {
-				t.Fatal("historical Root advertised as a supported Root")
-			}
-			if _, err := maltcid.ExtractCommitment(root); err == nil {
-				t.Fatal("historical commitment extracted by current parser")
+			if _, err := maltcid.ExtractCommitment(invalid); err == nil {
+				t.Fatal("commitment extracted from invalid descriptor")
 			}
 		})
 	}

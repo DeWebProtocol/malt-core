@@ -20,9 +20,9 @@ their original identifiers.
 
 The current layout names are **Map** and **List**, exposed as `maltcid.Map` and
 `maltcid.List`, with layout IDs 1 and 2 respectively. No Prefix/Positional source
-aliases are retained. Experimental layout IDs 4/3 are rejected. Because layout
-identity is part of Roots, internal node references, CIDs and proofs, active
-pre-beta state must be rebuilt; rewriting a Root prefix is not a migration.
+aliases are retained. Parsers validate the current Map/List layout IDs. Layout
+identity is part of Roots, internal node references, CIDs and proofs; active
+pre-beta state must be built from current inputs.
 Historical release notes retain their release-specific names and IDs.
 
 The legacy Map/List facade, string-path resolver, Resolve/Read, Map-proof, client-root,
