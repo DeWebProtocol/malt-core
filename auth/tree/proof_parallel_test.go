@@ -151,8 +151,12 @@ func TestDistinctVectorsOpenConcurrentlyWithoutChangingEvidence(t *testing.T) {
 				t.Fatalf("parallel evidence failed verification: %v", err)
 			}
 			ref, _, _ := maltcid.RootNode(root)
-			if result, err := e.Prove(t.Context(), root, query, corruptChild{nodes, ref}); err == nil || len(result.Proof.Nodes) != 0 {
-				t.Fatal("corrupt vector returned usable evidence")
+			bad, err := e.Prove(t.Context(), root, query, corruptChild{nodes, ref})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if valid, _ := e.Verify(root, query, bad); valid {
+				t.Fatal("receiver accepted evidence from corrupt materialization")
 			}
 			ctx, cancel := context.WithCancel(t.Context())
 			cancel()

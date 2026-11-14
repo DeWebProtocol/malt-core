@@ -61,7 +61,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 		}
 		// Verify each physical vector once, but check metadata, routing and
 		// logical expansion for every occurrence of a shared subtree.
-		if _, _, err := physical.open(ctx, s, 0); err != nil {
+		if err := physical.validate(ctx, s); err != nil {
 			return err
 		}
 		// Snapshot only opens index zero. Its verified evidence is sufficient

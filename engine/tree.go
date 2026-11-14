@@ -10,6 +10,8 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
+// Prove generates untrusted evidence; Verify must succeed before its claimed
+// presence or target can be accepted. Generation does not self-verify prepared openings.
 func (e *Engine) Prove(ctx context.Context, root cid.Cid, query []byte, source materializer.NodeLookup) (Result, error) {
 	if err := e.CheckRoot(root); err != nil {
 		return Result{}, err

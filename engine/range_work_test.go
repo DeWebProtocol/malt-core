@@ -42,7 +42,7 @@ func (s *rangeNodes) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commit
 	return s.buffer, nil
 }
 
-func TestRangeReusesVerifiedNodeWork(t *testing.T) {
+func TestRangeReusesGeneratedNodeWork(t *testing.T) {
 	for _, tc := range []struct {
 		name              string
 		profile           maltcid.ProfileID
@@ -96,8 +96,8 @@ func TestRangeReusesVerifiedNodeWork(t *testing.T) {
 			if len(nodes.reads) != tc.nodes {
 				t.Fatalf("read %d distinct nodes, want %d", len(nodes.reads), tc.nodes)
 			}
-			if counter.verified != tc.openings {
-				t.Fatalf("verified %d openings, want %d", counter.verified, tc.openings)
+			if counter.verified != 0 {
+				t.Fatalf("proof generation added %d verification calls", counter.verified)
 			}
 			if tc.prepared {
 				if counter.prepared != tc.nodes || counter.opened != tc.openings || counter.provedAtRoot != 0 {
@@ -120,10 +120,13 @@ func TestRangeReusesVerifiedNodeWork(t *testing.T) {
 				!bytes.Equal(proof, result.Segments[1].Proof.Nodes[0].MetadataProof) {
 				t.Fatal("returned evidence aliases another result")
 			}
-			// A new call must consult and check its own materializer, even at
+			// A new call must consult its own materializer, even at
 			// a Root successfully queried by the same engine before.
-			if _, err := e.ProveRange(t.Context(), root, tc.start, &tc.end, corruptVector{store}); err == nil {
-				t.Fatal("reused evidence across calls")
+			bad, err := e.ProveRange(t.Context(), root, tc.start, &tc.end, corruptUnselectedCell{store})
+			if err == nil {
+				if valid, _ := e.VerifyRange(root, tc.start, &tc.end, bad); valid {
+					t.Fatal("receiver accepted corrupt input or stale evidence")
+				}
 			}
 			canceled, cancel := context.WithCancel(t.Context())
 			cancel()

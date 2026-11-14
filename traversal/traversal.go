@@ -17,6 +17,8 @@ type Traversal struct {
 
 // Resolve interprets each explicit step using the AA of the Root reached at
 // that step. No string separators or longest-path-prefix policy are involved.
+// The returned target and evidence are untrusted until the receiver calls Verify
+// against its independently selected Root and steps.
 func Resolve(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]byte, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
 	target, proof, err := ResolvePath(ctx, e, root, steps, source)
 	if err == nil && !target.Defined() {
@@ -27,6 +29,7 @@ func Resolve(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]byte
 
 // ResolvePath returns an undefined target and a terminal absence proof when a
 // selector is absent. Missing materialization and execution failures are errors.
+// Both presence and absence are untrusted claims until VerifyPath succeeds.
 func ResolvePath(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]byte, source materializer.NodeLookup) (cid.Cid, Traversal, error) {
 	return ResolvePathWithRoots(ctx, e, root, steps, func(context.Context, cid.Cid) (materializer.NodeLookup, error) { return source, nil })
 }
@@ -36,7 +39,9 @@ func ResolvePath(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]
 type RootLookup func(context.Context, cid.Cid) (materializer.NodeLookup, error)
 
 // ResolvePathWithRoots lazily obtains nodes for each reached Root. No lookup
-// occurs for an unvisited suffix after authenticated absence.
+// occurs for an unvisited suffix after claimed absence. Reached Roots and the
+// final target are untrusted during generation; receivers must call VerifyPath
+// against their independently selected Root and steps before accepting them.
 func ResolvePathWithRoots(ctx context.Context, e *engine.Engine, root cid.Cid, steps [][]byte, lookup RootLookup) (cid.Cid, Traversal, error) {
 	if lookup == nil {
 		return cid.Undef, Traversal{}, errors.New("Root lookup is nil")

@@ -165,14 +165,19 @@ They identify authentication nodes, not application vertices, and omit AA.
 The root descriptor supplies coordinate derivation; an internal node is
 interpreted with its layout and exact VC profile. Application-valued targets
 retain complete Roots/CIDs, including the target Root's AA. Each explicit
-traversal step uses the AA of the Root reached by the preceding verified step.
+traversal step uses the AA of the Root named by the preceding step. During proof
+generation, this is an untrusted claim. The receiver validates every link with
+`Verify` or `VerifyPath` against its independently selected initial Root and steps.
 
 Equal coordinates and targets do not establish interchangeable Map leaves:
 their original labels must also match. In particular, an opaque SHA256 label
 and its Direct key encoding authenticate different leaf bytes. Reuse across
 AA modes requires identical authenticated vectors and valid routing under each
 selected Root; complete Roots remain distinct.
-Caches validate the node identity, full vector and exact profile before reuse.
+Caches bind entries to the node identity, full vector and exact profile. Proof
+generation may cache untrusted computational state and evidence; reuse grants no
+trust, and receivers still verify the result. Consumers reconstructing or updating
+state must validate materialized vectors before using them as authenticated state.
 `EqualCommitment` does not establish interchangeable Root/query semantics.
 
 ## List root metadata and geometry

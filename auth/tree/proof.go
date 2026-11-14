@@ -34,7 +34,14 @@ func openVector(s Profile, ref maltcid.NodeRef, cells []commitment.Cell, index u
 	if err != nil {
 		return nil, nil, err
 	}
-	return opening.open(index)
+	cell, proof, err := opening.open(index)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := opening.verify(index, cell, proof); err != nil {
+		return nil, nil, err
+	}
+	return cell, proof, nil
 }
 func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []byte) (bool, error) {
 	root, err := commitment.NewValue(ref.Profile, ref.Commitment)
@@ -48,10 +55,12 @@ func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []b
 	return verifier.VerifyIndex(root, index, commitment.NewCell(cell), bytes.Clone(proof))
 }
 
-// Prove authenticates the original label at its checked routing coordinate.
+// Prove generates evidence for the original label at its routing coordinate.
 // Storage errors and coordinate collisions are never authenticated absence.
 // It collects the bounded path before opening its distinct vectors concurrently.
-// Materialization remains untrusted until every selected opening verifies.
+// Returned evidence is untrusted: callers must Verify it against their selected
+// Root and query before accepting the claimed presence or target. Prepared
+// openings are not self-verified during proof generation.
 func (e *Engine) Prove(ctx context.Context, root cid.Cid, query Selector, source materializer.NodeLookup) (Result, error) {
 	return e.prove(ctx, root, query, newProofWork(source))
 }

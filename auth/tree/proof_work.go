@@ -11,17 +11,18 @@ import (
 )
 
 // proofWork belongs to one binding/range query or snapshot. It loads each touched vector
-// once and reuses its auxiliary opening material and verified index evidence.
+// once and reuses its auxiliary opening material and untrusted index evidence.
 // Nothing survives the call or changes the caller's storage/cache policy.
 type proofWork struct {
 	source materializer.NodeLookup
 	nodes  map[string]*proofNode
 }
 type proofNode struct {
-	ref      maltcid.NodeRef
-	cells    []commitment.Cell
-	opening  *vectorOpening
-	verified map[uint64]indexEvidence
+	ref       maltcid.NodeRef
+	cells     []commitment.Cell
+	opening   *vectorOpening
+	evidence  map[uint64]indexEvidence
+	validated bool
 }
 type indexEvidence struct {
 	cell  commitment.Cell
@@ -49,7 +50,7 @@ func (w *proofWork) load(ctx context.Context, ref maltcid.NodeRef, slots int) (*
 	if len(cells) != slots {
 		return nil, materializer.ErrIncomplete
 	}
-	node := &proofNode{ref: copyNodeRef(ref), cells: commitment.CloneCells(cells), verified: make(map[uint64]indexEvidence)}
+	node := &proofNode{ref: copyNodeRef(ref), cells: commitment.CloneCells(cells), evidence: make(map[uint64]indexEvidence)}
 	w.nodes[string(key)] = node
 	return node, nil
 }
@@ -57,7 +58,7 @@ func (n *proofNode) open(ctx context.Context, profile Profile, index uint64) (co
 	if err := ctx.Err(); err != nil {
 		return nil, nil, err
 	}
-	if evidence, ok := n.verified[index]; ok {
+	if evidence, ok := n.evidence[index]; ok {
 		return commitment.NewCell(evidence.cell), bytes.Clone(evidence.proof), nil
 	}
 	var err error
@@ -72,10 +73,30 @@ func (n *proofNode) open(ctx context.Context, profile Profile, index uint64) (co
 	if err != nil {
 		return nil, nil, err
 	}
-	// Only verified evidence is reusable. Return detached slices so modifying
-	// one segment cannot change another segment or its metadata evidence.
-	n.verified[index] = indexEvidence{cell: cell, proof: proof}
+	// This cache only reuses generated evidence; it grants no trust. Return
+	// detached slices so one segment cannot change another segment's evidence.
+	n.evidence[index] = indexEvidence{cell: cell, proof: proof}
 	return commitment.NewCell(cell), bytes.Clone(proof), nil
+}
+
+// validate is for consumers reconstructing state, rather than serving proofs.
+// A shared physical vector is checked once before any of its cells are trusted.
+func (n *proofNode) validate(ctx context.Context, profile Profile) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if n.validated {
+		return nil
+	}
+	cell, proof, err := n.open(ctx, profile, 0)
+	if err != nil {
+		return err
+	}
+	if err := n.opening.verify(0, cell, proof); err != nil {
+		return err
+	}
+	n.validated = true
+	return nil
 }
 
 type vectorOpening struct {
@@ -94,10 +115,7 @@ func prepareVector(profile Profile, ref maltcid.NodeRef, cells []commitment.Cell
 	if len(cells) != profile.MaxValues() {
 		return nil, errors.New("materialized vector width mismatch")
 	}
-	verifier, ok := profile.(commitment.Verifier)
-	if !ok {
-		return nil, errors.New("VC profile cannot verify openings")
-	}
+	verifier, _ := profile.(commitment.Verifier)
 	opening := &vectorOpening{root: root, cells: cells, verifier: verifier}
 	if preparer, ok := profile.(commitment.PreparedProver); ok {
 		opening.prepared, err = preparer.PrepareOpening(root, commitment.CloneCells(cells))
@@ -133,12 +151,19 @@ func (o *vectorOpening) open(index uint64) (commitment.Cell, []byte, error) {
 	if !cell.Equal(o.cells[index]) {
 		return nil, nil, errors.New("prover returned a different cell")
 	}
+	return commitment.NewCell(cell), bytes.Clone(proof), nil
+}
+
+func (o *vectorOpening) verify(index uint64, cell commitment.Cell, proof []byte) error {
+	if o.verifier == nil {
+		return errors.New("VC profile cannot verify openings")
+	}
 	valid, err := o.verifier.VerifyIndex(o.root, index, commitment.NewCell(cell), bytes.Clone(proof))
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	if !valid {
-		return nil, nil, materializer.ErrIncomplete
+		return materializer.ErrIncomplete
 	}
-	return commitment.NewCell(cell), bytes.Clone(proof), nil
+	return nil
 }

@@ -38,8 +38,8 @@ The public interfaces under `auth/commitment` separate three capabilities:
 
 `Backend` composes all three for hosts that need them. `tree.Profile` identifies
 an installed backend by exact profile and capacity, without requiring all three
-capabilities. Construction requires a `Committer`; query execution requires a
-`Prover` and `Verifier`; verification requires only a `Verifier`. Retained owned
+capabilities. Construction requires a `Committer`; proof generation requires a
+`Prover` (optionally `PreparedProver`); verification requires only a `Verifier`. Retained owned
 updates need commitment computation, while imports and untrusted materialization
 also require proof generation and verification.
 
@@ -72,14 +72,20 @@ zero. The former Map/List and flat binding-CID commitment wrappers are removed. 
 The built-in KZG and IPA backends implement `commitment.PreparedProver`.
 `PrepareOpening` prepares an immutable witness for a caller-selected
 primitive value without computing its commitment. Preparation does not
-validate untrusted cells. The engine opens the selected coordinate, checks the
-returned root and cell, then calls `VerifyIndex` exactly once before returning
-the proof. A corrupt vector fails verification. Backends without the prepared
-capability use `Prover.Prove(root, cells, index)` and verify its result against
-the same selected root. There is no commit-and-prove fallback.
+validate untrusted cells. Binding/range generation opens the selected coordinate
+and checks the returned root identity and cell, but does not self-verify the
+proof. Results, including claimed presence, absence, metadata and targets, remain
+untrusted until the receiver verifies them against its independently selected
+Root and query. A corrupt vector may yield evidence that the receiver rejects.
+Backends without preparation use `Prover.Prove(root, cells, index)` without an
+additional engine verification. There is no commit-and-prove fallback.
 
-Public `Prover` methods still verify their own outputs. The engine
-uses the prepared capability to avoid repeating that verification. Cache
+Public primitive `Prover` methods still verify their own outputs. The engine
+uses the prepared capability for proof generation without that self-check.
+`ReadMetadata`, snapshots, `ValidateNode`, imports and updates still verify
+untrusted materialization before consuming it. Reusing generated evidence does
+not make it authenticated; checked state reconstruction tracks validation
+separately and checks each physical vector once. Cache
 ownership, lifetime, serialization, persistence, authorization, publication,
 and trusted-root selection remain caller responsibilities.
 

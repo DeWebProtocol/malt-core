@@ -114,9 +114,10 @@ store this data.
 
 Binding proofs collect their bounded authentication path before opening distinct
 vectors concurrently, up to `GOMAXPROCS` jobs per binding. Storage lookup remains
-serial and every generated opening is checked against its selected commitment
-before any result is returned. Openings from the same vector retain preparation
-and verified-index reuse; proof order and serialized bytes do not depend on
+serial. Generation returns untrusted evidence without self-verifying prepared
+openings; the receiver verifies the complete caller-selected Root and query
+before accepting the result. Openings from the same vector retain preparation
+and generated-evidence reuse; proof order and serialized bytes do not depend on
 scheduling. The built-in KZG and IPA arithmetic also follows the process's Go
 scheduler budget. Applications may schedule independent ArcSet proofs separately.
 

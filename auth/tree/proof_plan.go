@@ -22,7 +22,7 @@ type plannedVector struct {
 
 // Planning reads storage serially and detaches selected cells before any
 // cryptographic work starts. Each distinct vector has one job, so its prepared
-// opening and verified-index cache need no concurrent mutation. Multiple
+// opening and generated-evidence cache need no concurrent mutation. Multiple
 // requests against one vector remain in that job and reuse the existing cache.
 type proofPlan struct {
 	vectors []*plannedVector
