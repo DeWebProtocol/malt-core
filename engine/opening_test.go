@@ -3,6 +3,7 @@ package engine_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
@@ -19,12 +20,15 @@ import (
 type openingCounter struct {
 	commitment.Backend
 	profile                                  maltcid.ProfileID
+	mu                                       sync.Mutex
 	prepared, opened, verified, provedAtRoot int
 }
 
 func (s *openingCounter) ProfileID() maltcid.ProfileID { return s.profile }
 func (s *openingCounter) PrepareOpening(root commitment.Value, cells []commitment.Cell) (commitment.Opening, error) {
+	s.mu.Lock()
 	s.prepared++
+	s.mu.Unlock()
 	opening, err := s.Backend.(commitment.PreparedProver).PrepareOpening(root, cells)
 	if err != nil {
 		return nil, err
@@ -32,15 +36,21 @@ func (s *openingCounter) PrepareOpening(root commitment.Value, cells []commitmen
 	return &countedOpening{Opening: opening, owner: s}, nil
 }
 func (s *openingCounter) Prove(root commitment.Value, cells []commitment.Cell, index uint64) (commitment.Cell, []byte, error) {
+	s.mu.Lock()
 	s.provedAtRoot++
+	s.mu.Unlock()
 	return s.Backend.(commitment.Prover).Prove(root, cells, index)
 }
 func (s *openingCounter) BatchProve(root commitment.Value, cells []commitment.Cell, indices []uint64) ([]commitment.Cell, []byte, error) {
+	s.mu.Lock()
 	s.provedAtRoot++
+	s.mu.Unlock()
 	return s.Backend.(commitment.Prover).BatchProve(root, cells, indices)
 }
 func (s *openingCounter) VerifyIndex(root commitment.Value, index uint64, value commitment.Cell, proof []byte) (bool, error) {
+	s.mu.Lock()
 	s.verified++
+	s.mu.Unlock()
 	return s.Backend.VerifyIndex(root, index, value, proof)
 }
 
@@ -50,7 +60,9 @@ type countedOpening struct {
 }
 
 func (p *countedOpening) Open(index uint64) (commitment.Cell, []byte, error) {
+	p.owner.mu.Lock()
 	p.owner.opened++
+	p.owner.mu.Unlock()
 	return p.Opening.Open(index)
 }
 

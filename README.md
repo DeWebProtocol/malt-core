@@ -112,6 +112,14 @@ The helper retains content bytes in `blocks` and makes the committed
 relationships queryable through `nodes`. Your application chooses where to
 store this data.
 
+Binding proofs collect their bounded authentication path before opening distinct
+vectors concurrently, up to `GOMAXPROCS` jobs per binding. Storage lookup remains
+serial and every generated opening is checked against its selected commitment
+before any result is returned. Openings from the same vector retain preparation
+and verified-index reuse; proof order and serialized bytes do not depend on
+scheduling. The built-in KZG and IPA arithmetic also follows the process's Go
+scheduler budget. Applications may schedule independent ArcSet proofs separately.
+
 ### Update
 
 Replace the document and commit again. `Delta(ctx)` collects changes relative
