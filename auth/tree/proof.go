@@ -50,6 +50,8 @@ func verifyOpening(s Profile, ref maltcid.NodeRef, index uint64, cell, proof []b
 
 // Prove authenticates the original label at its checked routing coordinate.
 // Storage errors and coordinate collisions are never authenticated absence.
+// It collects the bounded path before opening its distinct vectors concurrently.
+// Materialization remains untrusted until every selected opening verifies.
 func (e *Engine) Prove(ctx context.Context, root cid.Cid, query Selector, source materializer.NodeLookup) (Result, error) {
 	return e.prove(ctx, root, query, newProofWork(source))
 }
@@ -71,6 +73,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 		return Result{}, errors.New("node lookup is nil")
 	}
 	result := Result{Proof: Proof{Format: ProofFormat, Nodes: []NodeOpening{}}}
+	plan := newProofPlan()
 	localIndex := k.Index
 	var pos listGeometry
 	for depth := 0; depth < 256; depth++ {
@@ -90,7 +93,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 			}
 			slot = uint64(digit)
 		} else if depth == 0 {
-			opening.Metadata, opening.MetadataProof, err = node.open(ctx, s, 0)
+			opening.Metadata, err = plan.selectCell(node, 0, depth, true)
 			if err != nil {
 				return Result{}, err
 			}
@@ -101,13 +104,13 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 			pos = listRootGeometry(meta.Count, p.Slots)
 			if localIndex >= meta.Count {
 				result.Proof.Nodes = append(result.Proof.Nodes, opening)
-				return result, nil
+				return plan.finish(ctx, s, result)
 			}
 		}
 		if d.Layout == maltcid.List {
 			slot = uint64(pos.slot(localIndex, p.Slots))
 		}
-		opening.Cell, opening.Proof, err = node.open(ctx, s, slot)
+		opening.Cell, err = plan.selectCell(node, slot, depth, false)
 		if err != nil {
 			return Result{}, err
 		}
@@ -116,7 +119,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 			if d.Layout == maltcid.List {
 				return Result{}, errors.New("hole in List state")
 			}
-			return result, nil
+			return plan.finish(ctx, s, result)
 		}
 		if d.Layout == maltcid.Map && opening.Cell[0] == mapLeaf {
 			label, target, err := parseMap(opening.Cell)
@@ -137,7 +140,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 			if result.Present {
 				result.Target = target
 			}
-			return result, nil
+			return plan.finish(ctx, s, result)
 		}
 		if d.Layout == maltcid.List && pos.height == 0 {
 			result.Target, err = parseList(opening.Cell)
@@ -145,7 +148,7 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 				return Result{}, err
 			}
 			result.Present = true
-			return result, nil
+			return plan.finish(ctx, s, result)
 		}
 		ref, err = parseChild(opening.Cell, ref)
 		if err != nil {

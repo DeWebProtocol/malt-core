@@ -1,5 +1,7 @@
 // Package commitment defines independent cryptographic commitment capabilities.
 // Backends are restart-safe and do not rely on RAM-only state for correctness.
+// Shared backend instances must permit concurrent calls; proof schedulers may
+// prepare, open and verify independent vectors in parallel.
 package commitment
 
 // Committer constructs commitments and performs index-stable replacements.
