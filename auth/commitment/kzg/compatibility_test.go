@@ -102,6 +102,46 @@ func compatibilityValues() []commitment.Cell {
 	return values
 }
 
+func TestKZGSparseOpeningsMatchUpstream(t *testing.T) {
+	legacy, err := gokzg4844.NewContext4096Secure()
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer, err := kzg.NewScheme()
+	if err != nil {
+		t.Fatal(err)
+	}
+	domain := legacyDomainPoints(t)
+	for _, occupancy := range []int{0, 1, 32, 128, 129} {
+		values := make([]commitment.Cell, kzg.MaxValues)
+		for i := 0; i < occupancy; i++ {
+			values[(i*73+19)%kzg.MaxValues] = commitment.NewCell([]byte{byte(i), byte(i >> 8)})
+		}
+		root, err := writer.Commit(values)
+		if err != nil {
+			t.Fatal(err)
+		}
+		prepared, err := writer.PrepareOpening(root, values)
+		if err != nil {
+			t.Fatal(err)
+		}
+		blob := legacyBlob(values)
+		for _, index := range []uint64{0, 19, kzg.MaxValues - 1} {
+			_, got, err := prepared.Open(index)
+			if err != nil {
+				t.Fatal(err)
+			}
+			proof, claimed, err := legacy.ComputeKZGProof(blob, domain[index], 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(got, encodeLegacyProof(proof, claimed, index)) {
+				t.Fatalf("sparse proof differs from upstream at occupancy=%d index=%d", occupancy, index)
+			}
+		}
+	}
+}
+
 func TestKZGBatchEncodingMatchesLegacyPrimitiveProofs(t *testing.T) {
 	legacy, err := gokzg4844.NewContext4096Secure()
 	if err != nil {

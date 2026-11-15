@@ -24,18 +24,27 @@ when construction is needed. The old combined commit-and-prove signatures and
 `ProveAtRoot`/`BatchProveAtRoot` entry points are removed.
 
 `PreparedProver.PrepareOpening(root, cells)` optionally prepares an immutable
-`Opening` without recomputing the commitment. Every opened result must be
-verified before use or cache admission. The old implicit-commit preparation API
+`Opening` without recomputing the commitment. Preparation and opened results
+remain untrusted: generators may reuse and forward them, while receivers must
+verify before accepting any claimed binding. The old implicit-commit preparation API
 is removed. An evaluator that intentionally measures commitment plus witness
 preparation must call both inside its recorded measurement boundary.
 
 `tree.Profile` and the typed engine's shared `Profile` identify exact registered
 profiles independently of their execution capabilities. Tree construction needs
-only a committer. Proof serving requires proving and verification capabilities;
+only a committer. Proof generation requires proving capabilities;
 portable verification needs only verification. A retained Writer can construct
 and update owned state with a committer, while importing or checking untrusted
 materialization also needs proving and verification. Both built-in verifier
 constructors return types with no committing or proving method set.
+
+Prepared binding/range generation no longer self-verifies each opening.
+`authentication.Verify`, `engine.Verify`, and `VerifyRange` are the receiving
+consumer's trust boundary. A successful generation call alone does not certify
+materialization. `ReadMetadata`, snapshots, node validation, imports and updates
+retain the verification required before consuming untrusted state. Direct
+primitive `Prover.Prove`/`BatchProve` retain their checked-root contract; a backend
+without preparation may still perform that self-check inside its primitive call.
 
 This is a Go source migration. Root descriptors, canonical node encoding,
 commitment and proof bytes, typed query profiles, candidate/batch/receipt

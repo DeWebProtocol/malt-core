@@ -30,6 +30,13 @@ type proofProfile struct {
 func (p proofProfile) ProfileID() maltcid.ProfileID { return p.id }
 func (p proofProfile) MaxValues() int               { return p.Prover.MaxValues() }
 
+type generationProfile struct {
+	commitment.PreparedProver
+	id maltcid.ProfileID
+}
+
+func (p generationProfile) ProfileID() maltcid.ProfileID { return p.id }
+
 func capabilityEngine(t *testing.T, p engine.Profile) *engine.Engine {
 	t.Helper()
 	registry := engine.NewRegistry()
@@ -73,6 +80,17 @@ func TestIndependentAuthenticationCapabilities(t *testing.T) {
 			}
 			if valid, err := verifier.Verify(root, query, proof); err != nil || !valid {
 				t.Fatalf("independent verification: %v, %v", valid, err)
+			}
+			generator := capabilityEngine(t, generationProfile{PreparedProver: backend.(commitment.PreparedProver), id: id})
+			generated, err := generator.Prove(t.Context(), root, query, nodes)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if valid, err := verifier.Verify(root, query, generated); err != nil || !valid {
+				t.Fatalf("proof generator without a verifier: %v, %v", valid, err)
+			}
+			if _, err := generator.Snapshot(t.Context(), root, nodes); err == nil {
+				t.Fatal("state reconstruction accepted a profile without verification")
 			}
 			if _, err := prover.Build(t.Context(), state, nodes); err == nil {
 				t.Fatal("proof-only profile can compute commitments")

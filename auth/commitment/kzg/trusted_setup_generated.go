@@ -7,4 +7,5 @@ const (
 	trustedSetupSourceSHA256   = "0229b43f4fac9b17374809520eb621b5ee1a7f74547e7d36918e7d4b122e178d"
 	trustedSetupVerifierSHA256 = "cb309e7babbbfc398ba780e993f9cdce0a3580ec14b76ce155876a3e249e5c66"
 	trustedSetupWriterSHA256   = "f39d3cb84a0b8e5dbba3601ad506e5a6fc89db22b361b59b10207768a82ba623"
+	trustedSetupOpeningsSHA256 = "cf2ea2b1c529c63c637047e33d0a792260ecaf8c5ef321b58f53682c14fe6c38"
 )

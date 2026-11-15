@@ -1,5 +1,7 @@
 // Package commitment defines independent cryptographic commitment capabilities.
 // Backends are restart-safe and do not rely on RAM-only state for correctness.
+// Shared backend instances must permit concurrent calls; proof schedulers may
+// prepare, open and verify independent vectors in parallel.
 package commitment
 
 // Committer constructs commitments and performs index-stable replacements.
@@ -36,8 +38,9 @@ type Backend interface {
 }
 
 // Opening is prepared auxiliary material for one caller-selected commitment.
-// Preparation alone does not authenticate the supplied vector. The consumer
-// must verify each Open result before using it or admitting it to a cache.
+// Preparation and Open do not authenticate the supplied vector. Proof producers
+// may reuse and forward this untrusted evidence without self-verifying it.
+// Consumers must verify it before trusting any claimed value or binding.
 type Opening interface {
 	Root() Value
 	Open(index uint64) (value Cell, proof []byte, err error)

@@ -112,6 +112,23 @@ The helper retains content bytes in `blocks` and makes the committed
 relationships queryable through `nodes`. Your application chooses where to
 store this data.
 
+Binding proofs collect their bounded authentication path before opening distinct
+vectors concurrently, up to `GOMAXPROCS` jobs per binding. Storage lookup remains
+serial. Generation returns untrusted evidence without self-verifying prepared
+openings; the receiver verifies the complete caller-selected Root and query
+before accepting the result. Openings from the same vector retain preparation
+and generated-evidence reuse; proof order and serialized bytes do not depend on
+scheduling. The built-in KZG and IPA arithmetic also follows the process's Go
+scheduler budget. Applications may schedule independent ArcSet proofs separately.
+
+The built-in KZG prover uses a sparse quotient calculation for vectors with at
+most 128 nonzero scalars. Its fixed unit-polynomial opening table is generated
+from the pinned public setup and loaded with the writer key; queries require
+no table precomputation. Higher occupancy uses the full-vector calculation.
+Both paths emit identical proof bytes and use the same verifier. Writers retain
+an additional 384 KiB embedded table plus 384 KiB of decoded points per process;
+portable verifiers do not load or link either.
+
 ### Update
 
 Replace the document and commit again. `Delta(ctx)` collects changes relative

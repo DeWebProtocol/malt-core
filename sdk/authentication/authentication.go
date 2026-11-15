@@ -20,6 +20,8 @@ import (
 // policy remain with the caller. It is invoked only for Roots actually queried.
 type RootLookup = traversal.RootLookup
 
+// Execute generates an untrusted response. The receiver must call Verify with
+// its independently selected request before accepting any claimed result.
 func Execute(ctx context.Context, e *engine.Engine, q protocol.AuthenticationRequest, source materializer.NodeLookup) (protocol.AuthenticationResult, error) {
 	return ExecuteWithRoots(ctx, e, q, func(context.Context, cid.Cid) (materializer.NodeLookup, error) { return source, nil })
 }
@@ -27,6 +29,8 @@ func Execute(ctx context.Context, e *engine.Engine, q protocol.AuthenticationReq
 // ExecuteWithRoots executes the same protocol against a Root-scoped source.
 // This permits lazy recovery of individual ArcSets without expanding the
 // application graph or assigning persistence responsibilities to the engine.
+// Proof generation does not authenticate materialization; Verify is the receiver's
+// trust boundary, even when generation returns without an error.
 func ExecuteWithRoots(ctx context.Context, e *engine.Engine, q protocol.AuthenticationRequest, lookup RootLookup) (protocol.AuthenticationResult, error) {
 	if err := q.Validate(); err != nil {
 		return protocol.AuthenticationResult{}, err

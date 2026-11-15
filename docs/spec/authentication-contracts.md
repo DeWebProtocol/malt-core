@@ -40,6 +40,12 @@ A successful `resolve` has neither `binding` nor `range`. `binding` contains
 one `engine.Result`; `range` contains an `engine.RangeResult`. The caller's
 selected operation determines the only permitted result shape.
 
+Generation success is not authentication. Prepared proof generation does not
+self-verify openings; responses and any retained computational state remain
+untrusted until receiver verification succeeds. Corrupt materialization can
+produce a response that is rejected there, even if generation returns no error.
+Structural/I/O failures remain errors rather than authenticated absence.
+
 `authentication.Verify(engine, request, result)` verifies the complete Root,
 steps, ordered continuity, target, and final primitive evidence. It performs no
 I/O. A server-authored request is not a trust anchor: the client must construct

@@ -22,9 +22,20 @@ func indexSelector(index uint64) Selector {
 }
 
 // ReadMetadata uses the always-out-of-range uint64 maximum index to obtain a
-// root metadata opening. Metadata stays structural: there is no system arc.
+// verified root metadata opening. Metadata stays structural: there is no system arc.
 func (e *Engine) ReadMetadata(ctx context.Context, root cid.Cid, source materializer.NodeLookup) (Metadata, Result, error) {
-	return e.readMetadata(ctx, root, newProofWork(source))
+	meta, result, err := e.readMetadata(ctx, root, newProofWork(source))
+	if err != nil {
+		return Metadata{}, Result{}, err
+	}
+	valid, err := e.Verify(root, indexSelector(math.MaxUint64), result)
+	if err != nil {
+		return Metadata{}, Result{}, err
+	}
+	if !valid {
+		return Metadata{}, Result{}, materializer.ErrIncomplete
+	}
+	return meta, result, nil
 }
 
 func (e *Engine) readMetadata(ctx context.Context, root cid.Cid, work *proofWork) (Metadata, Result, error) {
@@ -56,8 +67,9 @@ func rangeBounds(meta Metadata, start uint64, end *uint64) (uint64, uint64, erro
 	return start, stop - start, nil
 }
 
-// ProveRange authenticates the ordered bindings in the half-open index interval
-// [start,end). A nil end selects Count. Byte interpretation belongs to callers.
+// ProveRange generates untrusted evidence for the ordered bindings in the
+// half-open index interval [start,end). A nil end selects the claimed Count.
+// Callers must VerifyRange before accepting metadata or bindings.
 func (e *Engine) ProveRange(ctx context.Context, root cid.Cid, start uint64, end *uint64, source materializer.NodeLookup) (RangeResult, error) {
 	work := newProofWork(source)
 	meta, evidence, err := e.readMetadata(ctx, root, work)
