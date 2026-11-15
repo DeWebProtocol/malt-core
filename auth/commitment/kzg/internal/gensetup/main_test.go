@@ -9,7 +9,7 @@ import (
 )
 
 func TestCommittedAssetsMatchPinnedTrustedSetup(t *testing.T) {
-	verifier, writer, err := generateFromPinnedModule()
+	verifier, writer, openings, err := generateFromPinnedModule()
 	if err != nil {
 		t.Fatalf("generateFromPinnedModule: %v", err)
 	}
@@ -20,6 +20,7 @@ func TestCommittedAssetsMatchPinnedTrustedSetup(t *testing.T) {
 	packageDir := filepath.Clean(filepath.Join(filepath.Dir(sourceFile), "..", ".."))
 	assertCommittedAsset(t, filepath.Join(packageDir, "trusted_setup_verifier.bin"), verifier)
 	assertCommittedAsset(t, filepath.Join(packageDir, "trusted_setup_writer.bin"), writer)
+	assertCommittedAsset(t, filepath.Join(packageDir, "trusted_setup_openings.bin"), openings)
 }
 
 func assertCommittedAsset(t *testing.T, path string, want []byte) {

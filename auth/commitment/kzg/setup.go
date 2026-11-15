@@ -21,6 +21,12 @@ var trustedSetupVerifierBytes []byte
 //go:embed trusted_setup_writer.bin
 var trustedSetupWriterBytes []byte
 
+// These unit-polynomial openings are derived from the same public setup, not
+// additional ceremony material. Only writers load or link this fixed table.
+//
+//go:embed trusted_setup_openings.bin
+var trustedSetupOpeningBytes []byte
+
 type kzgOpeningKey struct {
 	genG1   bls12381.G1Affine
 	genG2   bls12381.G2Affine
@@ -29,6 +35,7 @@ type kzgOpeningKey struct {
 
 type kzgWriterKey struct {
 	lagrangeG1 []bls12381.G1Affine
+	unitProofs []bls12381.G1Affine
 }
 
 var (
@@ -71,36 +78,46 @@ func loadKZGOpeningKey() (*kzgOpeningKey, error) {
 
 func loadKZGWriterKey() (*kzgWriterKey, error) {
 	writerKeyOnce.Do(func() {
-		if err := verifySetupAsset("writer", trustedSetupWriterBytes, trustedSetupWriterSHA256); err != nil {
+		points, err := decodeG1Asset("writer", trustedSetupWriterBytes, trustedSetupWriterSHA256)
+		if err != nil {
 			writerKeyErr = err
 			return
 		}
-		const pointSize = bls12381.SizeOfG1AffineUncompressed
-		if len(trustedSetupWriterBytes) != MaxValues*pointSize {
-			writerKeyErr = fmt.Errorf("KZG writer setup has %d bytes, want %d", len(trustedSetupWriterBytes), MaxValues*pointSize)
+		unitProofs, err := decodeG1Asset("unit openings", trustedSetupOpeningBytes, trustedSetupOpeningsSHA256)
+		if err != nil {
+			writerKeyErr = err
 			return
 		}
-		points := make([]bls12381.G1Affine, MaxValues)
-		for i := range points {
-			raw := trustedSetupWriterBytes[i*pointSize : (i+1)*pointSize]
-			// gensetup performed the expensive curve and subgroup validation.
-			// The embedded asset fingerprint binds these canonical coordinates,
-			// so runtime initialization only decodes the two field elements.
-			if err := points[i].X.SetBytesCanonical(raw[:48]); err != nil {
-				writerKeyErr = fmt.Errorf("decode KZG writer point %d X: %w", i, err)
-				return
-			}
-			if err := points[i].Y.SetBytesCanonical(raw[48:]); err != nil {
-				writerKeyErr = fmt.Errorf("decode KZG writer point %d Y: %w", i, err)
-				return
-			}
-		}
-		writerKey = &kzgWriterKey{lagrangeG1: points}
+		writerKey = &kzgWriterKey{lagrangeG1: points, unitProofs: unitProofs}
 	})
 	if writerKeyErr != nil {
 		return nil, writerKeyErr
 	}
 	return writerKey, nil
+}
+
+func decodeG1Asset(name string, data []byte, expected string) ([]bls12381.G1Affine, error) {
+	if err := verifySetupAsset(name, data, expected); err != nil {
+		return nil, err
+	}
+	const pointSize = bls12381.SizeOfG1AffineUncompressed
+	if len(data) != MaxValues*pointSize {
+		return nil, fmt.Errorf("KZG %s setup has %d bytes, want %d", name, len(data), MaxValues*pointSize)
+	}
+	points := make([]bls12381.G1Affine, MaxValues)
+	for i := range points {
+		raw := data[i*pointSize : (i+1)*pointSize]
+		// gensetup validates the curve/subgroup and each derived opening.
+		// The fingerprint binds these canonical coordinates, so runtime
+		// initialization only decodes the two field elements.
+		if err := points[i].X.SetBytesCanonical(raw[:48]); err != nil {
+			return nil, fmt.Errorf("decode KZG %s point %d X: %w", name, i, err)
+		}
+		if err := points[i].Y.SetBytesCanonical(raw[48:]); err != nil {
+			return nil, fmt.Errorf("decode KZG %s point %d Y: %w", name, i, err)
+		}
+	}
+	return points, nil
 }
 
 func verifySetupAsset(name string, data []byte, expected string) error {

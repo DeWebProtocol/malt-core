@@ -104,7 +104,7 @@ func msmConfig() ecc.MultiExpConfig {
 	return ecc.MultiExpConfig{NbTasks: min(runtime.GOMAXPROCS(0), 1024)}
 }
 
-func provePolynomialAtIndex(
+func provePolynomialAtIndexDense(
 	key *kzgWriterKey,
 	domain *kzgDomain,
 	polynomial []blsfr.Element,

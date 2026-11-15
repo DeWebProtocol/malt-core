@@ -72,6 +72,28 @@ raises it to `2^(32-log2(4096))`, enumerates successive powers beginning with
 one, and bit-reverses the resulting array. Position `i` is opened at domain
 point `domain[i]`.
 
+### Opening Computation
+
+The CPU prover selects a sparse computation when at most 128 evaluations are
+nonzero; higher occupancy uses the full 4096-element quotient. This is an
+implementation choice and does not change KZG4096 parameters or proof bytes.
+
+Let `L_j` be the Lagrange basis for the index domain, `omega_i` the opening
+point, and `p_j` the supplied evaluations. The writer embeds one public point
+`U_i = Commit((L_i(X)-1)/(X-omega_i))` per slot. For every nonzero `p_j` with
+`j != i`, it computes `a_j = p_j/(omega_j-omega_i)`. The proof is the MSM
+
+`p_i*U_i + sum(j!=i, a_j*Commit(L_j)) - sum(j!=i, a_j*omega_j/omega_i)*Commit(L_i)`.
+
+This is exactly the dense quotient commitment by linearity, including an empty
+target slot or an entirely zero vector. The generated table is 4096 uncompressed
+G1 points (384 KiB), derived using the pinned upstream prover and individually
+verified against the pinned Lagrange commitments. `make generate-kzg-setup`
+regenerates the table and its fingerprint; the asset test reproduces every byte.
+Writers decode it once with the writer key, retaining another 384 KiB of affine
+points per process in addition to the embedded bytes. Verification-only binaries neither
+load nor link it, and verification algorithms and proof framing are unchanged.
+
 ### Single Proof
 
 A KZG index proof is exactly 84 bytes:
