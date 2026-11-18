@@ -21,7 +21,7 @@ const (
 	// Map organizes bindings by coordinate prefixes for general, potentially
 	// sparse key spaces. Leaves bind original label bytes and targets.
 	Map Layout = 1
-	// List organizes dense integer positions using authenticated root count
+	// List organizes integer positions using authenticated root count
 	// metadata and full-capacity descendants.
 	List Layout = 2
 )

@@ -38,8 +38,8 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 	work := newProofWork(source)
 	visiting := make(map[string]bool)
 	seen := make(map[[32]byte][]byte)
-	var walk func(maltcid.NodeRef, int, *listGeometry, []int) error
-	walk = func(node maltcid.NodeRef, depth int, expected *listGeometry, path []int) error {
+	var walk func(maltcid.NodeRef, int, *listGeometry, uint64, []int) error
+	walk = func(node maltcid.NodeRef, depth int, expected *listGeometry, offset uint64, path []int) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -76,9 +76,6 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 				if err != nil {
 					return err
 				}
-				if meta.Count > maxBindings {
-					return fmt.Errorf("snapshot count %d exceeds bound %d", meta.Count, maxBindings)
-				}
 				view.PayloadCID = meta.PayloadCID
 				pos = listRootGeometry(meta.Count, p.Slots)
 			} else {
@@ -89,30 +86,29 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 				return err
 			}
 		}
-		before := len(view.Bindings)
 		for slot := start; slot < len(cells); slot++ {
 			cell := cells[slot]
 			if d.Layout == maltcid.List {
-				if slot-start >= pos.used(p.Slots) {
-					continue
-				}
 				if len(cell) == 0 {
-					return errors.New("hole in List state")
+					continue
 				}
 				if pos.height == 0 {
 					target, err := parseList(cell)
 					if err != nil {
 						return err
 					}
-					index := uint64(len(view.Bindings))
+					if uint64(len(view.Bindings)) >= maxBindings {
+						return fmt.Errorf("snapshot exceeds binding bound %d", maxBindings)
+					}
+					index := offset + uint64(slot-start)
 					view.Bindings = append(view.Bindings, CoordinateBinding{Coordinate: coordinate.At(index), Label: coordinate.EncodeIndex(index), Target: target})
 				} else {
 					child, err := parseChild(cell, node)
 					if err != nil {
 						return err
 					}
-					childPos, _ := pos.child(slot-start, p.Slots)
-					if err := walk(child, depth+1, &childPos, nil); err != nil {
+					childPos, startIndex := pos.child(slot-start, p.Slots)
+					if err := walk(child, depth+1, &childPos, offset+startIndex, nil); err != nil {
 						return err
 					}
 				}
@@ -155,7 +151,7 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 						return err
 					}
 					old := len(view.Bindings)
-					if err := walk(child, depth+1, nil, append(append([]int(nil), path...), slot)); err != nil {
+					if err := walk(child, depth+1, nil, 0, append(append([]int(nil), path...), slot)); err != nil {
 						return err
 					}
 					if len(view.Bindings)-old < 2 {
@@ -164,12 +160,9 @@ func (e *Engine) SnapshotBounded(ctx context.Context, root cid.Cid, source mater
 				}
 			}
 		}
-		if d.Layout == maltcid.List && uint64(len(view.Bindings)-before) != pos.count {
-			return errors.New("List subtree count mismatch")
-		}
 		return nil
 	}
-	if err := walk(ref, 0, nil, nil); err != nil {
+	if err := walk(ref, 0, nil, 0, nil); err != nil {
 		return View{}, err
 	}
 	return view, nil

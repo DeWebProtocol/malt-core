@@ -3,6 +3,7 @@ package engine_test
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"testing"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer/memory"
@@ -175,7 +176,13 @@ func TestListMetadataAndOpaqueDirectLabels(t *testing.T) {
 		t.Fatal("eight-byte label should be an ordinary absent index", err)
 	}
 	state.Entries[0].Label = []byte("@payload")
-	if _, err := e.Build(ctx, state, nodes); err == nil {
-		t.Fatal("List system binding committed")
+	root, err = e.Build(ctx, state, nodes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	meta, _, err := e.ReadMetadata(ctx, root, nodes)
+	index := binary.BigEndian.Uint64([]byte("@payload"))
+	if err != nil || meta.Count != index+1 || !meta.PayloadCID.Equals(state.PayloadCID) {
+		t.Fatal("eight-byte index changed the List payload metadata", err)
 	}
 }

@@ -44,10 +44,11 @@ type listGeometry struct {
 	count  uint64
 	height uint
 	root   bool
+	tail   bool // this interval ends at the highest bound index
 }
 
 func listRootGeometry(count uint64, slots int) listGeometry {
-	p := listGeometry{count: count, root: true}
+	p := listGeometry{count: count, root: true, tail: true}
 	if count > 0 {
 		for high := count - 1; high >= uint64(slots-1); high >>= listRadixBits(slots) {
 			p.height++
@@ -83,59 +84,73 @@ func (p listGeometry) child(digit int, slots int) (listGeometry, uint64) {
 	if shift < 64 {
 		count = min(count, uint64(1)<<shift)
 	}
-	return listGeometry{count: count, height: p.height - 1}, start
+	return listGeometry{count: count, height: p.height - 1, tail: p.tail && digit == p.used(slots)-1}, start
 }
 
 func (b *builder) list(items []binding, meta Metadata) (maltcid.NodeRef, error) {
-	return b.listNode(items, listRootGeometry(meta.Count, b.profile.Slots), meta)
+	return b.listNode(items, listRootGeometry(meta.Count, b.profile.Slots), 0, meta)
 }
 
-func (b *builder) listNode(items []binding, p listGeometry, meta Metadata) (maltcid.NodeRef, error) {
+func (b *builder) listNode(items []binding, p listGeometry, offset uint64, meta Metadata) (maltcid.NodeRef, error) {
 	cells := make([]commitment.Cell, b.profile.Slots)
 	if p.root {
 		cells[0] = meta.cell()
 	}
 	if p.height == 0 {
-		for i, item := range items {
-			cells[p.base()+i] = append(commitment.Cell{listLeaf}, item.target.Bytes()...)
+		for _, item := range items {
+			cells[p.slot(item.coordinate.Index-offset, len(cells))] = append(commitment.Cell{listLeaf}, item.target.Bytes()...)
 		}
 	} else {
-		for digit := 0; digit < p.used(b.profile.Slots); digit++ {
-			child, start := p.child(digit, b.profile.Slots)
-			ref, err := b.listNode(items[start:start+child.count], child, Metadata{})
+		for len(items) > 0 {
+			slot := p.slot(items[0].coordinate.Index-offset, len(cells))
+			n := 1
+			for n < len(items) && p.slot(items[n].coordinate.Index-offset, len(cells)) == slot {
+				n++
+			}
+			child, start := p.child(slot-p.base(), len(cells))
+			ref, err := b.listNode(items[:n], child, offset+start, Metadata{})
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
-			cells[p.base()+digit], err = childCell(ref)
+			cells[slot], err = childCell(ref)
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
+			items = items[n:]
 		}
 	}
 	return b.commit(cells)
 }
 
 // checkListGeometry validates shape using authenticated parent context. Internal
-// metadata, holes, wrong cell roles and nonempty padding are all noncanonical.
+// metadata, fully empty descendants and nonempty padding are noncanonical.
 func checkListGeometry(cells []commitment.Cell, p listGeometry, slots int) error {
 	if len(cells) != slots || p.used(slots) > slots-p.base() {
 		return errors.New("invalid List node geometry")
 	}
+	occupied := false
 	for slot := p.base(); slot < slots; slot++ {
 		cell := cells[slot]
-		if slot-p.base() >= p.used(slots) {
-			if len(cell) != 0 {
-				return errors.New("nonempty List padding")
+		if len(cell) == 0 {
+			if p.tail && slot-p.base() == p.used(slots)-1 {
+				return errors.New("List count extends past its last binding")
 			}
 			continue
+		}
+		occupied = true
+		if slot-p.base() >= p.used(slots) {
+			return errors.New("nonempty List padding")
 		}
 		want := childNode
 		if p.height == 0 {
 			want = listLeaf
 		}
-		if len(cell) == 0 || cell[0] != want {
+		if cell[0] != want {
 			return errors.New("invalid List content cell")
 		}
+	}
+	if !p.root && !occupied {
+		return errors.New("empty List subtree must be an empty cell")
 	}
 	return nil
 }

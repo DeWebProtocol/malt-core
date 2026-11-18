@@ -23,15 +23,14 @@ label + target --layout at derived coordinate + commitment--> Root
 | Choice | Meaning |
 | --- | --- |
 | Coordinate derivation | `SHA256` derives a 32-byte coordinate using Core's domain-separated framing; `Direct` parses an already canonical coordinate |
-| Authentication layout | `Map` organizes 32-byte keys; `List` organizes dense integer indices `[0, count)` |
+| Authentication layout | `Map` organizes 32-byte keys; `List` organizes integer indices `[0, count)` |
 | Commitment profile | An exact KZG or IPA parameter set and encoding, identified in the Root |
 | ArcSet organization | The application's choice to group bindings in one Root or compose several Roots; this is not encoded in the Root |
 
 Map and List are **authentication layouts**. Map uses coordinate-prefix routing
 for general, potentially sparse key spaces. List uses count-defined radix
-intervals for dense integer positions. Dense/sparse describe the intended
-coordinate distributions; the current List implementation requires a binding
-at every position in `[0,count)`. Both layouts are implemented by `auth/tree`.
+intervals. Unbound positions in `[0,count)` and unoccupied child intervals
+are authenticated empty cells. Count is one past the greatest binding, or zero. Both layouts are implemented by `auth/tree`.
 
 `Direct` accepts exactly 32 key bytes or eight unsigned big-endian index bytes.
 Use `coordinate.EncodeKey` or `coordinate.EncodeIndex`; a decimal text label such

@@ -62,12 +62,14 @@ Map absence ends at a proved empty slot or a routed terminal label with a
 different full coordinate. Membership compares exact authenticated label bytes;
 different labels at the same full coordinate return `ErrCoordinateCollision`
 instead of membership or absence. Map leaves use Root layout 1.
-List absence authenticates count metadata showing the index is outside
-`[0,count)`. Both use `malt.binding/1` node evidence. A binding's `present` and
+List opens root count metadata for every query. An index outside
+`[0,count)` needs only that opening. An unbound index within the extent
+also needs the authenticated empty leaf or child slot on its route.
+Both layouts use `malt.binding/1` node evidence. A binding's `present` and
 target are checked against this evidence, never accepted as assertions.
 
 A List range authenticates root count, optional payload CID, bounds, and
-precisely the ordered bindings selected by the element index interval. Applications
+one presence or absence result for every position in the index interval. Applications
 decode their own CID-bound metadata and verify content bytes when assembling
 byte ranges. The optional payload consumes no element index.
 Authentication alone does not prove availability, freshness, or byte integrity

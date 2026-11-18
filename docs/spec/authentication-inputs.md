@@ -121,9 +121,8 @@ coordinate prefixes. It is suited to sparse coordinates in a general key space;
 sparsity is an optimization context, not a requirement on every input set.
 The **List authentication layout** (`maltcid.List`, `L=2`) organizes integer
 positions into fixed radix intervals, with geometry determined by authenticated
-count and vector capacity. It is suited to dense position domains. The current
-Core contract requires every position in `[0,count)` to have a binding; it does
-not support holes or non-shifting deletion within that domain.
+count and vector capacity. Positions within the extent can be empty. Clearing
+an index preserves all other indices.
 
 Map and List are the layout names; **sparse** and **dense** describe their
 intended coordinate distributions. **prefix** describes Map routing, and
@@ -152,10 +151,15 @@ Native keys are not rehash inputs. Root `V` remains zero. Cell encodings are
 defined in `maltcid/node_cells.go` and
 `auth/tree`; changing them must not silently reuse a descriptor's interpretation.
 
-List consumes dense indices `[0,count)` using canonical index labels.
+List uses canonical integer index labels. The empty List has count zero. Otherwise
+count is one plus the greatest bound index. The largest bindable index is
+`2^64-2`, and `2^64-1` is always out of bounds.
 Only root slot 0 stores metadata: count and an optional opaque payload CID.
+The List has no named `@payload` binding. Under Direct indexing those eight
+bytes encode an ordinary integer index. Applications that use a Map can bind
+the label `@payload` to the vertex's content.
 The root has `slots-1` entry/child slots; descendants use all `slots` positions.
-Count authenticates sequence bounds and determines tree height and occupancy.
+Count authenticates sequence bounds and determines tree height and addressable intervals.
 Core range queries select element indices. Applications may bind byte geometry
 through the root payload CID, verify its content, and translate byte ranges
 into those indices as described below.
@@ -191,8 +195,8 @@ Root `V` remains zero.
 With physical capacity `C=2^k` (`k=8` for IPA, `12` for KZG), the root has `C-1`
 content slots and every descendant has `C`. Height `H` is the smallest
 nonnegative integer satisfying `count <= (C-1)*C^H`, with `H=0` for empty state.
-Cells are densely packed left to right; all unused positions are empty. Internal
-cells reference children, leaf cells contain `0x03 || targetCID`. Child references
+Unbound positions and entirely unoccupied child intervals use the empty cell
+(zero scalar). Occupied internal cells reference children, and bound leaves contain `0x03 || targetCID`. Child references
 retain the existing `0x02 || NodeRef` framing. No descendant stores metadata.
 
 For index `i`, the root selects `1 + (i >> (k*H))`. Each subsequent level selects
@@ -200,7 +204,10 @@ the next `k`-bit digit `(i >> (k*h)) & (C-1)`; the leaf uses `i & (C-1)`.
 A height-zero root selects `i+1`. Child counts and padding follow from count and
 traversal context. Implementations must handle virtual spans at or above `2^64`
 without overflow. Membership proofs open metadata once at the root; any
-metadata attached to a descendant proof is rejected.
+metadata attached to a descendant proof is rejected. In-range absence ends at
+an authenticated empty cell along the selected path. Out-of-range absence opens
+only the root metadata. An empty interval covering the declared final index
+contradicts the authenticated count.
 
 At capacity 256, count 255 fits a root leaf, count 256 uses one full descendant
 leaf, and count 257 uses two leaves. When a root becomes a descendant, move its
@@ -213,7 +220,10 @@ the root. `Height`, byte sizes and per-node counts are never serialized.
 `[start,end)`, with omitted end equal to count. Bounds require
 `0 <= start <= end <= count`. Applications such as UnixFS may bind JSON byte
 geometry through the root payload CID, verify those bytes, and translate their
-byte interval into element indices. Heterogeneous lists need no byte geometry.
+byte interval into element indices. Each position has one result in order,
+including an absence proof for each hole. For intervals containing holes the
+Core prover accepts pages of up to 65,536 positions. Heterogeneous
+lists need no byte geometry.
 
 ## State, writes and proofs
 
@@ -228,8 +238,9 @@ targets against root-bound materialization. A query never accepts a distinct
 label merely because its coordinate matches. Coordinate collisions are explicit
 errors and do not create collision buckets or overwrite existing bindings.
 
-`Apply` handles Map changes and List replacements; `Append`/`AppendBatch` and
-`Truncate` handle List length changes. These operations reuse unchanged
+`Apply` inserts, replaces and clears Map or List bindings. On a List, `Append`
+and `AppendBatch` start at the current count, and `Truncate` removes every
+binding at or above the cutoff. The greatest surviving index determines count. These operations reuse unchanged
 subtrees. Updates check expected bindings before exposing a result Root. I/O
 failure may leave unreachable immutable nodes in the caller-owned store.
 Candidate preparation and materialization do not publish or trust a Root and
@@ -258,7 +269,7 @@ writer does not migrate historical update views. Recreate old experimental
 state and dependent parents with the current implementation. Replacing a Root
 prefix alone is not a migration; payload CIDs remain reusable.
 
-`conformance/authentication-v4.json` is generated from current queries over
+`conformance/authentication-v5.json` is generated from current queries over
 V=0 Roots. Historical authentication/0 vectors remain only in Git history and are not
 accepted by the current verifier. See [conformance corpora](./conformance-corpora.md). Measurements
 must identify their exact Core revision, profile, and corpus. Browser release
@@ -291,7 +302,7 @@ reaches them. Core defines no recovery records, durable store or cache policy.
 
 `authentication.NewWriter` imports and verifies a complete candidate once.
 `Writer.Update` returns an independent candidate writer, preserving its base for
-retries and branches. Map changes and List replacement, append,
+retries and branches. Map changes and List insertion, replacement, clearing, append,
 truncation and opaque payload changes reuse unchanged authentication paths.
 The exported candidate remains a complete input/node view: this is neither a
 partial update witness nor a stateless transition proof. Complete export still traverses the materialization, but does not repeat
@@ -300,7 +311,7 @@ update or transport cost. Applications update child ArcSets before rebinding
 parent entries, and retain candidate writers only under their own receipt and
 trust policies.
 
-Truncation supplies an explicit new count. `SetPayload` changes the optional
+Truncation supplies an exclusive cutoff that can fall in a gap. `SetPayload` changes the optional
 root payload CID; it never decodes application content. Applications update
 changed final chunks and their metadata together before publishing a candidate.
 
@@ -315,9 +326,11 @@ composes proofs across Roots. These are separate from application flat/rooted
 organization and from Gateway relation persistence.
 
 For a retained writer, `Apply(ctx, Delta)` accepts expected-before label changes.
-Map supports insert/replace/delete. List changes replace existing
-positions or supply appended bindings; `Count` controls suffix length and
-`PayloadCID` optionally replaces or clears the application metadata reference. `Update(ctx, State)` compiles complete desired inputs to
+Map and List changes can insert, replace or clear individual bindings. On a
+List, a smaller `Count` cuts off a suffix. A larger explicit `Count` requires
+a binding at `Count-1`. Omitting `Count` derives the extent from the surviving
+indices. `PayloadCID` optionally replaces or clears the metadata reference.
+`Update(ctx, State)` compiles complete desired inputs to
 the same path, with an unavoidable input scan.
 
 Use `Root()` for the candidate identity and `Export(ctx)` when a complete

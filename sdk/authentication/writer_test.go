@@ -47,6 +47,62 @@ func TestWriterStateOwnsLabelsAndPreservesMetadata(t *testing.T) {
 	}
 }
 
+func TestSparseListWriterDeltaAndRecovery(t *testing.T) {
+	ctx, e := t.Context(), pathEngine(t)
+	value := cid.MustParse("bafkqaaa")
+	state := engine.State{Descriptor: maltcid.RootDescriptor{Layout: maltcid.List, DerivationProfile: uint8(derivation.Direct), Profile: maltcid.IPA256}, PayloadCID: value}
+	entry := func(i uint64) engine.Entry { return engine.Entry{Label: coordinate.EncodeIndex(i), Target: value} }
+	state.Entries = []engine.Entry{entry(0), entry(2)}
+	base, err := authentication.BuildWriter(ctx, e, state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const high = uint64(1) << 40
+	state.Entries = []engine.Entry{entry(2), entry(high)}
+	updated, err := base.Update(ctx, state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	add := engine.Change{Label: coordinate.EncodeIndex(high), After: value}
+	remove := engine.Change{Label: coordinate.EncodeIndex(0), Before: value}
+	branch, err := base.Apply(ctx, authentication.Delta{Changes: []engine.Change{add, remove}})
+	if err != nil || !branch.Root().Equals(updated.Root()) {
+		t.Fatal("delta and full update disagree", err)
+	}
+	fresh, err := authentication.BuildWriter(ctx, e, state)
+	if err != nil || !fresh.Root().Equals(updated.Root()) {
+		t.Fatal("incremental root differs from fresh root", err)
+	}
+	candidate, err := updated.Export(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recovered, err := authentication.NewWriter(ctx, e, candidate)
+	if err != nil || recovered.Len() != 2 {
+		t.Fatal("sparse candidate import", err)
+	}
+	cut := high - 1
+	shrunk, err := recovered.Apply(ctx, authentication.Delta{Count: &cut})
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := shrunk.Nodes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	meta, _, err := e.ReadMetadata(ctx, shrunk.Root(), source)
+	if err != nil || meta.Count != 3 || !meta.PayloadCID.Equals(value) {
+		t.Fatal("truncated extent or metadata", err)
+	}
+	if _, err := shrunk.Apply(ctx, authentication.Delta{Count: &cut}); err == nil {
+		t.Fatal("extended a List without a terminal binding")
+	}
+	original, err := base.State(ctx)
+	if err != nil || len(original.Entries) != 2 || string(original.Entries[0].Label) != string(coordinate.EncodeIndex(0)) {
+		t.Fatal("base changed", err)
+	}
+}
+
 func TestWriterUpdatesEqualFreshBuild(t *testing.T) {
 	e := pathEngine(t)
 	target := cid.MustParse("bafkqaaa")
