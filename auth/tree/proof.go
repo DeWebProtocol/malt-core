@@ -125,8 +125,8 @@ func (e *Engine) prove(ctx context.Context, root cid.Cid, query Selector, work *
 		}
 		result.Proof.Nodes = append(result.Proof.Nodes, opening)
 		if len(opening.Cell) == 0 {
-			if d.Layout == maltcid.List {
-				return Result{}, errors.New("hole in List state")
+			if d.Layout == maltcid.List && pos.tail && int(slot)-pos.base() == pos.used(p.Slots)-1 {
+				return Result{}, errors.New("List count extends past its last binding")
 			}
 			return plan.finish(ctx, s, result)
 		}
@@ -231,7 +231,10 @@ func (e *Engine) Verify(root cid.Cid, query Selector, result Result) (bool, erro
 			return valid, err
 		}
 		if len(opening.Cell) == 0 {
-			return d.Layout == maltcid.Map && last && !result.Present, nil
+			if d.Layout == maltcid.List && pos.tail && int(slot)-pos.base() == pos.used(p.Slots)-1 {
+				return false, nil
+			}
+			return last && !result.Present, nil
 		}
 		if d.Layout == maltcid.Map && opening.Cell[0] == mapLeaf {
 			label, target, err := parseMap(opening.Cell)

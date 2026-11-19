@@ -211,8 +211,8 @@ partial reads, and serialized queries.
 Core calls its two authentication layouts **Map** and **List**. Map organizes
 bindings by coordinate prefixes and suits sparse key spaces. List organizes
 integer positions into fixed radix intervals and suits dense sequences.
-The optional `sdk/object` containers sit above these VC Trees. The List layout requires contiguous positions; its root count
-authenticates the sequence bounds. See the
+The optional `sdk/object` containers sit above these VC Trees. List root metadata authenticates the extent. Unbound positions
+inside that extent have zero-scalar absence proofs. See the
 [layout specification](docs/spec/authentication-inputs.md#authentication-layout-and-internal-node-identity).
 
 On the development branch, these are `maltcid.Map` (`L=1`) and `maltcid.List`

@@ -13,7 +13,7 @@ const (
 	Index Kind = "index"
 )
 
-// Coordinate is a sparse key or a dense sequence index. Exactly one is active.
+// Coordinate is a sparse key or an integer sequence index. Exactly one is active.
 type Coordinate struct {
 	Kind  Kind
 	Index uint64

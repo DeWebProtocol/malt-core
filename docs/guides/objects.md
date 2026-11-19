@@ -15,7 +15,7 @@ type Object interface {
 
 `Immutable` contains an owned copy of raw bytes and returns an ordinary
 CIDv1 with the raw codec and SHA-256 multihash. `Map` returns a MALT Root using
-the Map authentication layout. `List` holds dense, zero-based references and
+the Map authentication layout. `List` holds zero-based references and
 returns a Root using the List authentication layout.
 `MapConfig(profile)` and `ListConfig(profile)` select the authentication layout
 and coordinate derivation; each accepts either `maltcid.IPA256` or
@@ -64,8 +64,10 @@ exactly 32 key bytes.
 
 `NewList(e, object.ListConfig(maltcid.KZG4096))` selects the List layout with KZG.
 Choose `maltcid.IPA256` for the same container with IPA. `Append` appends child
-references, `Set` replaces an existing index, and `Remove` shifts all following
-references down by one. Invalid indices and nil children are errors.
+references. `Bind(i, child)` can extend the List across empty positions.
+`Get(i)` returns nil for an in-range hole, and `Set(i, child)` can fill it.
+`Clear(i)` preserves subsequent indices. `Remove(i)` shifts them down by one.
+The last bound index determines `Len()`. An empty List has length zero.
 
 List indices are zero-based integers. The corresponding authentication query
 label is `coordinate.EncodeIndex(uint64(index))`, which contains eight unsigned

@@ -79,6 +79,46 @@ func TestListCommitsDenseIndicesWithBothBackends(t *testing.T) {
 	}
 }
 
+func TestListBindsAndClearsWithoutShifting(t *testing.T) {
+	ctx := t.Context()
+	l, err := object.NewList(engineFor(t), object.ListConfig(maltcid.IPA256))
+	must(t, err)
+	a, b := leaf(t, "a"), leaf(t, "b")
+	must(t, l.Bind(2, b))
+	must(t, l.Bind(0, a))
+	gap, err := l.Get(1)
+	if err != nil || gap != nil || l.Len() != 3 {
+		t.Fatal("expected an in-range empty cell", err)
+	}
+	original, err := l.Commit(ctx)
+	must(t, err)
+	must(t, l.Set(1, a))
+	filled, err := l.Commit(ctx)
+	must(t, err)
+	if filled.Equals(original) {
+		t.Fatal("filling a hole did not change the root")
+	}
+	must(t, l.Clear(1))
+	again, err := l.Commit(ctx)
+	must(t, err)
+	if !again.Equals(original) {
+		t.Fatal("clearing a cell changed its successors")
+	}
+	must(t, l.Remove(1))
+	got, err := l.Get(1)
+	if err != nil || got != b || l.Len() != 2 {
+		t.Fatal("removing a gap did not shift its successor", err)
+	}
+	must(t, l.Bind(1<<25, b))
+	if l.Len() != 1<<25+1 {
+		t.Fatal("incorrect sparse extent")
+	}
+	must(t, l.Clear(1<<25))
+	if l.Len() != 2 {
+		t.Fatal("trailing gap survived Clear")
+	}
+}
+
 func TestMixedObjectGraphTraversalAndCycles(t *testing.T) {
 	ctx := context.Background()
 	parent, child := mapFor(t), mapFor(t)

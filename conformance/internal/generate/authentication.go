@@ -30,7 +30,7 @@ func GenerateAuthentication() ([]byte, error) {
 	corpus := struct {
 		Schema  string   `json:"schema"`
 		Vectors []vector `json:"vectors"`
-	}{Schema: "malt.conformance.authentication/4", Vectors: []vector{}}
+	}{Schema: "malt.conformance.authentication/5", Vectors: []vector{}}
 	ctx := context.Background()
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		var scheme engine.Profile
@@ -148,6 +148,36 @@ func GenerateAuthentication() ([]byte, error) {
 		tampered.Verification.Request.Root = root.String()
 		tampered.Valid = false
 		corpus.Vectors = append(corpus.Vectors, tampered)
+
+		layoutProfile, err := maltcid.Profile(profile)
+		if err != nil {
+			return nil, err
+		}
+		width := uint64(layoutProfile.Slots)
+		sequence.Entries = append(sequence.Entries, engine.Entry{Label: coordinate.EncodeIndex(2 * width), Target: cid.MustParse("bafkqaaa")})
+		sparseRoot, err := e.Build(ctx, sequence, nodes)
+		if err != nil {
+			return nil, err
+		}
+		for _, q := range []struct {
+			name  string
+			index uint64
+		}{{"empty-list-cell", 1}, {"empty-list-interval", width}} {
+			label := coordinate.EncodeIndex(q.index)
+			if err := add(q.name, protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: sparseRoot.String(), Steps: [][]byte{}, Operation: "binding", Label: &label}); err != nil {
+				return nil, err
+			}
+		}
+		wrongIndex := corpus.Vectors[len(corpus.Vectors)-1]
+		wrongIndex.ID = fmt.Sprintf("profile-%d.empty-interval-at-occupied-index", profile)
+		occupied := coordinate.EncodeIndex(2 * width)
+		wrongIndex.Verification.Request.Label = &occupied
+		wrongIndex.Valid = false
+		corpus.Vectors = append(corpus.Vectors, wrongIndex)
+		end = 2
+		if err := add("list-range-with-gap", protocol.AuthenticationRequest{Profile: protocol.AuthenticationPathProfile, Root: sparseRoot.String(), Steps: [][]byte{}, Operation: "range", Start: &start, End: &end}); err != nil {
+			return nil, err
+		}
 	}
 	data, err := json.MarshalIndent(corpus, "", "  ")
 	if err != nil {

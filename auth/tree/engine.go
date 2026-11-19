@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"sort"
 	"sync"
@@ -204,12 +205,17 @@ func (e *Engine) Commit(ctx context.Context, state View, out materializer.NodeUp
 		ref, err = build.mapNode(items, 0)
 	} else {
 		sort.Slice(items, func(i, j int) bool { return items[i].coordinate.Index < items[j].coordinate.Index })
+		meta := Metadata{PayloadCID: state.PayloadCID}
 		for i, item := range items {
-			if item.coordinate.Index != uint64(i) {
-				return cid.Undef, errors.New("List indices must be dense and unique")
+			index := item.coordinate.Index
+			if index == math.MaxUint64 {
+				return cid.Undef, errors.New("List length overflows uint64")
 			}
+			if i > 0 && index == items[i-1].coordinate.Index {
+				return cid.Undef, errors.New("duplicate List index")
+			}
+			meta.Count = index + 1
 		}
-		meta := Metadata{Count: uint64(len(items)), PayloadCID: state.PayloadCID}
 		ref, err = build.list(items, meta)
 	}
 	if err != nil {

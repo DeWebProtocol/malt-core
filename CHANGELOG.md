@@ -18,9 +18,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   to `maltcid.Map` / `maltcid.List` and leaf tags to `MapLeafCell` /
   `ListLeafCell`; update Core callers, examples and current specifications.
   The old `Prefix` / `Positional` source names have no compatibility aliases.
-- Retain sparse/dense as descriptions of the intended coordinate distributions,
-  and coordinate prefixes as the Map routing mechanism. List still requires
-  contiguous bindings; this rename does not introduce holes or new mutations.
+- Authenticate empty List positions and unoccupied intervals as zero scalars.
+  Insert or clear a binding without shifting its successors. The highest bound
+  index determines the extent after a deletion or truncation. Existing dense
+  Roots and proof encodings are preserved. Corpus `/5` adds leaf, subtree and
+  range evidence for sparse Lists in both commitment profiles.
 - Assign the current VC-tree layouts Map `L=1` and List `L=2`. Advance complete
   candidates to `malt.authentication/6`, batches and receipts to `/3`, and the
   authentication conformance corpus to `/4`.

@@ -33,6 +33,15 @@ func bindingKey(c coordinate.Coordinate) (k [33]byte) {
 	}
 	return
 }
+
+// listBindingCount is the logical extent, independent of the number of bindings.
+func listBindingCount(root *bindingNode) uint64 {
+	if root == nil {
+		return 0
+	}
+	return binary.BigEndian.Uint64(root.maximum[25:]) + 1
+}
+
 func keyBit(k [33]byte, i int) byte { return k[i/8] >> uint(7-i%8) & 1 }
 func bindingGet(n *bindingNode, k [33]byte) *bindingNode {
 	for n != nil && n.left != nil {

@@ -22,7 +22,7 @@ type nodeEdit struct {
 	verifier Profile
 	source   materializer.NodeLookup
 	loaded   map[string][]commitment.Cell
-	pending  []pendingNode
+	pending  map[string]pendingNode
 }
 type pendingNode struct {
 	ref   maltcid.NodeRef
@@ -45,7 +45,7 @@ func (e *Engine) edit(ctx context.Context, root cid.Cid, source materializer.Nod
 	if source == nil || out == nil {
 		return nil, ref, errors.New("node lookup and updater are required")
 	}
-	u := &nodeEdit{builder: builder{registry: e.Profiles, ctx: ctx, descriptor: d, profile: p, scheme: committer, out: out}, tree: e, verifier: s, source: source, loaded: make(map[string][]commitment.Cell)}
+	u := &nodeEdit{builder: builder{registry: e.Profiles, ctx: ctx, descriptor: d, profile: p, scheme: committer, out: out}, tree: e, verifier: s, source: source, loaded: make(map[string][]commitment.Cell), pending: make(map[string]pendingNode)}
 	return u, ref, nil
 }
 func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitment.Cell, error) {
@@ -69,7 +69,13 @@ func (u *nodeEdit) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]commitme
 	return commitment.CloneCells(cells), nil
 }
 func (u *nodeEdit) PutNode(_ context.Context, ref maltcid.NodeRef, cells []commitment.Cell) error {
-	u.pending = append(u.pending, pendingNode{ref, commitment.CloneCells(cells)})
+	key, err := ref.Bytes()
+	if err != nil {
+		return err
+	}
+	owned := commitment.CloneCells(cells)
+	u.loaded[string(key)] = owned
+	u.pending[string(key)] = pendingNode{ref, owned}
 	return nil
 }
 func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
@@ -77,15 +83,35 @@ func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
 	if err != nil {
 		return cid.Undef, err
 	}
-	for _, node := range u.pending {
-		if err := u.ctx.Err(); err != nil {
-			return cid.Undef, err
-		}
-		if err := putComputed(u.ctx, u.builder.out, node.ref, node.cells, u.registry); err != nil {
-			return cid.Undef, err
-		}
+	key, err := ref.Bytes()
+	if err != nil {
+		return cid.Undef, err
+	}
+	if err := u.writePending(string(key)); err != nil {
+		return cid.Undef, err
 	}
 	return root, nil
+}
+
+// Write each reachable staged node after its children. Shrinking a List may
+// promote a staged vector to root and discard its intermediate child encoding.
+func (u *nodeEdit) writePending(key string) error {
+	node, ok := u.pending[key]
+	if !ok {
+		return nil // an unchanged child remains in the base materialization
+	}
+	if err := u.ctx.Err(); err != nil {
+		return err
+	}
+	delete(u.pending, key)
+	for _, cell := range node.cells {
+		if len(cell) > 0 && cell[0] == childNode {
+			if err := u.writePending(string(cell[1:])); err != nil {
+				return err
+			}
+		}
+	}
+	return putComputed(u.ctx, u.builder.out, node.ref, node.cells, u.registry)
 }
 
 type coordinateChange struct {
@@ -94,9 +120,8 @@ type coordinateChange struct {
 	before, after cid.Cid
 }
 
-// Apply copies only affected authentication paths. Map supports insert,
-// replace and delete; List supports replacement at existing indices.
-// Append and Truncate explicitly manage List length and metadata.
+// Apply inserts, replaces or clears bindings along the affected paths.
+// Clearing a List index preserves the coordinates of all surviving bindings.
 func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	u, ref, err := e.edit(ctx, root, source, out)
 	if err != nil {
@@ -121,9 +146,6 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 		if !change.Before.Defined() && !change.After.Defined() {
 			return cid.Undef, errors.New("empty update")
 		}
-		if u.descriptor.Layout == maltcid.List && (!change.Before.Defined() || !change.After.Defined()) {
-			return cid.Undef, errors.New("List Apply requires replacement; use Append or Truncate for length changes")
-		}
 		items = append(items, coordinateChange{key: k, label: bytes.Clone(change.Label), before: change.Before, after: change.After})
 	}
 	if len(items) == 0 {
@@ -140,20 +162,11 @@ func (e *Engine) Apply(ctx context.Context, root cid.Cid, changes []Change, sour
 			return cid.Undef, err
 		}
 	} else {
-		cells, err := u.GetNode(ctx, ref)
+		_, meta, err := u.sequence(ref)
 		if err != nil {
 			return cid.Undef, err
 		}
-		meta, err := parseMetadata(cells[0])
-		if err != nil {
-			return cid.Undef, err
-		}
-		for _, item := range items {
-			if item.key.Index >= meta.Count {
-				return cid.Undef, errors.New("old target does not match authenticated state")
-			}
-		}
-		ref, err = u.replace(&b, ref, listRootGeometry(meta.Count, u.profile.Slots), 0, items)
+		ref, err = u.applyList(ref, meta, items)
 		if err != nil {
 			return cid.Undef, err
 		}

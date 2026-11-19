@@ -2,13 +2,13 @@
 
 The current authentication tree lives in `auth/tree`. Map (`L=1`) authenticates
 exact original label bytes and target CIDs, using derived coordinates for routing.
-List (`L=2`) authenticates dense integer indices and root count metadata. Both
+List (`L=2`) authenticates integer indices, including empty positions, and root count metadata. Both
 compose vector commitments into immutable trees. The application-facing
 `sdk/object` containers consume these layouts; they do not define them.
 
 Map construction, cell encoding and routing live in `map.go`, with updates in
 `map_update.go`. List geometry and cell encoding live in `list.go`, with
-replacement, append, truncation and payload changes in `list_update.go`.
+insertion, replacement, clearing, append, truncation and payload changes in `list_update.go`.
 `engine` binds derivation/layout/exact VC profiles to complete Roots;
 `traversal` composes explicit steps across Roots.
 

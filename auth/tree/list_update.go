@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"math"
+	"sort"
 
 	"github.com/dewebprotocol/malt-core/auth/arcset/materializer"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
+	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/maltcid"
 	cid "github.com/ipfs/go-cid"
 )
@@ -45,23 +47,15 @@ func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Ci
 	if len(targets) == 0 || uint64(len(targets)) > math.MaxUint64-meta.Count {
 		return cid.Undef, 0, errors.New("empty append batch or sequence length overflow")
 	}
-	items := make([]binding, len(targets))
+	changes := make([]coordinateChange, len(targets))
 	for i, target := range targets {
-		if err := ctx.Err(); err != nil {
-			return cid.Undef, 0, err
-		}
 		if !target.Defined() {
 			return cid.Undef, 0, errors.New("undefined append target")
 		}
-		items[i] = binding{target: target}
+		changes[i] = coordinateChange{key: coordinate.At(meta.Count + uint64(i)), after: target}
 	}
 	first := meta.Count
-	old := listRootGeometry(first, u.profile.Slots)
-	meta.Count += uint64(len(items))
-	next := listRootGeometry(meta.Count, u.profile.Slots)
-	b := u.builder
-	b.out = u
-	ref, err = u.appendNode(&b, ref, old, next, meta, items)
+	ref, err = u.applyList(ref, meta, changes)
 	if err != nil {
 		return cid.Undef, 0, err
 	}
@@ -69,75 +63,14 @@ func (e *Engine) AppendBatch(ctx context.Context, root cid.Cid, targets []cid.Ci
 	return root, first, err
 }
 
-func (u *nodeEdit) appendNode(b *builder, ref maltcid.NodeRef, old, next listGeometry, meta Metadata, items []binding) (maltcid.NodeRef, error) {
-	if old == next {
-		return ref, nil
-	}
-	if old.count == 0 {
-		return b.listNode(items, next, meta)
-	}
-	cells := make([]commitment.Cell, u.profile.Slots)
-	var previous []commitment.Cell
-	if old.height == next.height {
-		var err error
-		previous, err = u.GetNode(u.ctx, ref)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		if err := checkListGeometry(previous, old, u.profile.Slots); err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		// Demoting a root reclaims slot zero and shifts only this vector.
-		copy(cells[next.base():], previous[old.base():])
-	}
-	if next.root {
-		cells[0] = meta.cell()
-	}
-	if next.height == 0 {
-		for i, item := range items {
-			cells[next.base()+int(old.count)+i] = append(commitment.Cell{listLeaf}, item.target.Bytes()...)
-		}
-		return b.commit(cells)
-	}
-	for digit := 0; digit < next.used(u.profile.Slots); digit++ {
-		childPos, start := next.child(digit, u.profile.Slots)
-		var child maltcid.NodeRef
-		var err error
-		if start >= old.count {
-			child, err = b.listNode(items[:childPos.count], childPos, Metadata{})
-			items = items[childPos.count:]
-		} else {
-			oldChild := old
-			child = ref
-			if next.height == old.height {
-				child, err = parseChild(previous[old.base()+digit], ref)
-				if err != nil {
-					return maltcid.NodeRef{}, err
-				}
-				oldChild, _ = old.child(digit, u.profile.Slots)
-			}
-			added := childPos.count - oldChild.count
-			child, err = u.appendNode(b, child, oldChild, childPos, Metadata{}, items[:added])
-			items = items[added:]
-		}
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-		cells[next.base()+digit], err = childCell(child)
-		if err != nil {
-			return maltcid.NodeRef{}, err
-		}
-	}
-	return b.commit(cells)
-}
-
-// Truncate removes a suffix and preserves PayloadCID, including at count zero.
+// Truncate clears every binding at or beyond count. The resulting length
+// ends immediately after the last surviving binding, even if the cut falls in a gap.
 func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, source materializer.NodeLookup, out materializer.NodeUpdater) (cid.Cid, error) {
 	u, ref, err := e.edit(ctx, root, source, out)
 	if err != nil {
 		return cid.Undef, err
 	}
-	_, meta, err := u.sequence(ref)
+	cells, meta, err := u.sequence(ref)
 	if err != nil {
 		return cid.Undef, err
 	}
@@ -147,74 +80,43 @@ func (e *Engine) Truncate(ctx context.Context, root cid.Cid, count uint64, sourc
 	if count == meta.Count {
 		return root, nil
 	}
-	old := listRootGeometry(meta.Count, u.profile.Slots)
-	meta.Count = count
-	next := listRootGeometry(count, u.profile.Slots)
+	pos := listRootGeometry(meta.Count, len(cells))
 	b := u.builder
 	b.out = u
-	if count == 0 {
-		ref, err = b.list(nil, meta)
-	} else {
-		for old.height > next.height {
-			cells, loadErr := u.GetNode(ctx, ref)
-			if loadErr != nil {
-				return cid.Undef, loadErr
-			}
-			if err := checkListGeometry(cells, old, u.profile.Slots); err != nil {
-				return cid.Undef, err
-			}
-			ref, err = parseChild(cells[old.base()], ref)
-			if err != nil {
-				return cid.Undef, err
-			}
-			old, _ = old.child(0, u.profile.Slots)
-		}
-		ref, err = u.truncateNode(&b, ref, old, next, meta)
+	if err := u.cutList(&b, ref, cells, pos, count); err != nil {
+		return cid.Undef, err
 	}
+	ref, err = u.finishList(&b, ref, cells, pos, meta, true)
 	if err != nil {
 		return cid.Undef, err
 	}
 	return u.finish(ref)
 }
 
-func (u *nodeEdit) truncateNode(b *builder, ref maltcid.NodeRef, old, next listGeometry, meta Metadata) (maltcid.NodeRef, error) {
-	if old == next {
-		return ref, nil
+// Only one boundary subtree can be partly retained by a suffix cut.
+func (u *nodeEdit) cutList(b *builder, ref maltcid.NodeRef, cells []commitment.Cell, pos listGeometry, keep uint64) error {
+	if keep == 0 {
+		clear(cells[pos.base():])
+		return nil
 	}
-	previous, err := u.GetNode(u.ctx, ref)
+	slot := pos.slot(keep-1, len(cells))
+	clear(cells[slot+1:])
+	if pos.height == 0 || len(cells[slot]) == 0 {
+		return nil
+	}
+	childPos, start := pos.child(slot-pos.base(), len(cells))
+	if keep-start == childPos.count {
+		return nil
+	}
+	child, previous, err := u.loadListChild(ref, cells[slot], childPos)
 	if err != nil {
-		return maltcid.NodeRef{}, err
+		return err
 	}
-	if err := checkListGeometry(previous, old, u.profile.Slots); err != nil {
-		return maltcid.NodeRef{}, err
+	if err := u.cutList(b, child, previous, childPos, keep-start); err != nil {
+		return err
 	}
-	cells := make([]commitment.Cell, u.profile.Slots)
-	if next.root {
-		cells[0] = meta.cell()
-	}
-	for digit := 0; digit < next.used(u.profile.Slots); digit++ {
-		cell := previous[old.base()+digit]
-		if next.height > 0 {
-			oldChild, _ := old.child(digit, u.profile.Slots)
-			nextChild, _ := next.child(digit, u.profile.Slots)
-			if oldChild != nextChild {
-				child, err := parseChild(cell, ref)
-				if err != nil {
-					return maltcid.NodeRef{}, err
-				}
-				child, err = u.truncateNode(b, child, oldChild, nextChild, Metadata{})
-				if err != nil {
-					return maltcid.NodeRef{}, err
-				}
-				cell, err = childCell(child)
-				if err != nil {
-					return maltcid.NodeRef{}, err
-				}
-			}
-		}
-		cells[next.base()+digit] = cell
-	}
-	return b.commit(cells)
+	cells[slot], err = storeListChild(b, previous)
+	return err
 }
 
 // SetPayload changes only the root's opaque payload reference. Undef removes
@@ -242,48 +144,181 @@ func (e *Engine) SetPayload(ctx context.Context, root cid.Cid, payload cid.Cid, 
 	return u.finish(ref)
 }
 
-func (u *nodeEdit) replace(b *builder, ref maltcid.NodeRef, pos listGeometry, offset uint64, items []coordinateChange) (maltcid.NodeRef, error) {
-	cells, err := u.GetNode(u.ctx, ref)
+// Reuse the existing child reference unless a changed coordinate enters its interval.
+// Growth demotes the old root into the first child and reclaims its metadata slot.
+func (u *nodeEdit) applyList(ref maltcid.NodeRef, meta Metadata, items []coordinateChange) (maltcid.NodeRef, error) {
+	sort.Slice(items, func(i, j int) bool { return items[i].key.Index < items[j].key.Index })
+	old := listRootGeometry(meta.Count, u.profile.Slots)
+	recount := false
+	for _, item := range items {
+		if item.key.Index == math.MaxUint64 {
+			return maltcid.NodeRef{}, errors.New("List length overflows uint64")
+		}
+		if item.after.Defined() {
+			meta.Count = max(meta.Count, item.key.Index+1)
+		} else if item.key.Index >= old.count {
+			return maltcid.NodeRef{}, errors.New("old target does not match authenticated state")
+		} else if item.key.Index+1 == old.count {
+			recount = true
+		}
+	}
+	next := listRootGeometry(meta.Count, u.profile.Slots)
+	b := u.builder
+	b.out = u
+	cells, err := u.editListCells(&b, ref, old, next, 0, items)
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	if err := checkListGeometry(cells, pos, u.profile.Slots); err != nil {
-		return maltcid.NodeRef{}, err
+	return u.finishList(&b, ref, cells, next, meta, recount && next.count == old.count)
+}
+
+func (u *nodeEdit) editListCells(b *builder, ref maltcid.NodeRef, old, next listGeometry, offset uint64, items []coordinateChange) ([]commitment.Cell, error) {
+	if err := u.ctx.Err(); err != nil {
+		return nil, err
 	}
-	groups := make(map[int][]coordinateChange)
-	for _, item := range items {
-		slot := pos.slot(item.key.Index-offset, u.profile.Slots)
-		groups[slot] = append(groups[slot], item)
+	slots := u.profile.Slots
+	cells := make([]commitment.Cell, slots)
+	if old.count != 0 && old.height == next.height {
+		previous, err := u.GetNode(u.ctx, ref)
+		if err != nil {
+			return nil, err
+		}
+		if err := checkListGeometry(previous, old, slots); err != nil {
+			return nil, err
+		}
+		copy(cells[next.base():], previous[old.base():])
 	}
-	for slot := pos.base(); slot < len(cells); slot++ {
-		group := groups[slot]
-		if len(group) == 0 {
+	if next.height == 0 {
+		for _, item := range items {
+			slot := next.slot(item.key.Index-offset, slots)
+			var target cid.Cid
+			if len(cells[slot]) > 0 {
+				var err error
+				target, err = parseList(cells[slot])
+				if err != nil {
+					return nil, err
+				}
+			}
+			if err := expect(target, item); err != nil {
+				return nil, err
+			}
+			cells[slot] = nil
+			if item.after.Defined() {
+				cells[slot] = append(commitment.Cell{listLeaf}, item.after.Bytes()...)
+			}
+		}
+		return cells, nil
+	}
+	for digit := 0; digit < next.used(slots); digit++ {
+		slot := next.base() + digit
+		n := 0
+		for n < len(items) && next.slot(items[n].key.Index-offset, slots) == slot {
+			n++
+		}
+		demote := digit == 0 && old.count > 0 && old.height < next.height
+		if n == 0 && !demote {
 			continue
 		}
-		if pos.height == 0 {
-			target, err := parseList(cells[slot])
+		var prior listGeometry
+		childRef := ref
+		if demote {
+			prior = old
+		} else if len(cells[slot]) != 0 {
+			prior, _ = old.child(digit, slots)
+			var err error
+			childRef, err = parseChild(cells[slot], ref)
 			if err != nil {
-				return maltcid.NodeRef{}, err
-			}
-			if err = expect(target, group[0]); err != nil {
-				return maltcid.NodeRef{}, err
-			}
-			cells[slot] = append(commitment.Cell{listLeaf}, group[0].after.Bytes()...)
-		} else {
-			child, err := parseChild(cells[slot], ref)
-			if err != nil {
-				return maltcid.NodeRef{}, err
-			}
-			childPos, start := pos.child(slot-pos.base(), u.profile.Slots)
-			child, err = u.replace(b, child, childPos, offset+start, group)
-			if err != nil {
-				return maltcid.NodeRef{}, err
-			}
-			cells[slot], err = childCell(child)
-			if err != nil {
-				return maltcid.NodeRef{}, err
+				return nil, err
 			}
 		}
+		childPos, start := next.child(digit, slots)
+		updated, err := u.editListCells(b, childRef, prior, childPos, offset+start, items[:n])
+		if err != nil {
+			return nil, err
+		}
+		cells[slot], err = storeListChild(b, updated)
+		if err != nil {
+			return nil, err
+		}
+		items = items[n:]
 	}
+	return cells, nil
+}
+
+// An unoccupied interval is committed directly as the parent's zero scalar.
+func storeListChild(b *builder, cells []commitment.Cell) (commitment.Cell, error) {
+	for _, cell := range cells {
+		if len(cell) != 0 {
+			ref, err := b.commit(cells)
+			if err != nil {
+				return nil, err
+			}
+			return childCell(ref)
+		}
+	}
+	return nil, nil
+}
+
+func (u *nodeEdit) loadListChild(parent maltcid.NodeRef, cell commitment.Cell, pos listGeometry) (maltcid.NodeRef, []commitment.Cell, error) {
+	ref, err := parseChild(cell, parent)
+	if err != nil {
+		return ref, nil, err
+	}
+	cells, err := u.GetNode(u.ctx, ref)
+	if err != nil {
+		return ref, nil, err
+	}
+	return ref, cells, checkListGeometry(cells, pos, len(cells))
+}
+
+// A removed tail may expose an earlier occupied interval. Follow only the
+// rightmost surviving path and promote child zero when a shorter root suffices.
+func (u *nodeEdit) finishList(b *builder, ref maltcid.NodeRef, cells []commitment.Cell, pos listGeometry, meta Metadata, recount bool) (maltcid.NodeRef, error) {
+	if recount {
+		pos.tail = false // the previous upper bound is no longer an occupied index
+		last, err := u.listLength(ref, cells, pos)
+		if err != nil {
+			return maltcid.NodeRef{}, err
+		}
+		meta.Count = last
+	}
+	slots := u.profile.Slots
+	if meta.Count == 0 {
+		return b.list(nil, meta)
+	}
+	next := listRootGeometry(meta.Count, slots)
+	for pos.height > next.height {
+		child, _ := pos.child(0, slots)
+		var err error
+		ref, cells, err = u.loadListChild(ref, cells[pos.base()], child)
+		if err != nil {
+			return maltcid.NodeRef{}, err
+		}
+		pos = child
+	}
+	if !pos.root {
+		copy(cells[1:], cells[:slots-1])
+	}
+	cells[0] = meta.cell()
 	return b.commit(cells)
+}
+
+func (u *nodeEdit) listLength(ref maltcid.NodeRef, cells []commitment.Cell, pos listGeometry) (uint64, error) {
+	for slot := len(cells) - 1; slot >= pos.base(); slot-- {
+		if len(cells[slot]) == 0 {
+			continue
+		}
+		digit := slot - pos.base()
+		if pos.height == 0 {
+			return uint64(digit) + 1, nil
+		}
+		child, start := pos.child(digit, len(cells))
+		r, data, err := u.loadListChild(ref, cells[slot], child)
+		if err != nil {
+			return 0, err
+		}
+		n, err := u.listLength(r, data, child)
+		return start + n, err
+	}
+	return 0, nil
 }

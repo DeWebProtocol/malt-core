@@ -11,6 +11,10 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
+// A single sparse binding can address a huge interval. Page ranges that
+// expand empty cells while retaining the existing behavior for dense reads.
+const maxSparseRangeSegments = 65536
+
 type RangeResult struct {
 	Metadata         Metadata `json:"metadata"`
 	MetadataEvidence Result   `json:"metadata_evidence"`
@@ -86,8 +90,8 @@ func (e *Engine) ProveRange(ctx context.Context, root cid.Cid, start uint64, end
 		if err != nil {
 			return RangeResult{}, err
 		}
-		if !segment.Present {
-			return RangeResult{}, errors.New("missing in-range segment")
+		if !segment.Present && count > maxSparseRangeSegments {
+			return RangeResult{}, errors.New("range containing empty List positions exceeds 65536 segments; request smaller pages")
 		}
 		result.Segments = append(result.Segments, segment)
 	}
@@ -120,9 +124,6 @@ func (e *Engine) VerifyRange(root cid.Cid, start uint64, end *uint64, result Ran
 		return false, nil
 	}
 	for offset, segment := range result.Segments {
-		if !segment.Present {
-			return false, nil
-		}
 		valid, err := e.Verify(root, indexSelector(first+uint64(offset)), segment)
 		if err != nil || !valid {
 			return valid, err

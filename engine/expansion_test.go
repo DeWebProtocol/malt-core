@@ -29,14 +29,13 @@ func (s *rootOnlyNodes) GetNode(ctx context.Context, ref maltcid.NodeRef) ([]com
 	return s.NodeLookup.GetNode(ctx, ref)
 }
 
-func TestSnapshotRejectsHugeLogicalExpansionAtRoot(t *testing.T) {
+func TestSnapshotRejectsMissingListTailAtRoot(t *testing.T) {
 	e, nodes := setup(t, maltcid.IPA256)
 	scheme, err := ipa.NewCommitterScheme(ipa.ProfileDirect)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// A root can advertise an enormous logical count with only one supplied
-	// vector. Reject its count before traversing or allocating logical entries.
+	// The advertised final index requires an occupied interval at the root.
 	cells := make([]commitment.Cell, 256)
 	cells[0] = []byte{maltcid.MetadataCell}
 	for _, v := range []uint64{1 << 40} {
@@ -61,8 +60,8 @@ func TestSnapshotRejectsHugeLogicalExpansionAtRoot(t *testing.T) {
 	}
 	counted := &rootOnlyNodes{NodeLookup: nodes}
 	_, err = e.SnapshotBounded(context.Background(), root, counted, 1)
-	if err == nil || !strings.Contains(err.Error(), "exceeds bound") || counted.gets != 1 {
-		t.Fatalf("count bound: gets=%d err=%v", counted.gets, err)
+	if err == nil || !strings.Contains(err.Error(), "last binding") || counted.gets != 1 {
+		t.Fatalf("missing tail: gets=%d err=%v", counted.gets, err)
 	}
 	if err = e.ValidateState(context.Background(), root, engine.State{Descriptor: d}, counted); err == nil {
 		t.Fatal("tiny candidate accepted enormous logical state")

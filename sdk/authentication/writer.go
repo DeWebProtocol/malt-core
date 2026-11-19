@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"math"
 	"sort"
 
 	"github.com/dewebprotocol/malt-core/auth/commitment"
@@ -182,6 +183,7 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 	}
 	desired := make(map[coordinate.Coordinate][]byte, len(view.Bindings))
 	delta := Delta{}
+	var count uint64
 	for i, b := range view.Bindings {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -194,6 +196,12 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		}
 		if !b.Target.Defined() {
 			return nil, errors.New("undefined desired target")
+		}
+		if state.Descriptor.Layout == maltcid.List {
+			if b.Coordinate.Index == math.MaxUint64 {
+				return nil, errors.New("List length overflows uint64")
+			}
+			count = max(count, b.Coordinate.Index+1)
 		}
 		desired[b.Coordinate] = b.Label
 		old := bindingGet(w.bindings, bindingKey(b.Coordinate))
@@ -210,27 +218,22 @@ func (w *Writer) Update(ctx context.Context, state engine.State) (*Writer, error
 		}
 		delta.Changes = append(delta.Changes, change)
 	}
-	if state.Descriptor.Layout == maltcid.Map {
-		if state.PayloadCID.Defined() {
-			return nil, errors.New("Map cannot carry sequence metadata")
-		}
-		if err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {
-			if _, exists := desired[n.coordinate]; !exists {
-				delta.Changes = append(delta.Changes, engine.Change{Label: n.entry.Label, Before: n.entry.Target})
-			}
-			return nil
-		}); err != nil {
-			return nil, err
-		}
-	} else {
-		count := uint64(len(state.Entries))
+	if state.Descriptor.Layout == maltcid.List {
 		delta.Count = &count
-		for i := uint64(0); i < count; i++ {
-			if _, exists := desired[coordinate.Coordinate{Kind: coordinate.Index, Index: i}]; !exists {
-				return nil, errors.New("List inputs must be contiguous")
-			}
-		}
 		delta.PayloadCID = &state.PayloadCID
+	} else if state.PayloadCID.Defined() {
+		return nil, errors.New("Map cannot carry sequence metadata")
+	}
+	if err := bindingWalk(ctx, w.bindings, func(n *bindingNode) error {
+		if delta.Count != nil && n.coordinate.Index >= count {
+			return nil // Count already removes this suffix.
+		}
+		if _, exists := desired[n.coordinate]; !exists {
+			delta.Changes = append(delta.Changes, engine.Change{Label: n.entry.Label, Before: n.entry.Target})
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	return w.Apply(ctx, delta)
 }

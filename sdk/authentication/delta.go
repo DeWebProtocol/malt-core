@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/dewebprotocol/malt-core/auth/coordinate"
 	"github.com/dewebprotocol/malt-core/engine"
@@ -12,8 +13,9 @@ import (
 	cid "github.com/ipfs/go-cid"
 )
 
-// Delta changes typed relations in an already verified retained ArcSet. Count
-// appends/truncates a List suffix; appended positions require bindings.
+// Delta changes typed relations in an already verified retained ArcSet. A smaller
+// Count discards indices at or above that cutoff. A larger Count requires a
+// binding at Count-1. Without Count the surviving indices determine the extent.
 // PayloadCID changes only the opaque root payload: nil preserves it and a
 // pointer to cid.Undef removes it. This is not a stateless update witness.
 type Delta struct {
@@ -32,27 +34,21 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 		return nil, err
 	}
 	meta := w.metadata
-	var oldCount uint64
-	if w.bindings != nil {
-		oldCount = w.bindings.size
-	}
-	count := oldCount
 	list := meta.Descriptor.Layout == maltcid.List
 	if !list && (delta.Count != nil || delta.PayloadCID != nil) {
 		return nil, errors.New("Map delta cannot carry sequence metadata")
 	}
-	if list && delta.Count != nil {
-		count = *delta.Count
+	var oldCount uint64
+	if list {
+		oldCount = listBindingCount(w.bindings)
 	}
-	if list && count > oldCount && count-oldCount > uint64(len(delta.Changes)) {
-		return nil, errors.New("appended positions require complete bindings")
-	}
+	truncate := list && delta.Count != nil && *delta.Count < oldCount
 	if list && delta.PayloadCID != nil {
 		meta.PayloadCID = *delta.PayloadCID
 	}
 	bindings := w.bindings
-	if list && count < oldCount {
-		bindings = bindingBefore(bindings, bindingKey(coordinate.At(count)))
+	if truncate {
+		bindings = bindingBefore(bindings, bindingKey(coordinate.At(*delta.Count)))
 	}
 	seen := make(map[coordinate.Coordinate][]byte, len(delta.Changes))
 	replacements := make([]engine.Change, 0, len(delta.Changes))
@@ -83,53 +79,31 @@ func (w *Writer) Apply(ctx context.Context, delta Delta) (*Writer, error) {
 		if old == nil && change.Before.Defined() || old != nil && !old.entry.Target.Equals(change.Before) {
 			return nil, errors.New("old target does not match retained state")
 		}
-		if list && (!change.After.Defined() || c.Index >= count) {
-			return nil, errors.New("List changes require targets within the new count; use Count to truncate")
+		if list && (c.Index == math.MaxUint64 || delta.Count != nil && c.Index >= *delta.Count) {
+			return nil, errors.New("List change outside representable or requested extent")
 		}
 		if change.After.Defined() {
 			bindings = bindingSet(bindings, c, engine.Entry{Label: change.Label, Target: change.After})
 		} else {
 			bindings = bindingDelete(bindings, key)
 		}
-		if (!list || c.Index < oldCount) && !change.Before.Equals(change.After) {
+		if !change.Before.Equals(change.After) {
 			replacements = append(replacements, change)
 		}
 	}
-	if list {
-		var size uint64
-		if bindings != nil {
-			size = bindings.size
-		}
-		if size != count {
-			return nil, errors.New("List delta leaves missing positions")
-		}
+	if list && delta.Count != nil && *delta.Count > oldCount && listBindingCount(bindings) != *delta.Count {
+		return nil, errors.New("extended List requires a binding at Count-1")
 	}
 	nodes, err := w.engine.Tree.Workspace(w.nodes)
 	if err != nil {
 		return nil, err
 	}
-	root, err := w.engine.Apply(ctx, w.root, replacements, nodes, nodes)
-	if err != nil {
-		return nil, err
+	root := w.root
+	if truncate {
+		root, err = w.engine.Truncate(ctx, root, *delta.Count, nodes, nodes)
 	}
-	if list && count < oldCount {
-		root, err = w.engine.Truncate(ctx, root, count, nodes, nodes)
-	}
-	if err == nil && list && count > oldCount {
-		targets := make([]cid.Cid, 0, count-oldCount)
-		for i := oldCount; i < count; i++ {
-			if err := ctx.Err(); err != nil {
-				return nil, err
-			}
-			entry := bindingGet(bindings, bindingKey(coordinate.At(i)))
-			if entry == nil {
-				return nil, errors.New("appended position is missing")
-			}
-			targets = append(targets, entry.entry.Target)
-		}
-		if err == nil {
-			root, _, err = w.engine.AppendBatch(ctx, root, targets, nodes, nodes)
-		}
+	if err == nil {
+		root, err = w.engine.Apply(ctx, root, replacements, nodes, nodes)
 	}
 	if err == nil && list && !meta.PayloadCID.Equals(w.metadata.PayloadCID) {
 		root, err = w.engine.SetPayload(ctx, root, meta.PayloadCID, nodes, nodes)
