@@ -2,19 +2,14 @@
 package kzg
 
 import (
-	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"math/big"
 
 	blsfr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	"github.com/dewebprotocol/malt-core/auth/commitment"
 	"github.com/dewebprotocol/malt-core/maltcid"
 )
-
-// bls12381ScalarMod is the BLS12-381 scalar field modulus.
-var bls12381ScalarMod, _ = new(big.Int).SetString("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16)
 
 const (
 	// MaxValues is the maximum number of values per commitment (KZG constraint).
@@ -292,19 +287,7 @@ func (s *Scheme) Replace(values []commitment.Cell, index uint64, oldValue, newVa
 }
 
 func cellToKZGScalar(value commitment.Cell) gokzg4844.Scalar {
-	var scalar gokzg4844.Scalar
-	if len(value) == 0 {
-		return scalar
-	}
-	hash := sha256.Sum256(value)
-
-	fieldValue := new(big.Int).SetBytes(hash[:])
-	fieldValue.Mod(fieldValue, bls12381ScalarMod)
-
-	result := fieldValue.FillBytes(make([]byte, 32))
-	copy(scalar[:], result)
-
-	return scalar
+	return commitment.KZGCellScalar(value)
 }
 
 func (s *Scheme) commitValues(values []commitment.Cell) (commitment.Value, error) {
