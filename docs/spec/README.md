@@ -9,6 +9,7 @@ original revisions rather than overriding these current contracts.
 - [Candidates, batches, and receipts](authentication-batches.md)
 - [Commitment model](commitment.md)
 - [Commitment and proof encoding](commitment-proof-encoding.md)
+- [Compact ProofList encoding](prooflist.md)
 - [CID and wire format](cid-and-wire-format.md)
 - [Conformance corpus](conformance-corpora.md)
 

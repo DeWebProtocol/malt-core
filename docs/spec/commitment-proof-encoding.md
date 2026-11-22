@@ -13,6 +13,9 @@ operation profile identifiers. Released corpus bytes are immutable.
 
 ## Common Cell And Root Rules
 
+The [compact ProofList encoding](prooflist.md) projects the typed evidence
+below into a request-bound binary response.
+
 A primitive commitment authenticates an indexed vector of opaque
 `commitment.Cell` byte strings. A CID-valued semantic slot is the binary CID
 bytes, not its text form. An undefined slot is the empty cell.
