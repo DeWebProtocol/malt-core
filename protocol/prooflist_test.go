@@ -96,7 +96,15 @@ func TestProofListAuthenticationCorpus(t *testing.T) {
 					t.Fatalf("step bytes=%d want=%d error=%v", len(step), size, err)
 				}
 				t.Logf("List segment %d B, full range %d B (JSON %d B)", len(step), len(wire), len(wantJSON))
-				got.Range.Segments[0].Proof.Nodes[0].Metadata = nil
+				segment := &got.Range.Segments[0].Proof.Nodes[0]
+				bounds := got.Range.MetadataEvidence.Proof.Nodes[0]
+				neighbor := got.Range.Segments[1].Proof.Nodes[0]
+				segment.Metadata[0] ^= 1
+				segment.MetadataProof[0] ^= 1
+				if segment.Metadata[0] == bounds.Metadata[0] || segment.MetadataProof[0] == bounds.MetadataProof[0] ||
+					segment.Metadata[0] == neighbor.Metadata[0] || segment.MetadataProof[0] == neighbor.MetadataProof[0] {
+					t.Fatal("range results share mutable metadata buffers")
+				}
 				if _, err := protocol.EncodeProofList(input.Request, got); err == nil {
 					t.Fatal("accepted inconsistent shared metadata")
 				}

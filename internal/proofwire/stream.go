@@ -77,6 +77,10 @@ func (s *Stream) CID(v cid.Cid) cid.Cid {
 			return cid.Undef
 		}
 		raw := v.Bytes()
+		if _, err := cid.Cast(raw); err != nil {
+			s.Err = errors.New("invalid ProofList CID")
+			return cid.Undef
+		}
 		s.Fixed(raw, len(raw))
 		return v
 	}

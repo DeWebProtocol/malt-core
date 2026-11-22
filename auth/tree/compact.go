@@ -115,10 +115,14 @@ func TransferBindingProof(s *proofwire.Stream, d maltcid.RootDescriptor, query S
 
 func transferRootMetadata(s *proofwire.Stream, profile maltcid.ProfileID, node *NodeOpening, shared *NodeOpening) error {
 	if shared != nil {
-		if !s.Reading && (!bytes.Equal(node.Metadata, shared.Metadata) || !bytes.Equal(node.MetadataProof, shared.MetadataProof)) {
+		if s.Reading {
+			node.Metadata = bytes.Clone(shared.Metadata)
+			node.MetadataProof = bytes.Clone(shared.MetadataProof)
+			return nil
+		}
+		if !bytes.Equal(node.Metadata, shared.Metadata) || !bytes.Equal(node.MetadataProof, shared.MetadataProof) {
 			return errors.New("range segment disagrees with shared metadata proof")
 		}
-		node.Metadata, node.MetadataProof = shared.Metadata, shared.MetadataProof
 		return nil
 	}
 	node.Metadata = s.Blob(node.Metadata)
