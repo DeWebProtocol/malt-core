@@ -164,7 +164,11 @@ Core range queries select element indices. Applications may bind byte geometry
 through the root payload CID, verify its content, and translate byte ranges
 into those indices as described below.
 
-Internal references are `"MN" || 0x00 || byte(L) || multicommitment`.
+In both layouts a child cell is `0x02 || raw child commitment`. The Root's
+VC profile fixes the commitment width. To look up the child, combine its raw
+commitment with the parent node's layout and VC profile.
+
+Standalone materializer node references are `"MN" || 0x00 || byte(L) || multicommitment`.
 They identify authentication nodes, not application vertices, and omit AA.
 The root descriptor supplies coordinate derivation; an internal node is
 interpreted with its layout and exact VC profile. Application-valued targets
@@ -196,8 +200,8 @@ With physical capacity `C=2^k` (`k=8` for IPA, `12` for KZG), the root has `C-1`
 content slots and every descendant has `C`. Height `H` is the smallest
 nonnegative integer satisfying `count <= (C-1)*C^H`, with `H=0` for empty state.
 Unbound positions and entirely unoccupied child intervals use the empty cell
-(zero scalar). Occupied internal cells reference children, and bound leaves contain `0x03 || targetCID`. Child references
-retain the existing `0x02 || NodeRef` framing. No descendant stores metadata.
+(zero scalar). Occupied internal cells reference children, and bound leaves
+contain `0x03 || targetCID`. No descendant stores metadata.
 
 For index `i`, the root selects `1 + (i >> (k*H))`. Each subsequent level selects
 the next `k`-bit digit `(i >> (k*h)) & (C-1)`; the leaf uses `i & (C-1)`.

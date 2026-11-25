@@ -253,7 +253,7 @@ func storeListChild(b *builder, cells []commitment.Cell) (commitment.Cell, error
 			if err != nil {
 				return nil, err
 			}
-			return childCell(ref)
+			return childCell(ref.Commitment), nil
 		}
 	}
 	return nil, nil

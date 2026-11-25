@@ -85,7 +85,7 @@ func TransferBindingProof(s *proofwire.Stream, d maltcid.RootDescriptor, query S
 		if last {
 			cell, err = terminalWitnessCell(s, d.Layout, query.Label, target, node.Cell)
 		} else {
-			cell, err = childWitnessCell(s, d, profile.CommitmentSize, node.Cell)
+			cell, err = childWitnessCell(s, profile.CommitmentSize, node.Cell)
 		}
 		if err != nil {
 			return err
@@ -137,20 +137,20 @@ func transferRootMetadata(s *proofwire.Stream, profile maltcid.ProfileID, node *
 	return err
 }
 
-func childWitnessCell(s *proofwire.Stream, d maltcid.RootDescriptor, width int, original []byte) (commitment.Cell, error) {
-	ref := maltcid.NodeRef{Layout: d.Layout, Profile: d.Profile}
+func childWitnessCell(s *proofwire.Stream, width int, original []byte) (commitment.Cell, error) {
+	var raw []byte
 	if !s.Reading {
-		child, err := parseChild(original, ref)
+		var err error
+		raw, err = childPayload(original, width)
 		if err != nil {
 			return nil, err
 		}
-		ref = child
 	}
-	ref.Commitment = s.Fixed(ref.Commitment, width)
+	raw = s.Fixed(raw, width)
 	if s.Err != nil {
 		return nil, s.Err
 	}
-	return childCell(ref)
+	return childCell(raw), nil
 }
 
 func terminalWitnessCell(s *proofwire.Stream, layout maltcid.Layout, label []byte, target cid.Cid, original []byte) (commitment.Cell, error) {

@@ -54,10 +54,7 @@ func (u *nodeEdit) mapNode(b *builder, ref maltcid.NodeRef, depth int, items []c
 				if err != nil {
 					return nil, err
 				}
-				cells[slot], err = childCell(child)
-				if err != nil {
-					return nil, err
-				}
+				cells[slot] = childCell(child.Commitment)
 			}
 			continue
 		}
@@ -107,10 +104,7 @@ func (u *nodeEdit) mapNode(b *builder, ref maltcid.NodeRef, depth int, items []c
 			if err != nil {
 				return nil, err
 			}
-			cells[slot], err = childCell(child)
-			if err != nil {
-				return nil, err
-			}
+			cells[slot] = childCell(child.Commitment)
 		}
 	}
 	return cells, nil

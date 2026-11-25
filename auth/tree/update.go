@@ -83,11 +83,7 @@ func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
 	if err != nil {
 		return cid.Undef, err
 	}
-	key, err := ref.Bytes()
-	if err != nil {
-		return cid.Undef, err
-	}
-	if err := u.writePending(string(key)); err != nil {
+	if err := u.writePending(ref); err != nil {
 		return cid.Undef, err
 	}
 	return root, nil
@@ -95,7 +91,12 @@ func (u *nodeEdit) finish(ref maltcid.NodeRef) (cid.Cid, error) {
 
 // Write each reachable staged node after its children. Shrinking a List may
 // promote a staged vector to root and discard its intermediate child encoding.
-func (u *nodeEdit) writePending(key string) error {
+func (u *nodeEdit) writePending(ref maltcid.NodeRef) error {
+	raw, err := ref.Bytes()
+	if err != nil {
+		return err
+	}
+	key := string(raw)
 	node, ok := u.pending[key]
 	if !ok {
 		return nil // an unchanged child remains in the base materialization
@@ -106,7 +107,11 @@ func (u *nodeEdit) writePending(key string) error {
 	delete(u.pending, key)
 	for _, cell := range node.cells {
 		if len(cell) > 0 && cell[0] == childNode {
-			if err := u.writePending(string(cell[1:])); err != nil {
+			child, err := parseChild(cell, ref)
+			if err != nil {
+				return err
+			}
+			if err := u.writePending(child); err != nil {
 				return err
 			}
 		}
