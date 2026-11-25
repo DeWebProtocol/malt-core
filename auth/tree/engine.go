@@ -262,20 +262,25 @@ const (
 	metadataCell byte = maltcid.MetadataCell
 )
 
-func childCell(ref maltcid.NodeRef) (commitment.Cell, error) {
-	data, err := ref.Bytes()
-	return append(commitment.Cell{childNode}, data...), err
+func childCell(raw []byte) commitment.Cell {
+	return append(commitment.Cell{childNode}, raw...)
 }
-func parseChild(cell commitment.Cell, expected maltcid.NodeRef) (maltcid.NodeRef, error) {
-	if len(cell) < 2 || cell[0] != childNode {
-		return maltcid.NodeRef{}, errors.New("expected internal node reference")
+
+func childPayload(cell commitment.Cell, width int) ([]byte, error) {
+	if len(cell) != 1+width || cell[0] != childNode {
+		return nil, errors.New("invalid child commitment cell")
 	}
-	ref, err := maltcid.ParseNodeRef(cell[1:])
+	return cell[1:], nil
+}
+
+func parseChild(cell commitment.Cell, parent maltcid.NodeRef) (maltcid.NodeRef, error) {
+	profile, err := maltcid.Profile(parent.Profile)
 	if err != nil {
 		return maltcid.NodeRef{}, err
 	}
-	if ref.Layout != expected.Layout || ref.Profile != expected.Profile {
-		return maltcid.NodeRef{}, errors.New("mixed layout or VC profile inside authentication tree")
+	raw, err := childPayload(cell, profile.CommitmentSize)
+	if err != nil {
+		return maltcid.NodeRef{}, err
 	}
-	return ref, nil
+	return maltcid.NodeRef{Layout: parent.Layout, Profile: parent.Profile, Commitment: bytes.Clone(raw)}, nil
 }

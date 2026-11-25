@@ -1,7 +1,7 @@
 # Commitment And Proof Encoding
 
 This document describes current V0 primitive and semantic evidence exercised
-by `malt.conformance.authentication/5`. It complements
+by `malt.conformance.authentication/1`. It complements
 [self-describing Roots](./authentication-inputs.md) and
 [typed query contracts](./authentication-contracts.md). Historical V2/V3 Root readers and
 semantic proof envelopes are retired; their original source and corpus bytes

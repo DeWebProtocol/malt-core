@@ -22,7 +22,7 @@ import (
 )
 
 func TestProofListAuthenticationCorpus(t *testing.T) {
-	raw, err := os.ReadFile("../conformance/authentication-v5.json")
+	raw, err := os.ReadFile("../conformance/authentication-v1.json")
 	if err != nil {
 		t.Fatal(err)
 	}

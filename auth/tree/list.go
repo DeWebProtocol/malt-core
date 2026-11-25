@@ -112,10 +112,7 @@ func (b *builder) listNode(items []binding, p listGeometry, offset uint64, meta 
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
-			cells[slot], err = childCell(ref)
-			if err != nil {
-				return maltcid.NodeRef{}, err
-			}
+			cells[slot] = childCell(ref.Commitment)
 			items = items[n:]
 		}
 	}

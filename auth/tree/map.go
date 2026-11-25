@@ -74,10 +74,7 @@ func (b *builder) mapNode(items []binding, depth int) (maltcid.NodeRef, error) {
 			if err != nil {
 				return maltcid.NodeRef{}, err
 			}
-			cells[i], err = childCell(ref)
-			if err != nil {
-				return maltcid.NodeRef{}, err
-			}
+			cells[i] = childCell(ref.Commitment)
 		}
 	}
 	return b.commit(cells)
