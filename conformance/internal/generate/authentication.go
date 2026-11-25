@@ -30,7 +30,7 @@ func GenerateAuthentication() ([]byte, error) {
 	corpus := struct {
 		Schema  string   `json:"schema"`
 		Vectors []vector `json:"vectors"`
-	}{Schema: "malt.conformance.authentication/5", Vectors: []vector{}}
+	}{Schema: "malt.conformance.authentication/1", Vectors: []vector{}}
 	ctx := context.Background()
 	for _, profile := range []maltcid.ProfileID{maltcid.KZG4096, maltcid.IPA256} {
 		var scheme engine.Profile

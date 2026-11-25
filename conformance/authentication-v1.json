@@ -1,5 +1,5 @@
 {
-  "schema": "malt.conformance.authentication/5",
+  "schema": "malt.conformance.authentication/1",
   "vectors": [
     {
       "id": "profile-1.opaque-label",

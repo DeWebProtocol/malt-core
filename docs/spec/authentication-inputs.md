@@ -273,7 +273,7 @@ writer does not migrate historical update views. Recreate old experimental
 state and dependent parents with the current implementation. Replacing a Root
 prefix alone is not a migration; payload CIDs remain reusable.
 
-`conformance/authentication-v5.json` is generated from current queries over
+`conformance/authentication-v1.json` is generated from current queries over
 V=0 Roots. Historical authentication/0 vectors remain only in Git history and are not
 accepted by the current verifier. See [conformance corpora](./conformance-corpora.md). Measurements
 must identify their exact Core revision, profile, and corpus. Browser release
