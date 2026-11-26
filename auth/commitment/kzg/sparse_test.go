@@ -19,8 +19,8 @@ func TestSparseOpeningsEqualDenseQuotients(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Include zero and occupied targets, both ends of the domain, and both
-	// sides of the dispatch boundary. Dense outputs are the byte-level oracle.
+	// Compare empty and occupied targets against the dense reference,
+	// including both ends of the domain and a fully populated vector.
 	for _, occupancy := range []int{0, 1, 2, 32, 127, 128, 129, 1024, MaxValues} {
 		t.Run(fmt.Sprint(occupancy), func(t *testing.T) {
 			polynomial := make([]blsfr.Element, MaxValues)

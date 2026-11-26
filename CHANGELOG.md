@@ -8,9 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Compute KZG openings for up to 128 nonzero scalars using a sparse quotient
-  and fixed public unit-polynomial openings. Preserve dense behavior above the
-  threshold, exact proof bytes, checked primitive Prove and receiver verification.
+- Compute CPU KZG openings at every occupancy using a sparse quotient
+  and fixed public unit-polynomial openings. This preserves exact proof bytes,
+  checked primitive Prove and receiver verification.
   Generate and verify the additional writer-only table from the pinned setup;
   no query-time precomputation, new setup ceremony or profile change is needed.
 

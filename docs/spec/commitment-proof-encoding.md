@@ -77,9 +77,8 @@ point `domain[i]`.
 
 ### Opening Computation
 
-The CPU prover selects a sparse computation when at most 128 evaluations are
-nonzero; higher occupancy uses the full 4096-element quotient. This is an
-implementation choice and does not change KZG4096 parameters or proof bytes.
+The CPU prover uses the sparse quotient computation at every occupancy,
+including a fully populated 4096-element vector.
 
 Let `L_j` be the Lagrange basis for the index domain, `omega_i` the opening
 point, and `p_j` the supplied evaluations. The writer embeds one public point
