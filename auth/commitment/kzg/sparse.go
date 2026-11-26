@@ -8,10 +8,6 @@ import (
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 )
 
-// Sparse openings use at most occupancy+2 MSM terms instead of MaxValues.
-// Keep the existing full-vector algorithm for higher occupancy.
-const sparseOpeningLimit = 128
-
 func provePolynomialAtIndex(key *kzgWriterKey, domain *kzgDomain, polynomial []blsfr.Element, index uint64) (gokzg4844.KZGProof, gokzg4844.Scalar, error) {
 	if key == nil || len(key.lagrangeG1) != MaxValues || len(key.unitProofs) != MaxValues {
 		return gokzg4844.KZGProof{}, gokzg4844.Scalar{}, fmt.Errorf("KZG writer parameters are incomplete")
@@ -22,12 +18,9 @@ func provePolynomialAtIndex(key *kzgWriterKey, domain *kzgDomain, polynomial []b
 	if len(polynomial) != MaxValues || index >= MaxValues {
 		return gokzg4844.KZGProof{}, gokzg4844.Scalar{}, fmt.Errorf("invalid KZG opening index %d", index)
 	}
-	indices := make([]int, 0, sparseOpeningLimit)
+	indices := make([]int, 0, 128)
 	for i := range polynomial {
 		if !polynomial[i].IsZero() {
-			if len(indices) == sparseOpeningLimit {
-				return provePolynomialAtIndexDense(key, domain, polynomial, index)
-			}
 			indices = append(indices, i)
 		}
 	}
